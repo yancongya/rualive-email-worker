@@ -4,4 +4,3 @@ deploy-temp/
 temp/
 *.log
 .env
-package-lock.json
