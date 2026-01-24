@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RuAlive 数据流程说明</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 .icon {
+            font-size: 1.2em;
+        }
+
+        .step {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 3px solid #764ba2;
+        }
+
+        .step h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        .code-block .comment {
+            color: #888;
+            font-style: italic;
+        }
+
+        .code-block .keyword {
+            color: #ff79c6;
+        }
+
+        .code-block .string {
+            color: #f1fa8c;
+        }
+
+        .code-block .property {
+            color: #8be9fd;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .flow-step {
+            text-align: center;
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .flow-step .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .flow-step .label {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .note {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .note .note-title {
+            font-weight: bold;
+            color: #155724;
+            margin-bottom: 5px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .warning .warning-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .flow-diagram {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+
+            .flow-step {
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 RuAlive 数据流程说明</h1>
+            <p>从 AE 扩展到前端的完整数据流转过程</p>
+        </div>
+
+        <div class="content">
+            <!-- 流程概览 -->
+            <div class="section">
+                <h2><span class="icon">📊</span> 数据流程概览</h2>
+                <div class="flow-diagram">
+                    <div class="flow-step">
+                        <div class="icon">🎨</div>
+                        <div class="label">AE 扩展</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">扫描项目</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="icon">📁</div>
+                        <div class="label">JSON 文件</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">本地存储</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="icon">☁️</div>
+                        <div class="label">Cloudflare Worker</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">API 接收</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="icon">🗄️</div>
+                        <div class="label">D1 数据库</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">数据存储</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="icon">💾</div>
+                        <div class="label">KV 存储</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">前端代码</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="icon">🖥️</div>
+                        <div class="label">用户面板</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">数据展示</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第一步：AE 扩展生成 JSON -->
+            <div class="section">
+                <h2><span class="icon">1️⃣</span> 第一步：AE 扩展生成 JSON 数据</h2>
+                <div class="step">
+                    <h3>1.1 扫描 AE 项目</h3>
+                    <p>AE 扩展通过 JSX 脚本扫描当前打开的 After Effects 项目，收集以下信息：</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>项目基本信息（名称、路径、创建时间等）</li>
+                        <li>合成列表（compositions）</li>
+                        <li>图层列表（layers）</li>
+                        <li>关键帧数量（keyframes）</li>
+                        <li>效果列表（effects）</li>
+                        <li>工作时长（accumulatedRuntime）</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <h3>1.2 生成 JSON 文件</h3>
+                    <p>扫描完成后，扩展将数据保存为 JSON 文件，文件名格式：<span class="highlight">YYYY-MM-DD-项目名-hash.json</span></p>
+                    <div class="code-block">
+<span class="comment">// 文件位置：C:\Users\用户名\Documents\RuAlive@烟囱鸭\</span>
+<span class="comment">// 示例文件名：2026-01-19-52000钻-炽恋弦歌-240c62c4.json</span>
+
+{
+  <span class="property">"projectId"</span>: <span class="string">"240c62c4"</span>,
+  <span class="property">"name"</span>: <span class="string">"52000钻-炽恋弦歌.aep"</span>,
+  <span class="property">"path"</span>: <span class="string">"E:\\工作\\2026\\202601\\52000钻-炽恋弦歌.aep"</span>,
+  <span class="property">"createTime"</span>: <span class="string">"2026-01-19 09:47:22"</span>,
+  <span class="property">"dailyRuntime"</span>: <span class="string">"5小时9分46秒"</span>,
+  <span class="property">"accumulatedRuntime"</span>: <span class="number">18586</span>,
+  <span class="property">"statistics"</span>: {
+    <span class="property">"compositions"</span>: <span class="number">31</span>,
+    <span class="property">"layers"</span>: <span class="number">293</span>,
+    <span class="property">"keyframes"</span>: <span class="number">112</span>,
+    <span class="property">"effects"</span>: <span class="number">88</span>
+  },
+  <span class="property">"details"</span>: {
+    <span class="property">"compositions"</span>: [<span class="string">"开花1"</span>, <span class="string">"开花2"</span>, ...],
+    <span class="property">"layers"</span>: [<span class="string">"右翅膀"</span>, <span class="string">"左翅膀"</span>, ...],
+    <span class="property">"keyframes"</span>: {
+      <span class="property">"右翅膀"</span>: <span class="number">9</span>,
+      <span class="property">"左翅膀"</span>: <span class="number">9</span>,
+      <span class="property">"左猫耳"</span>: <span class="number">15</span>
+    },
+    <span class="property">"effects"</span>: [<span class="string">"Keylight (1.2)"</span>, <span class="string">"简单阻塞工具"</span>, ...]
+  }
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二步：上传到 Cloudflare Worker -->
+            <div class="section">
+                <h2><span class="icon">2️⃣</span> 第二步：上传数据到 Cloudflare Worker</h2>
+                <div class="step">
+                    <h3>2.1 读取本地 JSON 文件</h3>
+                    <p>AE 扩展的 <code>emailManager.js</code> 定期（每分钟）读取文档目录中的所有 JSON 文件：</p>
+                    <div class="code-block">
+<span class="comment">// emailManager.js - getCurrentWorkData 函数</span>
+<span class="keyword">var</span> baseFolder = userPath + separator + <span class="string">'RuAlive@烟囱鸭'</span>;
+<span class="comment">// 递归读取所有子文件夹中的 JSON 文件</span>
+<span class="keyword">function</span> readFolder(folderPath) {
+  <span class="comment">// ... 读取逻辑</span>
+  <span class="keyword">if</span> (file.name.indexOf(<span class="string">'.json'</span>) !== -1) {
+    <span class="keyword">var</span> data = JSON.parse(content);
+    <span class="comment">// 从文件名中提取日期</span>
+    <span class="keyword">var</span> dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
+    <span class="keyword">if</span> (dateMatch) {
+      <span class="keyword">var</span> date = dateMatch[<span class="number">1</span>];
+      <span class="comment">// 按日期分组数据</span>
+      dataByDate[date].projects.push({
+        <span class="property">projectId</span>: data.projectId,
+        <span class="property">name</span>: data.name,
+        <span class="property">statistics</span>: data.statistics,
+        <span class="property">details</span>: data.details  <span class="comment">// ← 关键：包含详细数据</span>
+      });
+    }
+  }
+}
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>2.2 发送到 Cloudflare Worker API</h3>
+                    <p>扩展将整理好的数据发送到后端 API：</p>
+                    <div class="code-block">
+<span class="comment">// 发送请求到 Cloudflare Worker</span>
+<span class="keyword">var</span> payload = {
+  <span class="property">"userId"</span>: <span class="string">"user_xxx"</span>,
+  <span class="property">"workData"</span>: {
+    <span class="property">"work_hours"</span>: <span class="number">7.66</span>,
+    <span class="property">"keyframe_count"</span>: <span class="number">112</span>,
+    <span class="property">"json_size"</span>: <span class="number">9579</span>,
+    <span class="property">"project_count"</span>: <span class="number">2</span>,
+    <span class="property">"composition_count"</span>: <span class="number">35</span>,
+    <span class="property">"layer_count"</span>: <span class="number">343</span>,
+    <span class="property">"effect_count"</span>: <span class="number">98</span>,
+    <span class="property">"projects"</span>: [
+      {
+        <span class="property">"projectId"</span>: <span class="string">"240c62c4"</span>,
+        <span class="property">"name"</span>: <span class="string">"52000钻-炽恋弦歌.aep"</span>,
+        <span class="property">"statistics"</span>: { ... },
+        <span class="property">"details"</span>: { ... }  <span class="comment">// ← 详细数据</span>
+      }
+    ]
+  },
+  <span class="property">"workDate"</span>: <span class="string">"2026-01-19"</span>
+};
+
+fetch(<span class="string">'https://rualive-email-worker.cubetan57.workers.dev/api/work-data'</span>, {
+  <span class="property">method</span>: <span class="string">'POST'</span>,
+  <span class="property">headers</span>: {
+    <span class="property">'Content-Type'</span>: <span class="string">'application/json'</span>,
+    <span class="property">'Authorization'</span>: <span class="string">'Bearer '</span> + token
+  },
+  <span class="property">body</span>: JSON.stringify(payload)
+});
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三步：Cloudflare Worker 处理数据 -->
+            <div class="section">
+                <h2><span class="icon">3️⃣</span> 第三步：Cloudflare Worker 处理并存储数据</h2>
+                <div class="step">
+                    <h3>3.1 接收 API 请求</h3>
+                    <p>Worker 的 <code>index.js</code> 接收请求并调用 <code>saveWorkData</code> 函数：</p>
+                    <div class="code-block">
+<span class="comment">// index.js - 处理 /api/work-data 请求</span>
+<span class="keyword">if</span> (path === <span class="string">'/api/work-data'</span> && request.method === <span class="string">'POST'</span>) {
+  <span class="keyword">const</span> body = <span class="keyword">await</span> request.json();
+  <span class="keyword">const</span> userId = body.userId;
+  <span class="keyword">const</span> workData = body.workData;
+  <span class="keyword">const</span> workDate = body.workDate;
+  
+  <span class="comment">// 保存到数据库</span>
+  <span class="keyword">await</span> saveWorkData(userId, workData, env, workDate);
+}
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>3.2 提取详细数据</h3>
+                    <p><code>saveWorkData</code> 函数从 <code>projects</code> 数组中提取详细数据：</p>
+                    <div class="code-block">
+<span class="comment">// index.js - saveWorkData 函数</span>
+<span class="keyword">const</span> allCompositions = [];
+<span class="keyword">const</span> allEffects = [];
+<span class="keyword">const</span> allLayers = [];
+<span class="keyword">const</span> allKeyframes = [];
+<span class="keyword">const</span> allProjects = [];
+<span class="keyword">const</span> allWorkHours = [];
+
+workData.projects.<span class="keyword">forEach</span>(<span class="keyword">function</span>(project) {
+  <span class="comment">// 项目列表</span>
+  allProjects.push({
+    <span class="property">name</span>: project.name,
+    <span class="property">path</span>: project.path || <span class="string">''</span>,
+    <span class="property">compositions</span>: project.statistics.compositions || <span class="number">0</span>,
+    <span class="property">layers</span>: project.statistics.layers || <span class="number">0</span>,
+    <span class="property">keyframes</span>: project.statistics.keyframes || <span class="number">0</span>,
+    <span class="property">effects</span>: project.statistics.effects || <span class="number">0</span>
+  });
+
+  <span class="comment">// 工作时长列表</span>
+  <span class="keyword">if</span> (project.accumulatedRuntime) {
+    allWorkHours.push({
+      <span class="property">project</span>: project.name,
+      <span class="property">hours</span>: (project.accumulatedRuntime / <span class="number">3600</span>).toFixed(<span class="number">2</span>)
+    });
+  }
+
+  <span class="comment">// 合成列表</span>
+  <span class="keyword">if</span> (project.statistics.compositions) {
+    allCompositions.push({
+      <span class="property">project</span>: project.name,
+      <span class="property">count</span>: project.statistics.compositions
+    });
+  }
+
+  <span class="comment">// 效果列表</span>
+  <span class="keyword">if</span> (project.details.effects) {
+    project.details.effects.<span class="keyword">forEach</span>(<span class="keyword">function</span>(effectName) {
+      allEffects.push({
+        <span class="property">project</span>: project.name,
+        <span class="property">name</span>: effectName
+      });
+    });
+  }
+
+  <span class="comment">// 图层列表和关键帧列表（类似处理）</span>
+});
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>3.3 保存到 D1 数据库</h3>
+                    <p>将提取的数据保存到 SQLite 数据库：</p>
+                    <div class="code-block">
+<span class="comment">// 构建 JSON 字符串</span>
+<span class="keyword">const</span> compositionsJson = allCompositions.length > <span class="number">0</span> 
+  ? JSON.stringify(allCompositions) : <span class="keyword">null</span>;
+<span class="keyword">const</span> effectsJson = allEffects.length > <span class="number">0</span> 
+  ? JSON.stringify(allEffects) : <span class="keyword">null</span>;
+<span class="comment">// ... 其他字段</span>
+
+<span class="comment">// 插入或更新数据库</span>
+<span class="keyword">await</span> DB.prepare(`
+  INSERT INTO work_logs (
+    user_id, work_date, work_hours, keyframe_count, json_size,
+    project_count, composition_count, layer_count, effect_count,
+    compositions_json, effects_json, layers_json, keyframes_json,
+    projects_json, work_hours_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(user_id, work_date) DO UPDATE SET
+    work_hours = excluded.work_hours,
+    compositions_json = excluded.compositions_json,
+    effects_json = excluded.effects_json,
+    -- ... 其他字段
+`).bind(
+  userId, workDate,
+  workData.work_hours || <span class="number">0</span>,
+  workData.keyframe_count || <span class="number">0</span>,
+  workData.json_size || <span class="number">0</span>,
+  workData.project_count || <span class="number">0</span>,
+  workData.composition_count || <span class="number">0</span>,
+  workData.layer_count || <span class="number">0</span>,
+  workData.effect_count || <span class="number">0</span>,
+  compositionsJson,
+  effectsJson,
+  layersJson,
+  keyframesJson,
+  projectsJson,
+  workHoursJson
+).run();
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>3.4 数据库表结构</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>字段名</th>
+                                <th>类型</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>id</td>
+                                <td>INTEGER</td>
+                                <td>主键，自增</td>
+                            </tr>
+                            <tr>
+                                <td>user_id</td>
+                                <td>TEXT</td>
+                                <td>用户ID</td>
+                            </tr>
+                            <tr>
+                                <td>work_date</td>
+                                <td>TEXT</td>
+                                <td>工作日期 (YYYY-MM-DD)</td>
+                            </tr>
+                            <tr>
+                                <td>work_hours</td>
+                                <td>REAL</td>
+                                <td>总工作时长（小时）</td>
+                            </tr>
+                            <tr>
+                                <td>keyframe_count</td>
+                                <td>INTEGER</td>
+                                <td>总关键帧数</td>
+                            </tr>
+                            <tr>
+                                <td>project_count</td>
+                                <td>INTEGER</td>
+                                <td>项目数量</td>
+                            </tr>
+                            <tr>
+                                <td>composition_count</td>
+                                <td>INTEGER</td>
+                                <td>总合成数</td>
+                            </tr>
+                            <tr>
+                                <td>layer_count</td>
+                                <td>INTEGER</td>
+                                <td>总图层数</td>
+                            </tr>
+                            <tr>
+                                <td>effect_count</td>
+                                <td>INTEGER</td>
+                                <td>总效果数</td>
+                            </tr>
+                            <tr>
+                                <td>compositions_json</td>
+                                <td>TEXT</td>
+                                <td>合成列表 JSON</td>
+                            </tr>
+                            <tr>
+                                <td>effects_json</td>
+                                <td>TEXT</td>
+                                <td>效果列表 JSON</td>
+                            </tr>
+                            <tr>
+                                <td>layers_json</td>
+                                <td>TEXT</td>
+                                <td>图层列表 JSON</td>
+                            </tr>
+                            <tr>
+                                <td>keyframes_json</td>
+                                <td>TEXT</td>
+                                <td>关键帧列表 JSON</td>
+                            </tr>
+                            <tr>
+                                <td>projects_json</td>
+                                <td>TEXT</td>
+                                <td>项目列表 JSON</td>
+                            </tr>
+                            <tr>
+                                <td>work_hours_json</td>
+                                <td>TEXT</td>
+                                <td>工作时长列表 JSON</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 第四步：前端读取数据 -->
+            <div class="section">
+                <h2><span class="icon">4️⃣</span> 第四步：前端读取并显示数据</h2>
+                <div class="step">
+                    <h3>4.1 前端代码存储</h3>
+                    <p>前端代码（HTML、CSS、JS）构建后存储在 Cloudflare KV 中：</p>
+                    <div class="code-block">
+<span class="comment">// 构建前端代码</span>
+node scripts/build-dashboard.js
+
+<span class="comment">// 上传到 KV</span>
+npx wrangler kv:key put --binding=KV <span class="string">"user-dashboard-inline"</span> \
+  --path=./src/user-dashboard/index-inline.html
+
+<span class="comment">// KV 键名：user-dashboard-inline</span>
+<span class="comment">// KV 值：完整的内联 HTML 代码（约 80KB）</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>4.2 用户访问面板</h3>
+                    <p>用户访问 https://rualive-email-worker.cubetan57.workers.dev 时：</p>
+                    <div class="code-block">
+<span class="comment">// Worker 返回 KV 中的 HTML</span>
+<span class="keyword">if</span> (url.pathname === <span class="string">'/'</span> || url.pathname === <span class="string">'/dashboard'</span>) {
+  <span class="keyword">const</span> html = <span class="keyword">await</span> env.KV.get(<span class="string">'user-dashboard-inline'</span>);
+  <span class="keyword">return new</span> Response(html, {
+    <span class="property">headers</span>: { <span class="property">'Content-Type'</span>: <span class="string">'text/html; charset=utf-8'</span> }
+  });
+}
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>4.3 获取工作日志数据</h3>
+                    <p>前端通过 API 获取工作日志：</p>
+                    <div class="code-block">
+<span class="comment">// logs-table.js - 获取所有工作日志</span>
+<span class="keyword">async</span> <span class="keyword">function</span> updateDashboard() {
+  <span class="keyword">const</span> token = localStorage.getItem(<span class="string">'token'</span>);
+  
+  <span class="comment">// 获取所有工作日志（不包含详细数据）</span>
+  <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">'/api/work-logs'</span>, {
+    <span class="property">headers</span>: {
+      <span class="property">'Authorization'</span>: <span class="string">'Bearer '</span> + token
+    }
+  });
+  
+  <span class="keyword">const</span> result = <span class="keyword">await</span> response.json();
+  <span class="keyword">const</span> data = result.data;
+  
+  <span class="comment">// 更新表格显示</span>
+  window.logsTable.update(data);
+}
+
+<span class="comment">// 获取特定日期的详细数据</span>
+<span class="keyword">async</span> <span class="keyword">function</span> showDetailList(date, type) {
+  <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">`/api/work-logs?date=${date}`</span>, {
+    <span class="property">headers</span>: {
+      <span class="property">'Authorization'</span>: <span class="string">'Bearer '</span> + token
+    }
+  });
+  
+  <span class="keyword">const</span> result = <span class="keyword">await</span> response.json();
+  <span class="keyword">const</span> log = result.data[<span class="number">0</span>];
+  
+  <span class="comment">// 根据 type 解析对应的 JSON 字段</span>
+  <span class="keyword">let</span> jsonData;
+  <span class="keyword">switch</span>(type) {
+    <span class="keyword">case</span> <span class="string">'compositions'</span>:
+      jsonData = JSON.parse(log.compositions_json);
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">'effects'</span>:
+      jsonData = JSON.parse(log.effects_json);
+      <span class="keyword">break</span>;
+    <span class="comment">// ... 其他类型</span>
+  }
+  
+  <span class="comment">// 显示列表</span>
+  showListModal(title, jsonData, columns);
+}
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>4.4 Worker 返回数据</h3>
+                    <p>Worker 从 D1 数据库查询并返回数据：</p>
+                    <div class="code-block">
+<span class="comment">// index.js - handleGetWorkLogs 函数</span>
+<span class="keyword">async function</span> handleGetWorkLogs(request, env) {
+  <span class="keyword">const</span> payload = <span class="keyword">await</span> verifyAuth(request, env);
+  <span class="keyword">const</span> userId = payload.userId;
+  <span class="keyword">const</span> url = <span class="keyword">new</span> URL(request.url);
+  <span class="keyword">const</span> date = url.searchParams.get(<span class="string">'date'</span>);
+  
+  <span class="keyword">let</span> result;
+  <span class="keyword">if</span> (date) {
+    <span class="comment">// 获取特定日期的详细数据</span>
+    result = <span class="keyword">await</span> DB.prepare(
+      <span class="string">'SELECT * FROM work_logs WHERE user_id = ? AND work_date = ?'</span>
+    ).bind(userId, date).all();
+  } <span class="keyword">else</span> {
+    <span class="comment">// 获取所有工作日志（不包含详细数据）</span>
+    result = <span class="keyword">await</span> DB.prepare(
+      <span class="string">'SELECT id, user_id, work_date, work_hours, keyframe_count, json_size, project_count, composition_count, layer_count, effect_count FROM work_logs WHERE user_id = ? ORDER BY work_date DESC'</span>
+    ).bind(userId).all();
+  }
+  
+  <span class="keyword">return</span> Response.json({ 
+    <span class="property">success</span>: <span class="keyword">true</span>, 
+    <span class="property">data</span>: result.results || [] 
+  });
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据流转示例 -->
+            <div class="section">
+                <h2><span class="icon">📈</span> 完整数据流转示例</h2>
+                <div class="step">
+                    <h3>示例：查看 2026-01-19 的效果列表</h3>
+                    <ol style="margin-left: 20px; line-height: 2;">
+                        <li><strong>AE 扩展</strong>：扫描项目，生成 JSON 文件，包含 <code>details.effects</code> 数组</li>
+                        <li><strong>上传</strong>：扩展每分钟自动上传数据到 Cloudflare Worker</li>
+                        <li><strong>处理</strong>：Worker 从 <code>projects.details.effects</code> 提取效果列表</li>
+                        <li><strong>存储</strong>：将效果列表序列化为 JSON 字符串，保存到 <code>effects_json</code> 字段</li>
+                        <li><strong>前端</strong>：用户双击"效果数量"卡片，调用 <code>/api/work-logs?date=2026-01-19</code></li>
+                        <li><strong>查询</strong>：Worker 从数据库查询该日期的所有字段</li>
+                        <li><strong>解析</strong>：前端解析 <code>log.effects_json</code>，显示效果列表</li>
+                    </ol>
+                </div>
+
+                <div class="note">
+                    <div class="note-title">💡 重要提示</div>
+                    <p>AE 扩展需要重新加载才能使用最新代码上传详细数据。如果扩展使用旧代码，上传的数据将不包含 <code>details</code> 字段，导致详细数据显示为空。</p>
+                </div>
+
+                <div class="warning">
+                    <div class="warning-title">⚠️ 注意事项</div>
+                    <ul>
+                        <li>AE 扩展每分钟自动上传一次数据，会覆盖数据库中的现有记录</li>
+                        <li>测试数据会被实际上传数据覆盖</li>
+                        <li>前端代码存储在 KV 中，修改后需要重新构建和上传</li>
+                        <li>数据库使用 SQLite，JSON 字段存储为 TEXT 类型</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 技术架构 -->
+            <div class="section">
+                <h2><span class="icon">🏗️</span> 技术架构</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>组件</th>
+                            <th>技术</th>
+                            <th>作用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AE 扩展</td>
+                            <td>CEP + JSX</td>
+                            <td>扫描 AE 项目，生成 JSON，上传数据</td>
+                        </tr>
+                        <tr>
+                            <td>Cloudflare Worker</td>
+                            <td>JavaScript</td>
+                            <td>API 服务器，处理请求，数据转换</td>
+                        </tr>
+                        <tr>
+                            <td>D1 数据库</td>
+                            <td>SQLite</td>
+                            <td>存储工作日志和详细数据</td>
+                        </tr>
+                        <tr>
+                            <td>KV 存储</td>
+                            <td>Key-Value</td>
+                            <td>存储前端 HTML 代码</td>
+                        </tr>
+                        <tr>
+                            <td>用户面板</td>
+                            <td>HTML + CSS + JS</td>
+                            <td>数据展示和用户交互</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>RuAlive 数据流程说明 | 生成时间：2026-01-19</p>
+        </div>
+    </div>
+</body>
+</html>

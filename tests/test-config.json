@@ -1,0 +1,21 @@
+{
+  "userId": "user-001",
+  "config": {
+    "enabled": true,
+    "sendTime": "22:00",
+    "timezone": "Asia/Shanghai",
+    "userEmails": ["test@example.com"],
+    "emergencyContacts": [
+      {
+        "email": "emergency@example.com",
+        "name": "紧急联系人",
+        "relation": "家人"
+      }
+    ],
+    "thresholds": {
+      "minWorkHours": 2,
+      "minKeyframes": 50,
+      "minJsonSize": 10
+    }
+  }
+}

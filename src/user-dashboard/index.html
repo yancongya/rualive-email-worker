@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive - 用户面板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/user-dashboard/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>📧 RuAlive 用户面板</h1>
+      <div class="user-info">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Checking...</span>
+        </div>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+        <span id="userInfo">Loading...</span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <!-- Fixed Time Navigation -->
+    <div class="fixed-time-nav">
+      <div class="time-nav-content">
+        <div class="time-nav-controls">
+          <button class="nav-btn-small" onclick="window.timeSelector.navigate(-1)">◀</button>
+          <div class="time-nav-label" id="timeNavLabel">今日</div>
+          <button class="nav-btn-small" onclick="window.timeSelector.navigate(1)">▶</button>
+        </div>
+        <div class="time-nav-tabs">
+          <button class="time-tab" data-range="day" onclick="window.timeSelector.setRange('day')">日</button>
+          <button class="time-tab" data-range="month" onclick="window.timeSelector.setRange('month')">月</button>
+          <button class="time-tab" data-range="year" onclick="window.timeSelector.setRange('year')">年</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Selector (hidden, used for logic) -->
+    <div id="timeSelector" style="display: none;"></div>
+
+    <!-- Stats Grid -->
+    <div id="statsGrid"></div>
+
+    <!-- Tab Navigation -->
+    <div class="card">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="trend" onclick="window.tabManager.switchTab('trend')">工作数据趋势</button>
+        <button class="tab-btn" data-tab="config" onclick="window.tabManager.switchTab('config')">邮件配置</button>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Trend Tab -->
+      <div id="tab-trend" class="tab-pane active">
+        <div class="card">
+          <div class="card-header">
+            <h2>📈 工作数据趋势</h2>
+          </div>
+          <div id="chartView"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>📋 工作历史</h2>
+          </div>
+          <div id="logsView"></div>
+        </div>
+      </div>
+
+      <!-- Config Tab -->
+      <div id="tab-config" class="tab-pane">
+        <div class="card">
+          <h2>⚙️ 邮件配置</h2>
+
+              <div class="form-section">
+                <h3>📋 基本设置</h3>
+                <div class="form-group">
+                  <label>启用邮件通知</label>
+                  <select id="enabled">
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>用户通知时间（工作总结）</label>
+                  <input type="time" id="userNotificationTime" value="22:00">
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人通知时间（警告）</label>
+                  <input type="time" id="emergencyNotificationTime" value="22:00">
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>👤 紧急联系人</h3>
+                <div class="form-group">
+                  <label>启用紧急联系人通知</label>
+                  <select id="enableEmergencyNotification">
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                  <small>启用后，当工作时长不足时将发送警告给紧急联系人</small>
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人邮箱</label>
+                  <input type="email" id="emergencyEmail" placeholder="emergency@example.com">
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人姓名</label>
+                  <input type="text" id="emergencyName" placeholder="联系人姓名">
+                </div>
+                <div class="form-group">
+                  <label>发送规则</label>
+                  <select id="notificationSchedule">
+                    <option value="all">每天发送</option>
+                    <option value="weekdays">仅工作日发送（周一至周五）</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                </div>
+                <div class="form-group" id="customDaysGroup" style="display: none;">
+                  <label>不发送的日期（多选）</label>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="0" class="day-checkbox"> 周日
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="1" class="day-checkbox"> 周一
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="2" class="day-checkbox"> 周二
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="3" class="day-checkbox"> 周三
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="4" class="day-checkbox"> 周四
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="5" class="day-checkbox"> 周五
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="6" class="day-checkbox"> 周六
+                    </label>
+                  </div>
+                  <small>勾选的日期将不会发送通知</small>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>🎯 工作阈值</h3>
+                <div class="form-group">
+                  <label>最小工作时长（小时）</label>
+                  <input type="number" id="minHours" value="2" min="0" max="24" step="0.5">
+                  <small>当天工作时长低于此值时，将发送警告给紧急联系人</small>
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+              </div>
+
+              <div class="form-section">
+                <h3>📧 测试邮件</h3>
+                <div class="form-group">
+                  <label>选择收件人</label>
+                  <select id="testEmailRecipient">
+                    <option value="user">用户本人</option>
+                    <option value="emergency">紧急联系人</option>
+                  </select>
+                </div>
+                <div class="btn-group">
+                  <button class="btn btn-success" onclick="sendTestEmail()">📧 发送测试邮件</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Functions -->
+  <script>
+    window.toggleDarkMode = function() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      if (window.chartView) {
+        window.chartView.updateTheme(isDark);
+      }
+    };
+
+    window.handleLogout = function() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      window.location.href = '/login';
+    };
+  </script>
+  <script src="/utils/api.js"></script>
+  <script src="/utils/date-utils.js"></script>
+  <script src="/components/time-selector.js"></script>
+  <script src="/components/stats-grid.js"></script>
+  <script src="/components/chart-view.js"></script>
+  <script src="/components/logs-table.js"></script>
+  <script src="/user-dashboard/app.js"></script>
+</body>
+</html>

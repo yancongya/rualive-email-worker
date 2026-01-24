@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive 管理后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logout-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.3s;
+    }
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #f5576c;
+      margin-bottom: 0.5rem;
+    }
+    .stat-card p {
+      color: #6b7280;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 1024px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #f5576c;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    tr:hover {
+      background: #f9fafb;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-admin {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .badge-user {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      background: #f5576c;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #e04659;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #f5576c;
+      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .alert.show {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #111827;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .modal-close:hover {
+      color: #111827;
+    }
+    .sensitive-info {
+      font-family: 'Courier New', monospace;
+      background: #f3f4f6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>🔐 RuAlive 管理后台</h1>
+      <div class="user-info">
+        <span id="userInfo">加载中...</span>
+        <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <div id="alert" class="alert"></div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3 id="stat-users">0</h3>
+        <p>用户总数</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-invites">0</h3>
+        <p>邀请码总数</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-emails">0</h3>
+        <p>已发送邮件</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-today">0</h3>
+        <p>今日发送</p>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div>
+        <div class="card">
+          <h2>🎫 邀请码管理</h2>
+          <div class="form-group">
+            <label>最大使用次数</label>
+            <input type="number" id="maxUses" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label>有效期（天）</label>
+            <input type="number" id="expiresInDays" value="30" min="1">
+          </div>
+          <button class="btn btn-primary" onclick="createInviteCode()">创建邀请码</button>
+        </div>
+
+        <div class="card">
+          <h2>📋 邀请码列表</h2>
+          <div class="table-container">
+            <table id="inviteCodesTable">
+              <thead>
+                <tr>
+                  <th>邀请码</th>
+                  <th>状态</th>
+                  <th>使用情况</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align: center; color: #6b7280;">加载中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>👥 用户管理</h2>
+          <div class="table-container">
+            <table id="usersTable">
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>邮箱</th>
+                  <th>角色</th>
+                  <th>注册时间</th>
+                  <th>最后登录</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" style="text-align: center; color: #6b7280;">加载中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📧 邮件发送日志</h2>
+          <div class="table-container">
+            <table id="logsTable">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>收件人类型</th>
+                  <th>收件人邮箱</th>
+                  <th>邮件类型</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" style="text-align: center; color: #6b7280;">加载中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 密码验证弹窗 -->
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔐 密码验证</h3>
+        <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>请输入管理员密码</label>
+        <input type="password" id="adminPassword" placeholder="请输入密码">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="verifyPassword()">验证</button>
+        <button class="btn btn-secondary" onclick="closePasswordModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let pendingAction = null;
+
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('alert');
+      const icon = type === 'success' ? '✅' : '❌';
+      alert.className = 'alert alert-' + type + ' show';
+      alert.innerHTML = '<span>' + icon + '</span><span>' + message + '</span>';
+      setTimeout(() => alert.classList.remove('show'), 4000);
+    }
+
+    function getAuthHeader() {
+      const token = localStorage.getItem('token');
+      return { 'Authorization': 'Bearer ' + token };
+    }
+
+    // 脱敏处理
+    function maskEmail(email) {
+      if (!email) return '-';
+      const [name, domain] = email.split('@');
+      if (name.length <= 2) {
+        return name[0] + '***@' + domain;
+      }
+      return name.substring(0, 2) + '***@' + domain;
+    }
+
+    function maskUserId(userId) {
+      if (!userId) return '-';
+      if (userId.length <= 8) {
+        return userId.substring(0, 4) + '****';
+      }
+      return userId.substring(0, 8) + '****';
+    }
+
+    async function loadUserInfo() {
+      try {
+        const response = await fetch(API_BASE + '/api/auth/me', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success && data.user && data.user.role === 'admin') {
+          document.getElementById('userInfo').textContent = data.user.username;
+          loadStats();
+          loadUsers();
+          loadInviteCodes();
+          loadLogs();
+        } else {
+          window.location.href = '/admin';
+        }
+      } catch (error) {
+        window.location.href = '/admin';
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+          headers: getAuthHeader()
+        });
+        const usersData = await usersResponse.json();
+
+        const invitesResponse = await fetch(API_BASE + '/api/admin/invite-codes', {
+          headers: getAuthHeader()
+        });
+        const invitesData = await invitesResponse.json();
+
+        if (usersData.success) {
+          document.getElementById('stat-users').textContent = usersData.users.length;
+        }
+
+        if (invitesData.success) {
+          document.getElementById('stat-invites').textContent = invitesData.codes.length;
+        }
+      } catch (error) {
+        console.error('加载统计失败:', error);
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#usersTable tbody');
+          tbody.innerHTML = data.users.map(user => `
+            <tr>
+              <td>${user.username}</td>
+              <td><span class="sensitive-info">${maskEmail(user.email)}</span></td>
+              <td><span class="badge badge-${user.role}">${user.role === 'admin' ? '管理员' : '用户'}</span></td>
+              <td>${new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
+              <td>${user.last_login ? new Date(user.last_login).toLocaleDateString('zh-CN') : '从未登录'}</td>
+              <td>
+                <button class="btn btn-sm btn-secondary" onclick="showUserDetail('${user.id}')">查看详情</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载用户失败:', error);
+      }
+    }
+
+    async function loadInviteCodes() {
+      try {
+        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#inviteCodesTable tbody');
+          tbody.innerHTML = data.codes.map(code => `
+            <tr>
+              <td><span class="sensitive-info">${code.code}</span></td>
+              <td><span class="badge badge-${code.is_active ? 'active' : 'inactive'}">${code.is_active ? '有效' : '已失效'}</span></td>
+              <td>${code.used_count}/${code.max_uses}</td>
+              <td>
+                ${code.is_active ? `
+                  <button class="btn btn-sm btn-danger" onclick="deleteInviteCode('${code.id}')">删除</button>
+                ` : '-'}
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载邀请码失败:', error);
+      }
+    }
+
+    async function loadLogs() {
+      try {
+        const response = await fetch(API_BASE + '/api/logs?limit=20', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#logsTable tbody');
+          tbody.innerHTML = data.data.map(log => `
+            <tr>
+              <td>${new Date(log.sent_at).toLocaleString('zh-CN')}</td>
+              <td>${log.recipient_type === 'user' ? '用户' : '紧急联系人'}</td>
+              <td><span class="sensitive-info">${maskEmail(log.recipient_email)}</span></td>
+              <td>${log.email_type === 'summary' ? '总结' : '警告'}</td>
+              <td><span class="badge badge-${log.status === 'success' ? 'active' : 'inactive'}">${log.status === 'success' ? '成功' : '失败'}</span></td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载日志失败:', error);
+      }
+    }
+
+    async function createInviteCode() {
+      const maxUses = parseInt(document.getElementById('maxUses').value);
+      const expiresInDays = parseInt(document.getElementById('expiresInDays').value);
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ maxUses, expiresInDays })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('邀请码创建成功: ' + data.code);
+          loadInviteCodes();
+          loadStats();
+        } else {
+          showAlert('创建失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('创建失败: ' + error.message, 'error');
+      }
+    }
+
+    function deleteInviteCode(codeId) {
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/invite-codes?id=' + codeId, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert('邀请码已删除');
+            loadInviteCodes();
+            loadStats();
+          } else {
+            showAlert('删除失败: ' + data.error, 'error');
+          }
+        } catch (error) {
+          showAlert('删除失败: ' + error.message, 'error');
+        }
+      };
+
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function showUserDetail(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              alert('用户详情:\n\n用户名: ' + user.username + '\n邮箱: ' + user.email + '\n角色: ' + user.role + '\n注册时间: ' + new Date(user.created_at).toLocaleString('zh-CN') + '\n最后登录: ' + (user.last_login ? new Date(user.last_login).toLocaleString('zh-CN') : '从未登录'));
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户详情失败: ' + error.message, 'error');
+        }
+      };
+
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function verifyPassword() {
+      const password = document.getElementById('adminPassword').value;
+      if (!password) {
+        showAlert('请输入密码', 'error');
+        return;
+      }
+
+      // 这里可以添加密码验证逻辑
+      // 暂时直接执行操作
+      if (pendingAction) {
+        pendingAction();
+        pendingAction = null;
+      }
+      closePasswordModal();
+    }
+
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('show');
+      document.getElementById('adminPassword').value = '';
+      pendingAction = null;
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch(API_BASE + '/api/auth/logout', {
+          method: 'POST',
+          headers: getAuthHeader()
+        });
+      } catch (error) {
+        console.error('登出失败:', error);
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+    }
+
+    window.onload = loadUserInfo;
+  </script>
+</body>
+</html>

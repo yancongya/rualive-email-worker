@@ -1,0 +1,1 @@
+UPDATE work_logs SET effects_json = '[{"project":"52000钻-炽恋弦歌.aep","name":"高斯模糊"},{"project":"52000钻-炽恋弦歌.aep","name":"色彩校正"}]' WHERE id=348;

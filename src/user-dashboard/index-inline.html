@@ -1,0 +1,3169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive - 用户面板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-primary: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --accent-primary: #667eea;
+  --accent-secondary: #764ba2;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-hover: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dark {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-hover: 0 4px 6px rgba(0,0,0,0.4);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+.navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+}
+
+.dark-mode-toggle {
+  padding: 0.5rem;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background: rgba(255,255,255,0.3);
+  transform: rotate(15deg);
+}
+
+.main-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tab Navigation Styles */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-btn:hover {
+  background: var(--bg-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--accent-primary);
+  background: var(--bg-secondary);
+  border-color: var(--accent-primary);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-primary);
+}
+
+/* Tab Content */
+.tab-content {
+  position: relative;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fixed Time Navigation */
+.fixed-time-nav {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 80px;
+  z-index: 99;
+}
+
+.time-nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.time-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn-small {
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  color: #333;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn-small:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+.nav-btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.time-nav-label {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 100px;
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.time-nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.time-tab {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.time-tab:hover {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+  color: #333;
+}
+
+.time-tab.active {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.time-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-primary);
+}
+
+/* Detail Stat Clickable */
+.detail-stat.clickable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.detail-stat.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* List Table */
+.list-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.list-table th,
+.list-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.list-table th {
+  background: var(--bg-primary);
+  font-weight: 600;
+  color: var(--text-primary);
+  position: sticky;
+  top: 0;
+}
+
+.list-table tbody tr:hover {
+  background: var(--bg-primary);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  min-width: 36px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.pagination-ellipsis {
+  padding: 0 0.5rem;
+  color: var(--text-secondary);
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  color: white;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+}
+
+.detail-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.detail-header h4 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-stat {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.detail-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.detail-stat-icon {
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  border-radius: 12px;
+}
+
+.detail-stat-content {
+  flex: 1;
+}
+
+.detail-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.detail-stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.detail-summary {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-primary);
+}
+
+.detail-summary h5 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.detail-summary p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.detail-summary strong {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .detail-stats {
+    grid-template-columns: 1fr;
+  }
+}
+</style><style>/**
+ * User Dashboard Styles
+ */
+
+/* Status Indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+  background: var(--success);
+}
+
+.status-dot.offline {
+  background: var(--error);
+  animation: none;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Time Selector */
+.time-selector {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.range-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.date-picker {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.date-picker select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.date-picker select:hover {
+  border-color: var(--accent-primary);
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--bg-primary);
+  border-color: var(--accent-primary);
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.stat-card h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.card-header h2 {
+  margin: 0;
+  border: none;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Form */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+}
+
+table tbody tr:hover {
+  background: var(--bg-primary);
+}
+
+/* Chart */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s;
+  z-index: 1001;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success {
+  background: var(--success);
+}
+
+.toast-error {
+  background: var(--error);
+}
+
+.toast-warning {
+  background: var(--warning);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-picker {
+    width: 100%;
+  }
+
+  .date-picker select {
+    flex: 1;
+  }
+}
+
+/* AE Status Card Styles */
+.status-loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+}
+
+.ae-status-no-record {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.ae-status-no-record .ae-status-icon {
+  font-size: 2rem;
+}
+
+.ae-status-no-record .ae-status-message {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.ae-status-hint {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.ae-status-online,
+.ae-status-offline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.ae-status-online {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ae-status-offline {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ae-status-icon {
+  font-size: 1.5rem;
+}
+
+.ae-status-message {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.ae-status-online .ae-status-message {
+  color: var(--success);
+}
+
+.ae-status-offline .ae-status-message {
+  color: var(--error);
+}
+
+.ae-status-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ae-status-detail:last-child {
+  border-bottom: none;
+}
+
+.ae-status-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ae-status-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ae-status-work-data {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.ae-status-work-data h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.work-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.work-data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.work-data-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.work-data-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}</style></head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>📧 RuAlive 用户面板</h1>
+      <div class="user-info">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Checking...</span>
+        </div>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+        <span id="userInfo">Loading...</span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <!-- Fixed Time Navigation -->
+    <div class="fixed-time-nav">
+      <div class="time-nav-content">
+        <div class="time-nav-controls">
+          <button class="nav-btn-small" onclick="window.timeSelector.navigate(-1)">◀</button>
+          <div class="time-nav-label" id="timeNavLabel">今日</div>
+          <button class="nav-btn-small" onclick="window.timeSelector.navigate(1)">▶</button>
+        </div>
+        <div class="time-nav-tabs">
+          <button class="time-tab" data-range="day" onclick="window.timeSelector.setRange('day')">日</button>
+          <button class="time-tab" data-range="month" onclick="window.timeSelector.setRange('month')">月</button>
+          <button class="time-tab" data-range="year" onclick="window.timeSelector.setRange('year')">年</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Selector (hidden, used for logic) -->
+    <div id="timeSelector" style="display: none;"></div>
+
+    <!-- Stats Grid -->
+    <div id="statsGrid"></div>
+
+    <!-- Tab Navigation -->
+    <div class="card">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="trend" onclick="window.tabManager.switchTab('trend')">工作数据趋势</button>
+        <button class="tab-btn" data-tab="config" onclick="window.tabManager.switchTab('config')">邮件配置</button>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Trend Tab -->
+      <div id="tab-trend" class="tab-pane active">
+        <div class="card">
+          <div class="card-header">
+            <h2>📈 工作数据趋势</h2>
+          </div>
+          <div id="chartView"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>📋 工作历史</h2>
+          </div>
+          <div id="logsView"></div>
+        </div>
+      </div>
+
+      <!-- Config Tab -->
+      <div id="tab-config" class="tab-pane">
+        <div class="card">
+          <h2>⚙️ 邮件配置</h2>
+
+              <div class="form-section">
+                <h3>📋 基本设置</h3>
+                <div class="form-group">
+                  <label>启用邮件通知</label>
+                  <select id="enabled">
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>用户通知时间（工作总结）</label>
+                  <input type="time" id="userNotificationTime" value="22:00">
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人通知时间（警告）</label>
+                  <input type="time" id="emergencyNotificationTime" value="22:00">
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>👤 紧急联系人</h3>
+                <div class="form-group">
+                  <label>启用紧急联系人通知</label>
+                  <select id="enableEmergencyNotification">
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                  <small>启用后，当工作时长不足时将发送警告给紧急联系人</small>
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人邮箱</label>
+                  <input type="email" id="emergencyEmail" placeholder="emergency@example.com">
+                </div>
+                <div class="form-group">
+                  <label>紧急联系人姓名</label>
+                  <input type="text" id="emergencyName" placeholder="联系人姓名">
+                </div>
+                <div class="form-group">
+                  <label>发送规则</label>
+                  <select id="notificationSchedule">
+                    <option value="all">每天发送</option>
+                    <option value="weekdays">仅工作日发送（周一至周五）</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                </div>
+                <div class="form-group" id="customDaysGroup" style="display: none;">
+                  <label>不发送的日期（多选）</label>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="0" class="day-checkbox"> 周日
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="1" class="day-checkbox"> 周一
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="2" class="day-checkbox"> 周二
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="3" class="day-checkbox"> 周三
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="4" class="day-checkbox"> 周四
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="5" class="day-checkbox"> 周五
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" value="6" class="day-checkbox"> 周六
+                    </label>
+                  </div>
+                  <small>勾选的日期将不会发送通知</small>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>🎯 工作阈值</h3>
+                <div class="form-group">
+                  <label>最小工作时长（小时）</label>
+                  <input type="number" id="minHours" value="2" min="0" max="24" step="0.5">
+                  <small>当天工作时长低于此值时，将发送警告给紧急联系人</small>
+                </div>
+              </div>
+
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+              </div>
+
+              <div class="form-section">
+                <h3>📧 测试邮件</h3>
+                <div class="form-group">
+                  <label>选择收件人</label>
+                  <select id="testEmailRecipient">
+                    <option value="user">用户本人</option>
+                    <option value="emergency">紧急联系人</option>
+                  </select>
+                </div>
+                <div class="btn-group">
+                  <button class="btn btn-success" onclick="sendTestEmail()">📧 发送测试邮件</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Functions -->
+  <script>
+    window.toggleDarkMode = function() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      if (window.chartView) {
+        window.chartView.updateTheme(isDark);
+      }
+    };
+
+    window.handleLogout = function() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      window.location.href = '/login';
+    };
+  </script>
+  
+  
+  
+  
+  
+  
+  
+<script>
+// ===== utils/api.js =====
+/**
+ * API Request Utilities
+ */
+const API_BASE = window.location.origin;
+
+/**
+ * Get Auth Header
+ */
+function getAuthHeader() {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
+ * Generic API Request
+ */
+async function apiRequest(endpoint, options = {}) {
+  const url = API_BASE + endpoint;
+  const headers = {
+    ...getAuthHeader(),
+    ...(options.headers || {})
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get Work Logs
+ */
+async function getWorkLogs() {
+  return apiRequest('/api/work-logs');
+}
+
+/**
+ * Get User Config
+ */
+async function getUserConfig() {
+  return apiRequest('/api/config');
+}
+
+/**
+ * Save User Config
+ */
+async function saveUserConfig(config) {
+  return apiRequest('/api/config', {
+    method: 'POST',
+    body: JSON.stringify(config)
+  });
+}
+
+/**
+ * Send Test Email
+ */
+async function sendTestEmail() {
+  return apiRequest('/api/send-now', {
+    method: 'POST'
+  });
+}
+
+/**
+ * Update Online Status
+ */
+async function updateOnlineStatus() {
+  try {
+    // 发送心跳
+    await apiRequest('/api/heartbeat', {
+      method: 'POST'
+    });
+
+    // 获取 AE 在线状态
+    const response = await apiRequest('/api/ae-status', {
+      method: 'GET'
+    });
+
+    // Update online status display
+    if (window.updateOnlineStatusDisplay) {
+      const isOnline = response.success && response.isOnline === true;
+      window.updateOnlineStatusDisplay(isOnline, response);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Update online status failed:', error);
+
+    // Update to offline status
+    if (window.updateOnlineStatusDisplay) {
+      window.updateOnlineStatusDisplay(false);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Update AE Status (from AE extension)
+ */
+async function updateAEStatus(status) {
+  return apiRequest('/api/ae-status', {
+    method: 'POST',
+    body: JSON.stringify(status)
+  });
+}
+
+// ===== utils/date-utils.js =====
+/**
+ * Date Utilities
+ */
+
+/**
+ * Filter by Time Range
+ */
+function filterByTimeRange(data, range, date = null) {
+  if (!data || data.length === 0) return [];
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  return data.filter(log => {
+    if (!log.work_date) return false;
+
+    const logDate = new Date(log.work_date);
+    const logYear = logDate.getFullYear();
+    const logMonth = logDate.getMonth() + 1;
+    const logDay = logDate.getDate();
+
+    if (range === 'day') {
+      // Specific day (use date if provided, otherwise use today)
+      const targetDate = date ? new Date(date) : now;
+      const targetYear = targetDate.getFullYear();
+      const targetMonth = targetDate.getMonth() + 1;
+      const targetDay = targetDate.getDate();
+      return logYear === targetYear && logMonth === targetMonth && logDay === targetDay;
+    } else if (range === 'month') {
+      // Specific month
+      const targetYear = date ? new Date(date).getFullYear() : currentYear;
+      const targetMonth = date ? new Date(date).getMonth() + 1 : currentMonth;
+      return logYear === targetYear && logMonth === targetMonth;
+    } else if (range === 'year') {
+      // Specific year
+      const targetYear = date ? parseInt(date) : currentYear;
+      return logYear === targetYear;
+    }
+
+    return false;
+  });
+}
+
+/**
+ * Calculate Summary
+ */
+function calculateSummary(data) {
+  if (!data || data.length === 0) {
+    return {
+      totalHours: 0,
+      totalComps: 0,
+      totalKeys: 0,
+      totalEffects: 0,
+      totalDays: 0
+    };
+  }
+
+  const uniqueDates = new Set();
+  let totalHours = 0;
+  let totalComps = 0;
+  let totalKeys = 0;
+  let totalEffects = 0;
+
+  data.forEach(log => {
+    if (log.work_date) {
+      uniqueDates.add(log.work_date);
+      totalHours += log.work_hours || 0;
+      totalComps += log.composition_count || 0;
+      totalKeys += log.keyframe_count || 0;
+      totalEffects += log.effect_count || 0;
+    }
+  });
+
+  return {
+    totalHours,
+    totalComps,
+    totalKeys,
+    totalEffects,
+    totalDays: uniqueDates.size
+  };
+}
+
+// ===== components/time-selector.js =====
+/**
+ * Time Selector Component
+ */
+class TimeSelector {
+  constructor(containerId, onChange) {
+    this.container = document.getElementById(containerId);
+    this.onChange = onChange;
+    this.currentRange = 'day';
+    this.currentDate = null;
+    this.render();
+  }
+
+  render() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    let yearOptions = '';
+    for (let y = 2020; y <= currentYear; y++) {
+      yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+    }
+
+    let monthOptions = '';
+    for (let m = 1; m <= 12; m++) {
+      monthOptions += `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${m}月</option>`;
+    }
+
+    this.container.innerHTML = `
+      <div class="time-selector">
+        <div class="range-buttons">
+          <button class="btn ${this.currentRange === 'day' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('day')">日</button>
+          <button class="btn ${this.currentRange === 'month' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('month')">月</button>
+          <button class="btn ${this.currentRange === 'year' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('year')">年</button>
+        </div>
+        <div class="date-picker">
+          ${this.currentRange === 'day' ? '' : `
+            <select id="yearSelect" onchange="window.timeSelector.handleDateChange()">
+              ${yearOptions}
+            </select>
+          `}
+          ${this.currentRange === 'month' ? `
+            <select id="monthSelect" onchange="window.timeSelector.handleDateChange()">
+              ${monthOptions}
+            </select>
+          ` : ''}
+          ${this.renderNavButtons()}
+        </div>
+      </div>
+    `;
+  }
+
+  renderNavButtons() {
+    const now = new Date();
+    let prevDisabled = false;
+    let nextDisabled = false;
+
+    if (this.currentRange === 'day') {
+      const today = new Date();
+      const targetDate = this.currentDate ? new Date(this.currentDate) : today;
+      prevDisabled = false;
+      nextDisabled = targetDate >= today;
+    } else if (this.currentRange === 'month') {
+      const currentYear = this.currentDate ? new Date(this.currentDate).getFullYear() : now.getFullYear();
+      const currentMonth = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : now.getMonth() + 1;
+      const firstMonth = new Date(2020, 0, 1);
+      const currentMonthDate = new Date(currentYear, currentMonth - 1, 1);
+      prevDisabled = currentMonthDate <= firstMonth;
+      nextDisabled = false;
+    } else if (this.currentRange === 'year') {
+      const currentYear = this.currentDate ? parseInt(this.currentDate) : now.getFullYear();
+      prevDisabled = currentYear <= 2020;
+      nextDisabled = currentYear >= now.getFullYear();
+    }
+
+    return `
+      <button class="nav-btn" onclick="window.timeSelector.navigate(-1)" ${prevDisabled ? 'disabled' : ''}>
+        ◀
+      </button>
+      <button class="nav-btn" onclick="window.timeSelector.navigate(1)" ${nextDisabled ? 'disabled' : ''}>
+        ▶
+      </button>
+    `;
+  }
+
+  setRange(range) {
+    this.currentRange = range;
+    
+    // 切换到日模式时，初始化为今天
+    if (range === 'day') {
+      const now = new Date();
+      this.currentDate = now.toISOString().split('T')[0];
+    } else {
+      this.currentDate = null;
+    }
+    
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  handleDateChange() {
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+
+    if (yearSelect) {
+      const year = yearSelect.value;
+      if (monthSelect) {
+        const month = monthSelect.value;
+        this.currentDate = `${year}-${String(month).padStart(2, '0')}`;
+      } else {
+        this.currentDate = year;
+      }
+    }
+
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  navigate(direction) {
+    const now = new Date();
+    
+    if (this.currentRange === 'day') {
+      // 日模式下，切换日期
+      let currentDate = this.currentDate ? new Date(this.currentDate) : new Date();
+      currentDate.setDate(currentDate.getDate() + direction);
+      this.currentDate = currentDate.toISOString().split('T')[0];
+    } else if (this.currentRange === 'month') {
+      // 月模式下，切换月份
+      let currentYear = this.currentDate ? new Date(this.currentDate).getFullYear() : now.getFullYear();
+      let currentMonth = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : now.getMonth() + 1;
+      
+      currentMonth += direction;
+
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+
+      this.currentDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+    } else if (this.currentRange === 'year') {
+      // 年模式下，切换年份
+      let currentYear = this.currentDate ? parseInt(this.currentDate) : now.getFullYear();
+      currentYear += direction;
+      this.currentDate = `${currentYear}`;
+    }
+
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  getCurrentRange() {
+    return this.currentRange;
+  }
+
+  getCurrentDate() {
+    return this.currentDate;
+  }
+}
+
+// ===== components/stats-grid.js =====
+/**
+ * Stats Grid Component
+ */
+class StatsGrid {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3 id="stat-hours">0</h3>
+          <p>工作时长</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-comps">0</h3>
+          <p>合成数量</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-keys">0</h3>
+          <p>关键帧数</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-effects">0</h3>
+          <p>效果数量</p>
+        </div>
+      </div>
+    `;
+  }
+
+  update(summary) {
+    document.getElementById('stat-hours').textContent = summary.totalHours.toFixed(1);
+    document.getElementById('stat-comps').textContent = summary.totalComps;
+    document.getElementById('stat-keys').textContent = summary.totalKeys;
+    document.getElementById('stat-effects').textContent = summary.totalEffects;
+  }
+}
+
+// ===== components/chart-view.js =====
+/**
+ * Chart View Component
+ */
+class ChartView {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.chart = null;
+    this.currentRange = 'day';
+    this.currentDate = null;
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="card">
+        <div class="chart-container">
+          <canvas id="workChart"></canvas>
+        </div>
+      </div>
+    `;
+  }
+
+  update(data, range, date) {
+    this.currentRange = range;
+    this.currentDate = date;
+    this.renderChart(data);
+  }
+
+  renderChart(data) {
+    const ctx = document.getElementById('workChart');
+    if (!ctx) return;
+
+    let labels = [];
+    let workHoursData = [];
+    let compositionsData = [];
+    let keyframesData = [];
+    let effectsData = [];
+
+    if (this.currentRange === 'day') {
+      // Last 7 days
+      const dailyData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          if (!dailyData[log.work_date]) {
+            dailyData[log.work_date] = { hours: 0, comps: 0, keys: 0, effects: 0 };
+          }
+          dailyData[log.work_date].hours += log.work_hours || 0;
+          dailyData[log.work_date].comps += log.composition_count || 0;
+          dailyData[log.work_date].keys += log.keyframe_count || 0;
+          dailyData[log.work_date].effects += log.effect_count || 0;
+        }
+      });
+
+      const sortedDates = Object.keys(dailyData).sort().slice(-7);
+      labels = sortedDates.map(date => {
+        const d = new Date(date);
+        return (d.getMonth() + 1) + '/' + d.getDate();
+      });
+      workHoursData = sortedDates.map(date => dailyData[date].hours.toFixed(1));
+      compositionsData = sortedDates.map(date => dailyData[date].comps);
+      keyframesData = sortedDates.map(date => dailyData[date].keys);
+      effectsData = sortedDates.map(date => dailyData[date].effects);
+    } else if (this.currentRange === 'month') {
+      // All days in current month
+      const year = this.currentDate ? new Date(this.currentDate).getFullYear() : new Date().getFullYear();
+      const month = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : new Date().getMonth() + 1;
+
+      const monthData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          const logDate = new Date(log.work_date);
+          if (logDate.getFullYear() === year && (logDate.getMonth() + 1) === month) {
+            const day = logDate.getDate();
+            if (!monthData[day]) {
+              monthData[day] = { hours: 0, comps: 0, keys: 0, effects: 0 };
+            }
+            monthData[day].hours += log.work_hours || 0;
+            monthData[day].comps += log.composition_count || 0;
+            monthData[day].keys += log.keyframe_count || 0;
+            monthData[day].effects += log.effect_count || 0;
+          }
+        }
+      });
+
+      const days = Object.keys(monthData).map(Number).sort((a, b) => a - b);
+      labels = days.map(day => day + '日');
+      workHoursData = days.map(day => monthData[day].hours.toFixed(1));
+      compositionsData = days.map(day => monthData[day].comps);
+      keyframesData = days.map(day => monthData[day].keys);
+      effectsData = days.map(day => monthData[day].effects);
+    } else if (this.currentRange === 'year') {
+      // All months in current year
+      const year = this.currentDate ? parseInt(this.currentDate) : new Date().getFullYear();
+
+      const yearData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          const logDate = new Date(log.work_date);
+          if (logDate.getFullYear() === year) {
+            const month = logDate.getMonth() + 1;
+            if (!yearData[month]) {
+              yearData[month] = { hours: 0, comps: 0, keys: 0, effects: 0 };
+            }
+            yearData[month].hours += log.work_hours || 0;
+            yearData[month].comps += log.composition_count || 0;
+            yearData[month].keys += log.keyframe_count || 0;
+            yearData[month].effects += log.effect_count || 0;
+          }
+        }
+      });
+
+      const months = Object.keys(yearData).map(Number).sort((a, b) => a - b);
+      labels = months.map(month => month + '月');
+      workHoursData = months.map(month => yearData[month].hours.toFixed(1));
+      compositionsData = months.map(month => yearData[month].comps);
+      keyframesData = months.map(month => yearData[month].keys);
+      effectsData = months.map(month => yearData[month].effects);
+    }
+
+    const isDark = document.body.classList.contains('dark');
+    const textColor = isDark ? '#9ca3af' : '#6b7280';
+    const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+    if (this.chart) {
+      this.chart.destroy();
+    }
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '工作时长',
+            data: workHoursData,
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#667eea',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: '合成数量',
+            data: compositionsData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: '关键帧数',
+            data: keyframesData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: '效果数量',
+            data: effectsData,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: textColor,
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: isDark ? '#1f2937' : '#ffffff',
+            titleColor: textColor,
+            bodyColor: textColor,
+            borderColor: gridColor,
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: gridColor,
+              display: false
+            },
+            ticks: {
+              color: textColor
+            }
+          },
+          y: {
+            grid: {
+              color: gridColor
+            },
+            ticks: {
+              color: textColor
+            },
+            beginAtZero: true
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  }
+
+  updateTheme(isDark) {
+    if (this.chart) {
+      const textColor = isDark ? '#9ca3af' : '#6b7280';
+      const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+      this.chart.options.plugins.legend.labels.color = textColor;
+      this.chart.options.scales.x.ticks.color = textColor;
+      this.chart.options.scales.y.ticks.color = textColor;
+      this.chart.options.scales.y.grid.color = gridColor;
+      this.chart.update();
+    }
+  }
+}
+
+// ===== components/logs-table.js =====
+/**
+ * Logs Table Component
+ */
+class LogsTable {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.data = [];
+    this.currentPage = 1;
+    this.pageSize = 10;
+    this.sortColumn = 'work_date';
+    this.sortDirection = 'desc';
+    // 添加详细数据缓存
+    this.detailCache = new Map(); // key: date_type, value: data
+    this.cacheExpiry = 5 * 60 * 1000; // 5分钟缓存过期时间
+    this.cacheTimestamps = new Map(); // key: date_type, value: timestamp
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="card">
+        <div class="table-container">
+          <table id="logsTable">
+            <thead>
+              <tr>
+                <th onclick="window.logsTable.sortBy('work_date')" class="sortable">日期 <span class="sort-icon" data-column="work_date"></span></th>
+                <th onclick="window.logsTable.sortBy('work_hours')" class="sortable">时长 <span class="sort-icon" data-column="work_hours"></span></th>
+                <th onclick="window.logsTable.sortBy('composition_count')" class="sortable">合成 <span class="sort-icon" data-column="composition_count"></span></th>
+                <th onclick="window.logsTable.sortBy('keyframe_count')" class="sortable">关键帧 <span class="sort-icon" data-column="keyframe_count"></span></th>
+                <th onclick="window.logsTable.sortBy('effect_count')" class="sortable">效果 <span class="sort-icon" data-column="effect_count"></span></th>
+                <th onclick="window.logsTable.sortBy('project_count')" class="sortable">项目 <span class="sort-icon" data-column="project_count"></span></th>
+              </tr>
+            </thead>
+            <tbody id="logsBody">
+              <tr><td colspan="6" style="text-align: center;">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination" class="pagination"></div>
+      </div>
+      
+      <!-- 详情弹窗 -->
+      <div id="detailModal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>📊 工作详情</h3>
+            <button class="modal-close" onclick="window.logsTable.closeModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div id="detailContent"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  update(data) {
+    this.data = data || [];
+    this.currentPage = 1;
+    this.renderBody();
+    this.renderPagination();
+  }
+
+  renderBody() {
+    const tbody = document.getElementById('logsBody');
+    if (!tbody) return;
+
+    if (!this.data || this.data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无数据</td></tr>';
+      return;
+    }
+
+    // 计算当前页的数据
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    const pageData = this.data.slice(startIndex, endIndex);
+
+    tbody.innerHTML = pageData.map((log, index) => `
+      <tr ondblclick="window.logsTable.showDetail(${startIndex + index})" style="cursor: pointer;" title="双击查看详情">
+        <td>${log.work_date || '-'}</td>
+        <td>${(log.work_hours || 0).toFixed(1)}</td>
+        <td>${log.composition_count || 0}</td>
+        <td>${log.keyframe_count || 0}</td>
+        <td>${log.effect_count || 0}</td>
+        <td>${log.project_count || 0}</td>
+      </tr>
+    `).join('');
+
+    this.updateSortIcons();
+  }
+
+  renderPagination() {
+    const pagination = document.getElementById('pagination');
+    if (!pagination) return;
+
+    const totalPages = Math.ceil(this.data.length / this.pageSize);
+    
+    if (totalPages <= 1) {
+      pagination.innerHTML = '';
+      return;
+    }
+
+    let html = '<div class="pagination-info">';
+    html += `共 ${this.data.length} 条记录，第 ${this.currentPage} / ${totalPages} 页`;
+    html += '</div>';
+
+    html += '<div class="pagination-controls">';
+    
+    // 上一页按钮
+    html += `<button class="pagination-btn" onclick="window.logsTable.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+    
+    // 页码按钮
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
+        html += `<button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" onclick="window.logsTable.goToPage(${i})">${i}</button>`;
+      } else if (i === this.currentPage - 2 || i === this.currentPage + 2) {
+        html += '<span class="pagination-ellipsis">...</span>';
+      }
+    }
+    
+    // 下一页按钮
+    html += `<button class="pagination-btn" onclick="window.logsTable.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+    
+    html += '</div>';
+
+    pagination.innerHTML = html;
+  }
+
+  goToPage(page) {
+    const totalPages = Math.ceil(this.data.length / this.pageSize);
+    if (page < 1 || page > totalPages) return;
+    
+    this.currentPage = page;
+    this.renderBody();
+    this.renderPagination();
+  }
+
+  sortBy(column) {
+    if (!this.data || this.data.length === 0) return;
+
+    // 切换排序方向
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'desc'; // 默认降序
+    }
+
+    // 排序数据
+    this.data.sort((a, b) => {
+      let aVal = a[column] || 0;
+      let bVal = b[column] || 0;
+
+      // 日期特殊处理
+      if (column === 'work_date') {
+        aVal = new Date(aVal).getTime();
+        bVal = new Date(bVal).getTime();
+      }
+
+      if (this.sortDirection === 'asc') {
+        return aVal - bVal;
+      } else {
+        return bVal - aVal;
+      }
+    });
+
+    // 重新渲染
+    this.currentPage = 1;
+    this.renderBody();
+    this.renderPagination();
+  }
+
+  updateSortIcons() {
+    const icons = document.querySelectorAll('.sort-icon');
+    icons.forEach(icon => {
+      const column = icon.dataset.column;
+      if (column === this.sortColumn) {
+        icon.textContent = this.sortDirection === 'asc' ? '▲' : '▼';
+      } else {
+        icon.textContent = '';
+      }
+    });
+  }
+
+  showDetail(index) {
+    const log = this.data[index];
+    if (!log) return;
+
+    const modal = document.getElementById('detailModal');
+    const content = document.getElementById('detailContent');
+    
+    const date = log.work_date || '未知日期';
+    const hours = (log.work_hours || 0).toFixed(1);
+    const compositions = log.composition_count || 0;
+    const keyframes = log.keyframe_count || 0;
+    const effects = log.effect_count || 0;
+    const projects = log.project_count || 0;
+    const jsonSize = log.json_size || 0;
+
+    content.innerHTML = `
+      <div class="detail-header">
+        <h4>📅 ${date}</h4>
+      </div>
+      
+      <div class="detail-stats">
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'compositions')" title="双击查看合成列表">
+          <div class="detail-stat-icon">🎬</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${compositions}</div>
+            <div class="detail-stat-label">合成数量</div>
+          </div>
+        </div>
+        
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'keyframes')" title="双击查看关键帧列表">
+          <div class="detail-stat-icon">🎞️</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${keyframes}</div>
+            <div class="detail-stat-label">关键帧数</div>
+          </div>
+        </div>
+        
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'effects')" title="双击查看效果列表">
+          <div class="detail-stat-icon">✨</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${effects}</div>
+            <div class="detail-stat-label">效果数量</div>
+          </div>
+        </div>
+        
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'layers')" title="双击查看图层列表">
+          <div class="detail-stat-icon">📚</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${log.layer_count || 0}</div>
+            <div class="detail-stat-label">图层数量</div>
+          </div>
+        </div>
+        
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'work-hours')" title="双击查看各项目工作时长">
+          <div class="detail-stat-icon">⏱️</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${hours} 小时</div>
+            <div class="detail-stat-label">工作时长</div>
+          </div>
+        </div>
+
+        <div class="detail-stat clickable" ondblclick="window.logsTable.showDetailList('${date}', 'projects')" title="双击查看项目列表">
+          <div class="detail-stat-icon">📁</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${projects}</div>
+            <div class="detail-stat-label">项目数量</div>
+          </div>
+        </div>
+        
+        <div class="detail-stat">
+          <div class="detail-stat-icon">📄</div>
+          <div class="detail-stat-content">
+            <div class="detail-stat-value">${jsonSize} KB</div>
+            <div class="detail-stat-label">JSON 大小</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-summary">
+        <h5>📝 工作总结</h5>
+        <p>在 ${date} 这一天，您总共工作了 <strong>${hours} 小时</strong>，完成了 <strong>${compositions}</strong> 个合成项目，使用了 <strong>${keyframes}</strong> 个关键帧，应用了 <strong>${effects}</strong> 个效果。</p>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+  }
+
+  async showDetailList(date, type) {
+      try {
+        const cacheKey = `${date}_${type}`;
+
+        // 检查缓存
+        const now = Date.now();
+        const cachedTimestamp = this.cacheTimestamps.get(cacheKey);
+        const cachedData = this.detailCache.get(cacheKey);
+
+        if (cachedData && cachedTimestamp && (now - cachedTimestamp) < this.cacheExpiry) {
+          console.log(`[LogsTable] 使用缓存数据: ${cacheKey}`);
+          this.showListModal(cachedData.title, cachedData.jsonData, cachedData.columns);
+          return;
+        }
+
+        console.log(`[LogsTable] 从服务器获取数据: ${cacheKey}`);
+
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/work-logs?date=${date}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('获取数据失败');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+          alert('未找到详细数据');
+          return;
+        }
+
+        const log = result.data[0];
+        let jsonData = null;
+        let title = '';
+        let columns = [];
+
+        switch(type) {
+          case 'compositions':
+            jsonData = log.compositions_json ? JSON.parse(log.compositions_json) : [];
+            title = `🎬 ${date} 合成列表`;
+
+  
+
+                    columns = ['项目', '数量'];
+
+  
+
+                    break;
+
+  
+
+                  case 'effects':
+
+  
+
+                    jsonData = log.effects_json ? JSON.parse(log.effects_json) : [];
+
+  
+
+                    title = `✨ ${date} 效果列表`;
+
+  
+
+                    columns = ['项目', '效果名称'];
+
+  
+
+                    break;
+
+  
+
+                  case 'layers':
+
+  
+
+                    jsonData = log.layers_json ? JSON.parse(log.layers_json) : [];
+
+  
+
+                    title = `📚 ${date} 图层列表`;
+
+  
+
+                    columns = ['项目', '图层名称'];
+
+  
+
+                    break;
+
+  
+
+                  case 'keyframes':
+
+  
+
+                    jsonData = log.keyframes_json ? JSON.parse(log.keyframes_json) : [];
+
+  
+
+                    title = `🎞️ ${date} 关键帧列表`;
+
+  
+
+                    columns = ['项目', '图层', '数量'];
+
+  
+
+                    break;
+
+  
+
+                  case 'projects':
+
+  
+
+                    jsonData = log.projects_json ? JSON.parse(log.projects_json) : [];
+
+  
+
+                    title = `📁 ${date} 项目列表`;
+
+  
+
+                    columns = ['项目名称', '合成数', '图层数', '关键帧数', '效果数'];
+
+  
+
+                    break;
+
+  
+
+                  case 'work-hours':
+
+  
+
+                    jsonData = log.work_hours_json ? JSON.parse(log.work_hours_json) : [];
+
+  
+
+                    title = `⏱️ ${date} 各项目工作时长`;
+
+  
+
+                    columns = ['项目名称', '工作时长（小时）'];
+
+  
+
+                    break;
+
+  
+
+                }
+
+  
+
+        if (!jsonData || jsonData.length === 0) {
+
+  
+
+                  alert('暂无详细数据');
+
+  
+
+                  return;
+
+  
+
+                }
+
+  
+
+        
+
+  
+
+                // 保存到缓存
+
+  
+
+                this.detailCache.set(cacheKey, { title, jsonData, columns });
+
+  
+
+                this.cacheTimestamps.set(cacheKey, now);
+
+  
+
+        
+
+  
+
+                // 创建列表弹窗
+
+  
+
+                this.showListModal(title, jsonData, columns);
+
+  
+
+      } catch (error) {
+
+        console.error('获取详细数据失败:', error);
+
+        alert('获取详细数据失败: ' + error.message);
+
+      }
+
+    }
+
+  showListModal(title, data, columns) {
+    // 移除旧的列表弹窗
+    const oldModal = document.getElementById('listModal');
+    if (oldModal) {
+      oldModal.remove();
+    }
+
+    // 创建新的列表弹窗
+    const modal = document.createElement('div');
+    modal.id = 'listModal';
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+
+    const header = columns.join('</th><th>');
+
+    let rows = '';
+    data.forEach((item, index) => {
+      let values = [];
+
+      // 根据数据类型选择正确的字段
+      if (title.includes('项目列表')) {
+        // 项目列表：name, compositions, layers, keyframes, effects
+        values = [
+          item.name || '-',
+          item.compositions || 0,
+          item.layers || 0,
+          item.keyframes || 0,
+          item.effects || 0
+        ];
+      } else if (title.includes('工作时长')) {
+        // 工作时长列表：project, hours
+        values = [
+          item.project || '-',
+          item.hours || '0'
+        ];
+      } else {
+        // 其他列表：使用所有值
+        values = Object.values(item).slice(0, columns.length);
+      }
+
+      const cells = values.map(v => `<td>${v || '-'}</td>`).join('');
+      rows += `<tr>${cells}</tr>`;
+    });
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button class="close-btn" onclick="document.getElementById('listModal').remove()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="list-info">共 ${data.length} 条记录</div>
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th>${header}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+  }
+
+  closeModal() {
+    const modal = document.getElementById('detailModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+}
+
+// ===== components/tab-manager.js =====
+/**
+ * Tab Manager Component
+ */
+class TabManager {
+  constructor() {
+    this.currentTab = 'trend';
+    this.initialized = false;
+  }
+
+  init() {
+    if (this.initialized) return;
+    
+    // 初始化时默认显示趋势标签
+    this.switchTab('trend');
+    this.initialized = true;
+  }
+
+  switchTab(tabId) {
+    // 更新当前标签
+    this.currentTab = tabId;
+
+    // 更新按钮状态
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+      if (btn.dataset.tab === tabId) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // 更新内容显示
+    const panes = document.querySelectorAll('.tab-pane');
+    panes.forEach(pane => {
+      if (pane.id === `tab-${tabId}`) {
+        pane.classList.add('active');
+      } else {
+        pane.classList.remove('active');
+      }
+    });
+
+    // 如果切换到趋势标签，强制更新图表和表格
+    if (tabId === 'trend') {
+      if (window.chartView && window.timeSelector) {
+        const range = window.timeSelector.getCurrentRange();
+        const date = window.timeSelector.getCurrentDate();
+        window.chartView.update(window.appData, range, date);
+      }
+      if (window.logsTable && window.timeSelector) {
+        const range = window.timeSelector.getCurrentRange();
+        const date = window.timeSelector.getCurrentDate();
+        const filteredData = window.appData.filter(log => {
+          if (range === 'day') {
+            const logDate = new Date(log.work_date);
+            const now = new Date();
+            const diffTime = now - logDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays < 7;
+          } else if (range === 'month') {
+            const year = date ? new Date(date).getFullYear() : new Date().getFullYear();
+            const month = date ? new Date(date).getMonth() + 1 : new Date().getMonth() + 1;
+            const logDate = new Date(log.work_date);
+            return logDate.getFullYear() === year && (logDate.getMonth() + 1) === month;
+          } else if (range === 'year') {
+            const year = date ? parseInt(date) : new Date().getFullYear();
+            const logDate = new Date(log.work_date);
+            return logDate.getFullYear() === year;
+          }
+          return false;
+        });
+        window.logsTable.update(filteredData);
+      }
+    }
+  }
+
+  getCurrentTab() {
+    return this.currentTab;
+  }
+}
+
+// 创建全局实例
+window.tabManager = new TabManager();
+
+// ===== user-dashboard/app.js =====
+/**
+ * User Dashboard Main Logic
+ */
+
+// Global Data
+window.appData = [];
+
+// Global Component Instances
+window.timeSelector = null;
+window.statsGrid = null;
+window.chartView = null;
+window.logsTable = null;
+
+/**
+ * Initialize App
+ */
+async function initApp() {
+  try {
+    // Initialize components
+    window.timeSelector = new TimeSelector('timeSelector', handleTimeRangeChange);
+    window.statsGrid = new StatsGrid('statsGrid');
+    window.chartView = new ChartView('chartView');
+    window.logsTable = new LogsTable('logsView');
+
+    // Load data
+    await loadData();
+
+    // Initialize theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    // Load user info
+    await loadUserInfo();
+
+    // Update online status
+    await updateOnlineStatus();
+
+    // Schedule online status updates
+    setInterval(updateOnlineStatus, 30000);
+
+    // Initialize time nav
+    updateTimeNavLabel();
+    
+    // Initialize tab manager after all components are ready
+    if (window.tabManager) {
+      window.tabManager.init();
+    }
+
+  } catch (error) {
+    console.error('Initialization failed:', error);
+    showToast('初始化失败，请刷新页面', 'error');
+  }
+}
+
+/**
+ * Load Data
+ */
+async function loadData() {
+  try {
+    const response = await getWorkLogs();
+    if (response.success) {
+      window.appData = response.data || [];
+      updateDashboard();
+    }
+  } catch (error) {
+    console.error('Failed to load data:', error);
+    showToast('加载数据失败', 'error');
+  }
+}
+
+/**
+ * Update Dashboard
+ */
+function updateDashboard() {
+  const range = window.timeSelector.getCurrentRange();
+  const date = window.timeSelector.getCurrentDate();
+
+  // Filter data by time range
+  let filteredData;
+  if (range === 'day') {
+    filteredData = filterByTimeRange(window.appData, 'day', date);
+  } else if (range === 'month') {
+    filteredData = filterByTimeRange(window.appData, 'month', date);
+  } else if (range === 'year') {
+    filteredData = filterByTimeRange(window.appData, 'year', date);
+  }
+
+  // Calculate summary data from filtered data
+  const summary = calculateSummary(filteredData);
+
+  // Update stats grid (显示当前维度数据)
+  window.statsGrid.update(summary);
+
+  // Update chart (根据维度显示)
+  window.chartView.update(filteredData, range, date);
+
+  // Update logs table (始终显示全部数据)
+  window.logsTable.update(window.appData);
+}
+
+/**
+ * Handle Time Range Change
+ */
+function handleTimeRangeChange(range, date) {
+  updateDashboard();
+  updateTimeNavLabel();
+  updateTimeNavTabs();
+}
+
+/**
+ * Update Time Navigation Label
+ */
+function updateTimeNavLabel() {
+  const range = window.timeSelector.getCurrentRange();
+  const date = window.timeSelector.getCurrentDate();
+  const label = document.getElementById('timeNavLabel');
+
+  if (!label) return;
+
+  if (range === 'day') {
+    if (date) {
+      const d = new Date(date);
+      label.textContent = `${d.getMonth() + 1}月${d.getDate()}日`;
+    } else {
+      const now = new Date();
+      label.textContent = `${now.getMonth() + 1}月${now.getDate()}日`;
+    }
+  } else if (range === 'month') {
+    if (date) {
+      const [year, month] = date.split('-');
+      label.textContent = `${year}年${month}月`;
+    } else {
+      const now = new Date();
+      label.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月`;
+    }
+  } else if (range === 'year') {
+    if (date) {
+      label.textContent = `${date}年`;
+    } else {
+      const now = new Date();
+      label.textContent = `${now.getFullYear()}年`;
+    }
+  }
+}
+
+/**
+ * Update Time Navigation Tabs
+ */
+function updateTimeNavTabs() {
+  const range = window.timeSelector.getCurrentRange();
+  const tabs = document.querySelectorAll('.time-tab');
+
+  tabs.forEach(tab => {
+    const tabRange = tab.dataset.range;
+    if (tabRange === range) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+}
+
+/**
+ * Load User Info
+ */
+async function loadUserInfo() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+
+    // 从 API 获取用户信息
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.user) {
+        // 保存用户信息到 localStorage
+        localStorage.setItem('userInfo', JSON.stringify(data.user));
+        
+        // 更新用户名显示
+        document.getElementById('userInfo').textContent = data.user.username || data.user.email || 'User';
+        
+        // 如果有紧急联系人信息，更新全局变量供其他组件使用
+        if (data.user.config) {
+          window.emergencyContact = {
+            name: data.user.config.emergency_name || '',
+            email: data.user.config.emergency_email || ''
+          };
+          
+          // 加载配置到表单
+          loadConfigToForm(data.user.config);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load user info:', error);
+  }
+}
+
+/**
+ * Load Config to Form
+ */
+function loadConfigToForm(config) {
+  if (!config) return;
+  
+  const enabledSelect = document.getElementById('enabled');
+  const userNotificationTimeInput = document.getElementById('userNotificationTime');
+  const emergencyNotificationTimeInput = document.getElementById('emergencyNotificationTime');
+  const enableEmergencyNotificationSelect = document.getElementById('enableEmergencyNotification');
+  const emergencyEmailInput = document.getElementById('emergencyEmail');
+  const emergencyNameInput = document.getElementById('emergencyName');
+  const notificationScheduleSelect = document.getElementById('notificationSchedule');
+  const minHoursInput = document.getElementById('minHours');
+  
+  if (enabledSelect) enabledSelect.value = config.enabled ? 'true' : 'false';
+  if (userNotificationTimeInput) userNotificationTimeInput.value = config.user_notification_time || '22:00';
+  if (emergencyNotificationTimeInput) emergencyNotificationTimeInput.value = config.emergency_notification_time || '22:00';
+  if (enableEmergencyNotificationSelect) enableEmergencyNotificationSelect.value = config.enable_emergency_notification ? 'true' : 'false';
+  if (emergencyEmailInput) emergencyEmailInput.value = config.emergency_email || '';
+  if (emergencyNameInput) emergencyNameInput.value = config.emergency_name || '';
+  if (notificationScheduleSelect) {
+    notificationScheduleSelect.value = config.notification_schedule || 'all';
+    // 显示/隐藏自定义日期选择
+    toggleCustomDaysGroup();
+    
+    // 加载排除的日期
+    if (config.notification_excluded_days) {
+      try {
+        const excludedDays = JSON.parse(config.notification_excluded_days);
+        document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+          checkbox.checked = excludedDays.includes(checkbox.value);
+        });
+      } catch (e) {
+        console.error('Failed to parse excluded days:', e);
+      }
+    }
+  }
+  if (minHoursInput) minHoursInput.value = config.min_work_hours || 2;
+}
+
+/**
+ * Toggle Custom Days Group
+ */
+function toggleCustomDaysGroup() {
+  const scheduleSelect = document.getElementById('notificationSchedule');
+  const customDaysGroup = document.getElementById('customDaysGroup');
+  
+  if (scheduleSelect.value === 'custom') {
+    customDaysGroup.style.display = 'block';
+  } else {
+    customDaysGroup.style.display = 'none';
+  }
+}
+
+/**
+ * Save Config
+ */
+async function saveConfig() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast('请先登录', 'error');
+      return;
+    }
+
+    const enabled = document.getElementById('enabled').value === 'true';
+    const userNotificationTime = document.getElementById('userNotificationTime').value;
+    const emergencyNotificationTime = document.getElementById('emergencyNotificationTime').value;
+    const enableEmergencyNotification = document.getElementById('enableEmergencyNotification').value === 'true';
+    const emergencyEmail = document.getElementById('emergencyEmail').value.trim();
+    const emergencyName = document.getElementById('emergencyName').value.trim();
+    const notificationSchedule = document.getElementById('notificationSchedule').value;
+    const minHours = parseFloat(document.getElementById('minHours').value);
+    
+    // 获取排除的日期
+    let excludedDays = [];
+    if (notificationSchedule === 'custom') {
+      document.querySelectorAll('.day-checkbox:checked').forEach(checkbox => {
+        excludedDays.push(checkbox.value);
+      });
+    }
+    
+    const response = await fetch('/api/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        config: {
+          enabled,
+          sendTime: userNotificationTime,
+          timezone: 'Asia/Shanghai',
+          user_notification_time: userNotificationTime,
+          emergency_notification_time: emergencyNotificationTime,
+          enable_emergency_notification: enableEmergencyNotification,
+          emergency_email: emergencyEmail,
+          emergency_name: emergencyName,
+          notification_schedule: notificationSchedule,
+          notification_excluded_days: JSON.stringify(excludedDays),
+          min_work_hours: minHours,
+          min_keyframes: 0,
+          min_json_size: 0
+        }
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('配置保存成功', 'success');
+      
+      // 更新全局变量
+      window.emergencyContact = {
+        name: emergencyName,
+        email: emergencyEmail
+      };
+    } else {
+      showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+    }
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    showToast('保存失败: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Send Test Email
+ */
+async function sendTestEmail() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast('请先登录', 'error');
+      return;
+    }
+
+    const recipient = document.getElementById('testEmailRecipient').value;
+    
+    if (recipient === 'emergency') {
+      // 检查是否配置了紧急联系人
+      const emergencyEmail = document.getElementById('emergencyEmail').value.trim();
+      if (!emergencyEmail) {
+        showToast('请先配置紧急联系人邮箱', 'error');
+        return;
+      }
+    }
+
+    showToast('正在发送测试邮件...', 'success');
+
+    const response = await fetch('/api/send-now', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        recipient: recipient
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('测试邮件发送成功', 'success');
+    } else {
+      showToast('发送失败: ' + (data.error || '未知错误'), 'error');
+    }
+  } catch (error) {
+    console.error('Failed to send test email:', error);
+    showToast('发送失败: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Update Online Status Display
+ */
+function updateOnlineStatusDisplay(isOnline, statusData = null) {
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  if (!statusDot || !statusText) return;
+
+  if (isOnline) {
+    statusDot.className = 'status-dot online';
+    let statusMessage = 'AE 在线';
+
+    // 如果有项目信息，显示项目名称
+    if (statusData && statusData.projectName) {
+      statusMessage += ` - ${statusData.projectName}`;
+    }
+    // 如果有合成信息，显示合成名称
+    if (statusData && statusData.compositionName) {
+      statusMessage += ` / ${statusData.compositionName}`;
+    }
+
+    statusText.textContent = statusMessage;
+  } else {
+    statusDot.className = 'status-dot offline';
+    statusText.textContent = 'AE 离线';
+
+    // 如果有最后心跳时间，显示离线时长
+    if (statusData && statusData.lastHeartbeat) {
+      const lastHeartbeat = new Date(statusData.lastHeartbeat);
+      const now = new Date();
+      const diffMinutes = Math.floor((now - lastHeartbeat) / (1000 * 60));
+
+      if (diffMinutes < 60) {
+        statusText.textContent = `AE 离线 (${diffMinutes}分钟前)`;
+      } else if (diffMinutes < 1440) {
+        statusText.textContent = `AE 离线 (${Math.floor(diffMinutes / 60)}小时前)`;
+      } else {
+        statusText.textContent = `AE 离线 (${Math.floor(diffMinutes / 1440)}天前)`;
+      }
+    }
+  }
+
+  // 同时更新 AE 状态卡片
+  updateAEStatusCard(isOnline, statusData);
+}
+
+/**
+ * Update AE Status Card
+ */
+function updateAEStatusCard(isOnline, statusData = null) {
+  const statusContent = document.getElementById('aeStatusContent');
+  if (!statusContent) return;
+
+  if (!statusData) {
+    statusContent.innerHTML = '<div class="status-loading">Loading AE status...</div>';
+    return;
+  }
+
+  let html = '';
+
+  // 如果没有状态记录，显示提示信息
+  if (!statusData.hasStatusRecord) {
+    html += '<div class="ae-status-no-record">';
+    html += '<div class="ae-status-icon">ℹ️</div>';
+    html += '<div class="ae-status-message">No AE status data available</div>';
+    html += '<div class="ae-status-hint">Status will be updated when AE extension is connected</div>';
+    html += '</div>';
+    statusContent.innerHTML = html;
+    return;
+  }
+
+  if (isOnline) {
+    html += '<div class="ae-status-online">';
+    html += '<div class="ae-status-icon">✅</div>';
+    html += '<div class="ae-status-message">After Effects is Online</div>';
+    html += '</div>';
+
+    if (statusData.projectName) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Project:</span>';
+      html += `<span class="ae-status-value">${statusData.projectName}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.compositionName) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Composition:</span>';
+      html += `<span class="ae-status-value">${statusData.compositionName}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.lastHeartbeat) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Last Heartbeat:</span>';
+      html += `<span class="ae-status-value">${new Date(statusData.lastHeartbeat).toLocaleString('zh-CN')}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.lastWorkData) {
+      html += '<div class="ae-status-work-data">';
+      html += '<h4>Current Work Data</h4>';
+      html += '<div class="work-data-grid">';
+      if (statusData.lastWorkData.work_hours !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Hours:</span><span class="work-data-value">${statusData.lastWorkData.work_hours}h</span></div>`;
+      }
+      if (statusData.lastWorkData.keyframe_count !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Keyframes:</span><span class="work-data-value">${statusData.lastWorkData.keyframe_count}</span></div>`;
+      }
+      if (statusData.lastWorkData.json_size !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">JSON Size:</span><span class="work-data-value">${statusData.lastWorkData.json_size}KB</span></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="ae-status-offline">';
+    html += '<div class="ae-status-icon">❌</div>';
+    html += '<div class="ae-status-message">After Effects is Offline</div>';
+    html += '</div>';
+
+    if (statusData.lastHeartbeat) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Last Online:</span>';
+      html += `<span class="ae-status-value">${new Date(statusData.lastHeartbeat).toLocaleString('zh-CN')}</span>`;
+      html += '</div>';
+    }
+
+    // 如果有历史数据，显示最后的工作数据
+    if (statusData.lastWorkData) {
+      html += '<div class="ae-status-work-data">';
+      html += '<h4>Last Work Data</h4>';
+      html += '<div class="work-data-grid">';
+      if (statusData.lastWorkData.work_hours !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Hours:</span><span class="work-data-value">${statusData.lastWorkData.work_hours}h</span></div>`;
+      }
+      if (statusData.lastWorkData.keyframe_count !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Keyframes:</span><span class="work-data-value">${statusData.lastWorkData.keyframe_count}</span></div>`;
+      }
+      if (statusData.lastWorkData.json_size !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">JSON Size:</span><span class="work-data-value">${statusData.lastWorkData.json_size}KB</span></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+  }
+
+  statusContent.innerHTML = html;
+}
+
+/**
+ * Show Toast Message
+ */
+function showToast(message, type = 'success') {
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initApp);
+
+// Expose functions to global scope for HTML onclick handlers
+window.saveConfig = saveConfig;
+window.sendTestEmail = sendTestEmail;
+window.toggleCustomDaysGroup = toggleCustomDaysGroup;
+
+// Add event listener for notification schedule change
+document.addEventListener('DOMContentLoaded', () => {
+  const scheduleSelect = document.getElementById('notificationSchedule');
+  if (scheduleSelect) {
+    scheduleSelect.addEventListener('change', toggleCustomDaysGroup);
+  }
+});
+</script></body>
+</html>

@@ -1,0 +1,3 @@
+UPDATE work_logs SET compositions_json = '[{"name":"合成1","duration":"10s","frameRate":"30","resolution":"1920x1080"},{"name":"合成2","duration":"5s","frameRate":"24","resolution":"1280x720"},{"name":"合成3","duration":"15s","frameRate":"60","resolution":"3840x2160"}]' WHERE id=348;
+UPDATE work_logs SET effects_json = '[{"name":"高斯模糊","type":"模糊","parameters":"半径:5"},{"name":"色彩校正","type":"调色","parameters":"饱和度:1.2"},{"name":"噪点","type":"特效","parameters":"强度:10"}]' WHERE id=348;
+UPDATE work_logs SET layers_json = '[{"name":"背景层","type":"形状","parent":"根","effects":2},{"name":"文字层","type":"文字","parent":"合成1","effects":1},{"name":"视频层","type":"视频","parent":"合成1","effects":1}]' WHERE id=348;

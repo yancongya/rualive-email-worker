@@ -1,0 +1,137 @@
+<mxfile host="app.diagrams.net" modified="2026-01-19T08:10:00.000Z" agent="5.0" version="21.0.0">
+  <diagram name="数据流程" id="data-flow">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- AE 端 -->
+        <mxCell id="ae-panel" value="AE 扩展面板" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="scan" value="扫描项目" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="140" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="scan-result" value="扫描结果&#xa;{&#xa;  compositions: { count, compositions: [] },&#xa;  layers: { count, layers: [] },&#xa;  keyframes: { count, keyframes: [] },&#xa;  effects: { count, effects: [] }&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="280" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="project-data" value="项目数据&#xa;{&#xa;  projectId: &quot;xxx&quot;,&#xa;  name: &quot;xxx.aep&quot;,&#xa;  statistics: {...},&#xa;  details: {&#xa;    compositions: [&quot;comp1&quot;, &quot;comp2&quot;],&#xa;    effects: [&quot;effect1&quot;, &quot;effect2&quot;],&#xa;    layers: [&quot;layer1&quot;, &quot;layer2&quot;],&#xa;    keyframeCounts: {&quot;layer1&quot;: 5}&#xa;  }&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="280" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="save-json" value="保存 JSON 文件&#xa;路径: Documents/RuAlive@烟囱鸭/&#xa;YYYY-MM-DD-项目名-hash.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="280" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 箭头 -->
+        <mxCell id="arrow1" edge="1" parent="1" source="ae-panel" target="scan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" edge="1" parent="1" source="scan" target="scan-result">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" edge="1" parent="1" source="scan-result" target="project-data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" edge="1" parent="1" source="project-data" target="save-json">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 读取和上传 -->
+        <mxCell id="read-json" value="读取 JSON 文件" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="400" y="580" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="aggregate-data" value="按日期聚合数据&#xa;dataByDate = {&#xa;  &quot;2026-01-19&quot;: {&#xa;    work_hours: 20.4,&#xa;    keyframe_count: 275,&#xa;    composition_count: 35,&#xa;    layer_count: 334,&#xa;    effect_count: 136,&#xa;    project_count: 3,&#xa;    projects: [{&#xa;      projectId: &quot;xxx&quot;,&#xa;      name: &quot;xxx.aep&quot;,&#xa;      statistics: {...},&#xa;      details: {...}&#xa;    }],&#xa;    compositions_json: [...],&#xa;    effects_json: [...],&#xa;    layers_json: [...],&#xa;    keyframes_json: [...&#xa;  }&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="400" y="400" width="320" height="220" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="upload-api" value="POST /api/work-data&#xa;{&#xa;  userId: &quot;xxx&quot;,&#xa;  workData: dataByDate[date],&#xa;  workDate: &quot;2026-01-19&quot;&#xa;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="400" y="240" width="320" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow5" edge="1" parent="1" source="save-json" target="read-json">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow6" edge="1" parent="1" source="read-json" target="aggregate-data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow7" edge="1" parent="1" source="aggregate-data" target="upload-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 后端处理 -->
+        <mxCell id="worker" value="Cloudflare Worker&#xa;/api/work-data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="800" y="240" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="save-workdata" value="saveWorkData()&#xa;提取 projects 数组&#xa;遍历每个项目&#xa;提取 details.compositions&#xa;提取 details.effects&#xa;提取 details.layers&#xa;提取 details.keyframeCounts&#xa;转换为 JSON 字符串" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="340" width="280" height="140" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="database" value="D1 数据库&#xa;work_logs 表&#xa;字段:&#xa;- user_id&#xa;- work_date&#xa;- work_hours&#xa;- keyframe_count&#xa;- composition_count&#xa;- layer_count&#xa;- effect_count&#xa;- project_count&#xa;- compositions_json&#xa;- effects_json&#xa;- layers_json&#xa;- keyframes_json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="520" width="280" height="220" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow8" edge="1" parent="1" source="upload-api" target="worker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow9" edge="1" parent="1" source="worker" target="save-workdata">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow10" edge="1" parent="1" source="save-workdata" target="database">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 前端读取 -->
+        <mxCell id="frontend" value="前端页面&#xa;/user-dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="800" y="40" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="load-data" value="GET /api/work-logs&#xa;或&#xa;GET /api/work-logs?date=2026-01-19" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="800" y="140" width="280" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="get-worklogs" value="handleGetWorkLogs()&#xa;SELECT * FROM work_logs&#xa;WHERE user_id = ?&#xa;ORDER BY work_date DESC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="80" width="280" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow11" edge="1" parent="1" source="frontend" target="load-data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow12" edge="1" parent="1" source="load-data" target="get-worklogs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow13" edge="1" parent="1" source="get-worklogs" target="database">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 显示 -->
+        <mxCell id="display" value="显示数据&#xa;1. 工作历史表格（分页）&#xa;2. 双击行显示详情弹窗&#xa;3. 双击统计卡片显示详细列表" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="780" width="280" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow14" edge="1" parent="1" source="database" target="display">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 标签 -->
+        <mxCell id="label-ae" value="AE 端" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="120" y="20" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="label-upload" value="上传数据" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="380" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="label-backend" value="后端处理" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="760" y="220" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="label-frontend" value="前端读取" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="760" y="20" width="80" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

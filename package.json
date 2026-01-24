@@ -1,0 +1,27 @@
+{
+  "name": "rualive-email-worker",
+  "version": "1.0.0",
+  "description": "RuAlive Email Notification Worker",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:landing": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:create": "wrangler d1 create rualive",
+    "db:migrate": "wrangler d1 execute rualive --file=./schema.sql",
+    "kv:create": "wrangler kv:namespace create KV",
+    "kv:create-preview": "wrangler kv:namespace create KV --preview"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "email",
+    "notification"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^3.114.17"
+  }
+}
