@@ -1,4 +1,0 @@
-UPDATE work_logs SET compositions_json = '[{"project":"项目1","count":3},{"project":"项目2","count":2},{"project":"项目3","count":1}]' WHERE id=348;
-UPDATE work_logs SET effects_json = '[{"project":"项目1","name":"高斯模糊"},{"project":"项目1","name":"色彩校正"},{"project":"项目2","name":"噪点"}]' WHERE id=348;
-UPDATE work_logs SET layers_json = '[{"project":"项目1","name":"背景层"},{"project":"项目1","name":"文字层"},{"project":"项目2","name":"视频层"}]' WHERE id=348;
-UPDATE work_logs SET keyframes_json = '[{"project":"项目1","layer":"位置","count":5},{"project":"项目1","layer":"缩放","count":3},{"project":"项目2","layer":"旋转","count":2}]' WHERE id=348;

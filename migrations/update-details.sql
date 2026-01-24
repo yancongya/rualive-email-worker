@@ -1,3 +1,0 @@
-UPDATE work_logs SET effects_json = '[{"project":"52000钻-炽恋弦歌.aep","name":"高斯模糊"},{"project":"52000钻-炽恋弦歌.aep","name":"色彩校正"}]' WHERE id=348;
-UPDATE work_logs SET layers_json = '[{"project":"52000钻-炽恋弦歌.aep","name":"背景层"},{"project":"52000钻-炽恋弦歌.aep","name":"文字层"}]' WHERE id=348;
-UPDATE work_logs SET keyframes_json = '[{"project":"52000钻-炽恋弦歌.aep","layer":"位置","count":15},{"project":"52000钻-炽恋弦歌.aep","layer":"缩放","count":8}]' WHERE id=348;
