@@ -2039,12 +2039,16 @@ async function processUser(user, env) {
     return;
   }
 
-  // 获取当前时间（小时和分钟）
+  // 获取当前时间（转换为用户时区）
   const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const currentDayOfWeek = now.getDay(); // 0-6, 0=Sunday, 1=Monday, etc.
+  const userTimezone = config.timezone || 'Asia/Shanghai';
 
-  console.log(`User ${userId} - currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}`);
+  // 转换为用户时区的时间
+  const userNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+  const currentTime = `${String(userNow.getHours()).padStart(2, '0')}:${String(userNow.getMinutes()).padStart(2, '0')}`;
+  const currentDayOfWeek = userNow.getDay(); // 0-6, 0=Sunday, 1=Monday, etc.
+
+  console.log(`User ${userId} - currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}, timezone: ${userTimezone}`);
 
   // 检查是否应该发送紧急联系人通知
   let shouldSendEmergency = false;
