@@ -296,7 +296,8 @@ export default {
 
     // 处理静态文件（从 Assets 绑定）
     // 只对非 API 路径使用 Assets，避免消耗 request body
-    if (ASSETS && !path.startsWith('/api/')) {
+    // 排除 /login 和 /user 路由，这些路由需要返回 index.html
+    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user') {
       try {
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
