@@ -80,10 +80,10 @@ const TRANSLATIONS = {
       desc: "部分扩展和用户页截图",
       hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
       items: [
-        { title: "AE 插件面板", img: "/assets/showcase/01-panel.svg" },
-        { title: "生存看板详情", img: "/assets/showcase/02-dashboard.svg" },
-        { title: "受难同胞地图", img: "/assets/showcase/03-map.svg" },
-        { title: "遗言设置页面", img: "/assets/showcase/04-setup.svg" }
+        { title: "AE 插件面板", img: "/assets/showcase/01-panel.png" },
+        { title: "生存看板详情", img: "/assets/showcase/02-dashboard.png" },
+        { title: "受难同胞地图", img: "/assets/showcase/03-map.png" },
+        { title: "遗言设置页面", img: "/assets/showcase/04-setup.png" }
       ]
     },
     cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
@@ -159,10 +159,10 @@ const TRANSLATIONS = {
       desc: "UI screenshots & dashboard previews",
       hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
       items: [
-        { title: "AE Extension Panel", img: "/assets/showcase/01-panel.svg" },
-        { title: "Vital Dashboard", img: "/assets/showcase/02-dashboard.svg" },
-        { title: "Global Map", img: "/assets/showcase/03-map.svg" },
-        { title: "Setup Page", img: "/assets/showcase/04-setup.svg" }
+        { title: "AE Extension Panel", img: "/assets/showcase/01-panel.png" },
+        { title: "Vital Dashboard", img: "/assets/showcase/02-dashboard.png" },
+        { title: "Global Map", img: "/assets/showcase/03-map.png" },
+        { title: "Setup Page", img: "/assets/showcase/04-setup.png" }
       ]
     },
     cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
@@ -244,8 +244,8 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
     "M 400,400 C 250,250 250,550 400,400 C 550,250 550,550 400,400",
     // 3: Pain - Motion Curve
     "M 100,700 C 100,700 400,600 400,400 C 400,200 600,100 700,100",
-    // 4: FAQ - Question Mark
-    "M 350,300 C 350,200 450,200 450,300 C 450,400 400,400 400,500 C 400,600 400,650 400,700",
+    // 4: FAQ - Question Mark (放大版)
+    "M 300,150 C 300,50 500,50 500,150 C 500,250 400,250 400,350 C 400,450 400,500 400,550 C 400,600 380,650 380,700 C 380,750 420,750 420,700",
     // 5: Showcase - Circle
     "M 400,200 C 500,200 600,300 600,400 C 600,500 500,600 400,600 C 300,600 200,500 200,400 C 200,300 300,200 400,200",
     // 6: CTA - Spiral Vortex
@@ -255,13 +255,13 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
   const authPath = "M 0,400 C 100,400 120,200 160,200 C 250,200 350,600 450,600 C 550,600 700,400 800,400";
 
   const transforms = [
-    { x: '0vw', y: '0vh', scale: 1.0, rotate: 0, opacity: 0.20 },    // Hero
-    { x: '-5vw', y: '5vh', scale: 0.9, rotate: 0, opacity: 0.20 },   // Stats
-    { x: '5vw', y: '-5vh', scale: 1.2, rotate: 0, opacity: 0.20 },   // Buddy
-    { x: '-10vw', y: '10vh', scale: 1.3, rotate: 10, opacity: 0.20 },// Pain
-    { x: '10vw', y: '0vh', scale: 0.9, rotate: 0, opacity: 0.20 },   // FAQ
-    { x: '0vw', y: '0vh', scale: 1.0, rotate: 90, opacity: 0.25 },   // Showcase
-    { x: '-2vw', y: '5vh', scale: 1.5, rotate: 180, opacity: 0.20 }  // CTA
+    { x: '0vw', y: '0vh', scale: 1.1, rotate: 0, opacity: 0.25 },    // Hero
+    { x: '-5vw', y: '5vh', scale: 0.9, rotate: 0, opacity: 0.25 },   // Stats
+    { x: '5vw', y: '-5vh', scale: 1.6, rotate: 0, opacity: 0.25 },   // Buddy
+    { x: '-10vw', y: '10vh', scale: 1.8, rotate: 10, opacity: 0.25 },// Pain
+    { x: '10vw', y: '0vh', scale: 0.9, rotate: 0, opacity: 0.25 },   // FAQ
+    { x: '0vw', y: '0vh', scale: 0.8, rotate: 90, opacity: 0.55 },   // Showcase
+    { x: '-2vw', y: '5vh', scale: 2.5, rotate: 180, opacity: 0.25 }  // CTA
   ];
 
   useEffect(() => {
@@ -456,20 +456,34 @@ const App = () => {
 
     const obs = window.Observer.create({
       target: window, type: "wheel,touch,pointer", wheelSpeed: -1,
-      onDown: (self) => { 
+      onDown: (self) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
+          // 检查是否在 showcase 页面且鼠标悬停在图片组件上
+          const isShowcaseSection = currentSectionRef.current === 5;
+          const isOnSlide = (self.event.target as HTMLElement).closest('.showcase-slide');
           const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
-          if (currentSectionRef.current === 5 && currentSlideIndexRef.current > 0 && !isHeader) moveSlideToIndex(currentSlideIndexRef.current - 1);
-          else goToSection(currentSectionRef.current - 1);
+          
+          if (isShowcaseSection && isOnSlide && !isHeader && currentSlideIndexRef.current > 0) {
+            moveSlideToIndex(currentSlideIndexRef.current - 1);
+          } else {
+            goToSection(currentSectionRef.current - 1);
+          }
         }
       },
-      onUp: (self) => { 
+      onUp: (self) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
+          // 检查是否在 showcase 页面且鼠标悬停在图片组件上
+          const isShowcaseSection = currentSectionRef.current === 5;
+          const isOnSlide = (self.event.target as HTMLElement).closest('.showcase-slide');
           const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
-          if (currentSectionRef.current === 5 && currentSlideIndexRef.current < t.showcase.items.length - 1 && !isHeader) moveSlideToIndex(currentSlideIndexRef.current + 1);
-          else goToSection(currentSectionRef.current + 1);
+          
+          if (isShowcaseSection && isOnSlide && !isHeader && currentSlideIndexRef.current < t.showcase.items.length - 1) {
+            moveSlideToIndex(currentSlideIndexRef.current + 1);
+          } else {
+            goToSection(currentSectionRef.current + 1);
+          }
         }
       },
       tolerance: 50, preventDefault: true
@@ -587,7 +601,7 @@ const App = () => {
         <div className="sections-wrapper h-full flex flex-col will-change-transform relative z-10" ref={wrapperRef}>
           {/* SECTION 0: HERO */}
           <section id="hero" className="h-screen flex flex-col items-center justify-center px-6 shrink-0 bg-transparent">
-            <div className="container mx-auto text-center mt-12 sm:mt-0 cursor-pointer" onClick={() => switchView('auth')}>
+            <div className="container mx-auto text-center mt-12 sm:mt-0">
               <div className="inline-block px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-[10px] font-black uppercase tracking-widest mb-6 animate-pulse">{t.hero.tag}</div>
               <h1 className="text-5xl sm:text-8xl md:text-[9rem] font-black leading-none tracking-tighter mb-4 italic uppercase whitespace-nowrap overflow-visible">
                 {t.hero.title}<span className="text-primary inline-block animate-breathing">{t.hero.titleAlive}</span><span className="text-primary">?</span>
@@ -721,7 +735,16 @@ const App = () => {
               <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div>{t.footer.rights}</div>
-                  <div className="flex gap-6 items-center"><span>{t.footer.copy}</span><a href="#" className="underline decoration-black/20 hover:text-black transition-colors">GITHUB</a></div>
+                  <div className="flex gap-6 items-center">
+                    <span>{t.footer.copy}</span>
+                    <button onClick={() => { navigator.clipboard.writeText('2655283737@qq.com'); alert('Email copied to clipboard'); }} className="flex items-center gap-2 hover:text-black transition-colors group">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <span className="hidden sm:inline">EMAIL</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
