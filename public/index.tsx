@@ -392,7 +392,7 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
 
 // --- AUTH COMPONENT ---
 
-const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void, goToSection: (index: number) => void }) => {
+const AuthView = ({ isLogin, setIsLogin, onBack, goToSection, onAuthSuccess }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void, goToSection: (index: number) => void, onAuthSuccess: () => void }) => {
   const formRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -470,9 +470,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
         // 显示成功消息
         alert(isLogin ? '登录成功！' : '注册成功！');
 
-        // 跳转到首页并保存状态，然后跳转到生存看板
-        localStorage.setItem('rualive_redirect_to_stats', 'true');
-        window.location.assign('/');
+        // 调用登录成功回调
+        onAuthSuccess();
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
@@ -631,6 +630,7 @@ const App = () => {
   const [popups, setPopups] = useState<Popup[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
+  const [shouldRedirectToStats, setShouldRedirectToStats] = useState(false);
   const currentSectionRef = useRef(0);
   const popupId = useRef(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -671,22 +671,16 @@ const App = () => {
 
   // 检查是否需要重定向到生存看板
   useEffect(() => {
-    const path = window.location.pathname;
-    const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
-    console.log('[App] Check redirect - path:', path, 'redirectToStats:', redirectToStats, 'view:', view);
+    console.log('[App] Check redirect - shouldRedirectToStats:', shouldRedirectToStats, 'view:', view);
     
-    // 添加延迟，确保 view 状态已更新
-    setTimeout(() => {
-      if (redirectToStats === 'true' && path === '/' && view === 'landing') {
-        localStorage.removeItem('rualive_redirect_to_stats');
-        console.log('[App] Redirecting to stats section');
+    if (shouldRedirectToStats && view === 'landing') {
+      setShouldRedirectToStats(false);
+      console.log('[App] Redirecting to stats section');
+      setTimeout(() => {
         goToSection(1);
-      } else if (redirectToStats === 'true' && path === '/' && view !== 'landing') {
-        console.log('[App] Waiting for view to update to landing, current view:', view);
-        // 如果 view 还不是 landing，等待另一个检查周期
-      }
-    }, 1000);
-  }, [goToSection, view]);
+      }, 500);
+    }
+  }, [shouldRedirectToStats, view, goToSection]);
 
   // 监听 URL 变化
   useEffect(() => {
@@ -1106,7 +1100,16 @@ const moveSlideToIndex = useCallback((index: number) => {
           </section>
         </div>
       ) : (
-        <AuthView isLogin={isLogin} setIsLogin={setIsLogin} onBack={() => switchView('landing')} goToSection={goToSection} />
+        <AuthView 
+          isLogin={isLogin} 
+          setIsLogin={setIsLogin} 
+          onBack={() => switchView('landing')} 
+          goToSection={goToSection} 
+          onAuthSuccess={() => {
+            setShouldRedirectToStats(true);
+            switchView('landing');
+          }}
+        />
       )}
     </div>
   );
