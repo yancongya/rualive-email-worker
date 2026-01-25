@@ -23,8 +23,11 @@ export default defineConfig(({ mode }) => {
         copyPublicDir: false
       },
       server: {
-        port: 3000,
+        port: 3737,
         host: '0.0.0.0',
+        historyApiFallback: {
+          index: '/index.html', // 所有路由都返回 index.html
+        },
       },
       plugins: [react()],
       define: {

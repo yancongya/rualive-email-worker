@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
+console.log('[DEBUG] index.tsx loaded successfully!');
+
 // Global GSAP declarations
 declare global {
   interface Window {
@@ -472,7 +474,7 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
 
         // 跳转到首页并保存状态，然后跳转到生存看板
         localStorage.setItem('rualive_redirect_to_stats', 'true');
-        window.location.href = '/';
+        window.location.assign('/');
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
@@ -602,8 +604,30 @@ const IconMenu = () => (
 interface Popup { id: number; x: number; y: number; text: string; }
 
 const App = () => {
-  const [view, setView] = useState<'landing' | 'auth'>('landing');
-  const [isLogin, setIsLogin] = useState(true);
+  const [view, setView] = useState<'landing' | 'auth'>(() => {
+    // 根据初始 URL 设置初始视图
+    const path = window.location.pathname;
+    console.log('[App] Initial path:', path);
+    if (path === '/login' || path === '/register') {
+      console.log('[App] Setting initial view to auth');
+      return 'auth';
+    }
+    console.log('[App] Setting initial view to landing');
+    return 'landing';
+  });
+  const [isLogin, setIsLogin] = useState(() => {
+    // 根据初始 URL 设置登录/注册模式
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    console.log('[App] Initial isLogin check - path:', path, 'mode:', mode);
+    if (path === '/register' || (path === '/login' && mode === 'register')) {
+      console.log('[App] Setting initial isLogin to false (register)');
+      return false;
+    }
+    console.log('[App] Setting initial isLogin to true (login)');
+    return true;
+  });
   const [lang, setLang] = useState<'zh' | 'en'>('zh');
   const { t, getArray, isLoading: isTranslationsLoading } = useTranslation(lang);
   const [popups, setPopups] = useState<Popup[]>([]);
@@ -631,21 +655,79 @@ const App = () => {
     }
   }, [getArray]);
 
-  // 检查 URL，如果是 /login 路由，自动切换到登录视图
+  // 定义 goToSection 和其他回调函数（在使用它们的 useEffect 之前）
+  const goToSection = useCallback((index: number) => {
+    if (isAnimating.current || index < 0 || index >= sectionCount) return;
+    isAnimating.current = true;
+    currentSectionRef.current = index;
+    setCurrentSection(index);
+    if (window.gsap && wrapperRef.current) {
+      window.gsap.to(wrapperRef.current, { y: -index * 100 + "%", duration: 1.2, ease: "power4.inOut", onComplete: () => { isAnimating.current = false; } });
+    }
+  }, []);
+
+  // 检查是否需要重定向到生存看板
+  useEffect(() => {
+    console.log('[App] Initial view:', view, 'isLogin:', isLogin);
+  }, [view, isLogin]);
+
+  // 检查是否需要重定向到生存看板
   useEffect(() => {
     const path = window.location.pathname;
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-
-    if (path === '/login') {
-      setIsLogin(mode !== 'register');
-      setView('auth');
-    } else if (path === '/register') {
-      setIsLogin(false);
-      setView('auth');
+    const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
+    if (redirectToStats === 'true' && path === '/') {
+      localStorage.removeItem('rualive_redirect_to_stats');
+      setTimeout(() => {
+        goToSection(1);
+      }, 500);
     }
+  }, [goToSection]);
 
-    // 检查是否需要重定向到生存看板
+  // 监听 URL 变化
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      
+      console.log('[App] URL changed - path:', path, 'mode:', mode);
+      
+      if (path === '/login' || path === '/register') {
+        setIsLogin(path === '/register' || (path === '/login' && mode === 'register'));
+        setView('auth');
+      } else {
+        setView('landing');
+      }
+    };
+
+    // 定期检查 URL 变化（用于检测编程式导航）
+    let lastPath = window.location.pathname;
+    let lastSearch = window.location.search;
+    
+    const checkUrlChange = () => {
+      const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
+      
+      if (currentPath !== lastPath || currentSearch !== lastSearch) {
+        console.log('[App] URL changed detected - old:', lastPath + lastSearch, 'new:', currentPath + currentSearch);
+        lastPath = currentPath;
+        lastSearch = currentSearch;
+        handlePopState();
+      }
+    };
+
+    const intervalId = setInterval(checkUrlChange, 100);
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  // 检查是否需要重定向到生存看板
+  useEffect(() => {
+    const path = window.location.pathname;
     const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
     if (redirectToStats === 'true' && path === '/') {
       localStorage.removeItem('rualive_redirect_to_stats');
@@ -659,16 +741,6 @@ const App = () => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, [handleClick]);
-
-  const goToSection = useCallback((index: number) => {
-    if (isAnimating.current || index < 0 || index >= sectionCount) return;
-    isAnimating.current = true;
-    currentSectionRef.current = index;
-    setCurrentSection(index);
-    if (window.gsap && wrapperRef.current) {
-      window.gsap.to(wrapperRef.current, { y: -index * 100 + "%", duration: 1.2, ease: "power4.inOut", onComplete: () => { isAnimating.current = false; } });
-    }
-  }, []);
 
   const getSliderMetrics = useCallback(() => {
     const slides = document.querySelectorAll(".showcase-slide");
@@ -782,8 +854,18 @@ const moveSlideToIndex = useCallback((index: number) => {
   }, [goToSection, mobileMenuOpen, lang, moveSlideToIndex, getSliderMetrics, getArray, view]);
 
   const switchView = (target: 'landing' | 'auth') => {
+    console.log('[switchView] Switching to:', target);
+    
+    // 更新 URL
+    if (target === 'landing') {
+      window.history.pushState({}, '', '/');
+    } else {
+      window.history.pushState({}, '', '/login');
+    }
+    
     if (window.gsap) {
       window.gsap.to(document.body, { opacity: 0, duration: 0.3, onComplete: () => {
+        console.log('[switchView] GSAP animation complete, setting view to:', target);
         setView(target);
         if (target === 'landing') {
           // Explicitly reset section state to landing start
@@ -805,6 +887,7 @@ const moveSlideToIndex = useCallback((index: number) => {
         window.gsap.to(document.body, { opacity: 1, duration: 0.5 });
       }});
     } else {
+      console.log('[switchView] No GSAP, setting view to:', target);
       setView(target);
       if (target === 'landing') {
         currentSectionRef.current = 0;
@@ -843,7 +926,7 @@ const moveSlideToIndex = useCallback((index: number) => {
             <button onClick={() => switchView('landing')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
           )}
           <div className="flex items-center gap-3">
-            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? window.location.href = '/login' : window.location.href = '/'}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
+            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? window.location.assign('/login') : window.location.assign('/')}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-1 opacity-80">{mobileMenuOpen ? <IconX /> : <IconMenu />}</button>
           </div>
         </div>
@@ -877,8 +960,8 @@ const moveSlideToIndex = useCallback((index: number) => {
               <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t('hero.subtitle')}</p>
               <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t('hero.desc')}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.href = '/login?mode=register'; }}>{t('hero.btnPrimary')}</button>
-                          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.href = '/login'; }}>{t('hero.btnSecondary')}</button>              </div>
+                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login?mode=register'); }}>{t('hero.btnPrimary')}</button>
+                          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login'); }}>{t('hero.btnSecondary')}</button>              </div>
             </div>
           </section>
 
@@ -997,7 +1080,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               <div className="flex-grow flex flex-col justify-center items-center">
                 <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t('cta.title')}<span className="text-black">?</span></h2>
                 <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t('cta.subtitle')}</p>
-                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { window.location.href = '/login?mode=register'; }}>{t('cta.btn')}</button>
+                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { window.location.assign('/login?mode=register'); }}>{t('cta.btn')}</button>
               </div>
               <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
