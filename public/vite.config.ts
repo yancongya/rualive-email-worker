@@ -28,6 +28,13 @@ export default defineConfig(({ mode }) => {
         historyApiFallback: {
           index: '/index.html', // 所有路由都返回 index.html
         },
+        proxy: {
+          '/api': {
+            target: 'https://rualive-email-worker.cubetan57.workers.dev',
+            changeOrigin: true,
+            secure: true,
+          }
+        }
       },
       plugins: [react()],
       define: {
