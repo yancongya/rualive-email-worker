@@ -342,10 +342,11 @@ export default {
     
 
     if (path === '/login') {
-      // 返回主页面，前端会自动切换到登录视图
+      // 返回根路径的 index.html，前端会自动切换到登录视图
       if (ASSETS) {
         try {
-          const assetResponse = await ASSETS.fetch(new Request(request.url, { method: 'GET' }));
+          const rootUrl = new URL('/', request.url);
+          const assetResponse = await ASSETS.fetch(new Request(rootUrl, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
             return assetResponse;
           }
