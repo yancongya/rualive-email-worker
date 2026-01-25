@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => {
       root: '.',
       publicDir: false, // 禁用默认的 public 目录
       build: {
-        outDir: '../dist',
-        emptyOutDir: true,
+        outDir: './',
+        emptyOutDir: false,
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
           }
         },
         assetsDir: 'assets',
-        copyPublicDir: true
+        copyPublicDir: false
       },
       server: {
         port: 3000,
