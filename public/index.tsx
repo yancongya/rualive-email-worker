@@ -674,13 +674,18 @@ const App = () => {
     const path = window.location.pathname;
     const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
     console.log('[App] Check redirect - path:', path, 'redirectToStats:', redirectToStats, 'view:', view);
-    if (redirectToStats === 'true' && path === '/' && view === 'landing') {
-      localStorage.removeItem('rualive_redirect_to_stats');
-      console.log('[App] Redirecting to stats section');
-      setTimeout(() => {
+    
+    // 添加延迟，确保 view 状态已更新
+    setTimeout(() => {
+      if (redirectToStats === 'true' && path === '/' && view === 'landing') {
+        localStorage.removeItem('rualive_redirect_to_stats');
+        console.log('[App] Redirecting to stats section');
         goToSection(1);
-      }, 500);
-    }
+      } else if (redirectToStats === 'true' && path === '/' && view !== 'landing') {
+        console.log('[App] Waiting for view to update to landing, current view:', view);
+        // 如果 view 还不是 landing，等待另一个检查周期
+      }
+    }, 1000);
   }, [goToSection, view]);
 
   // 监听 URL 变化
