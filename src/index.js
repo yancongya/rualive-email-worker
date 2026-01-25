@@ -295,7 +295,8 @@ export default {
     const path = url.pathname;
 
     // 处理静态文件（从 Assets 绑定）
-    if (ASSETS) {
+    // 只对非 API 路径使用 Assets，避免消耗 request body
+    if (ASSETS && !path.startsWith('/api/')) {
       try {
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
