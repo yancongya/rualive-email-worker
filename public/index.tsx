@@ -601,13 +601,17 @@ const IconMenu = () => (
 interface Popup { id: number; x: number; y: number; text: string; }
 
 const App = () => {
-  const [view, setView] = useState<'landing' | 'auth'>(() => {
+  const [view, setView] = useState<'landing' | 'auth' | 'user'>(() => {
     // 根据初始 URL 设置初始视图
     const path = window.location.pathname;
     console.log('[App] Initial path:', path);
     if (path === '/login' || path === '/register') {
       console.log('[App] Setting initial view to auth');
       return 'auth';
+    }
+    if (path === '/user') {
+      console.log('[App] Setting initial view to user');
+      return 'user';
     }
     console.log('[App] Setting initial view to landing');
     return 'landing';
@@ -694,6 +698,8 @@ const App = () => {
       if (path === '/login' || path === '/register') {
         setIsLogin(path === '/register' || (path === '/login' && mode === 'register'));
         setView('auth');
+      } else if (path === '/user') {
+        setView('user');
       } else {
         setView('landing');
       }
@@ -921,11 +927,13 @@ const moveSlideToIndex = useCallback((index: number) => {
                           <button onClick={() => goToSection(4)} className={`hover:text-primary transition-colors ${currentSection === 4 ? 'text-primary opacity-100' : ''}`}>{t('nav.faq')}</button>
                           <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t('nav.showcase')}</button>              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
             </div>
+          ) : view === 'user' ? (
+            <button onClick={() => window.location.assign('/')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
           ) : (
             <button onClick={() => switchView('landing')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
           )}
           <div className="flex items-center gap-3">
-            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? window.location.assign('/login') : window.location.assign('/')}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
+            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? window.location.assign('/login') : window.location.assign('/')}>{view === 'landing' ? t('nav.start') : view === 'user' ? 'EXIT' : 'EXIT'}</button>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-1 opacity-80">{mobileMenuOpen ? <IconX /> : <IconMenu />}</button>
           </div>
         </div>
@@ -1099,6 +1107,19 @@ const moveSlideToIndex = useCallback((index: number) => {
             </div>
           </section>
         </div>
+      ) : view === 'user' ? (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-black mb-4">用户页面 User Page</h1>
+            <p className="text-white/40">欢迎回来！Welcome back!</p>
+            <button 
+              onClick={() => window.location.assign('/')}
+              className="mt-8 bg-primary text-white px-6 py-3 rounded-xl font-black hover:bg-primary-light transition-all"
+            >
+              返回首页 Back to Home
+            </button>
+          </div>
+        </div>
       ) : (
         <AuthView 
           isLogin={isLogin} 
@@ -1106,8 +1127,7 @@ const moveSlideToIndex = useCallback((index: number) => {
           onBack={() => switchView('landing')} 
           goToSection={goToSection} 
           onAuthSuccess={() => {
-            setShouldRedirectToStats(true);
-            switchView('landing');
+            window.location.assign('/user');
           }}
         />
       )}
