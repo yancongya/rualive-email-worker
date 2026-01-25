@@ -634,6 +634,14 @@ const App = () => {
     }
   }, [getArray]);
 
+  // 检查 URL，如果是 /login 路由，自动切换到登录视图
+  useEffect(() => {
+    if (window.location.pathname === '/login') {
+      setIsLogin(true);
+      setView('auth');
+    }
+  }, []);
+
   useEffect(() => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);

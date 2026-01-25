@@ -342,8 +342,21 @@ export default {
     
 
     if (path === '/login') {
-      // 重定向到主页面，登录功能已集成到主页面
-      return Response.redirect(new URL('/', request.url), 302);
+      // 返回主页面，前端会自动切换到登录视图
+      if (ASSETS) {
+        try {
+          const assetResponse = await ASSETS.fetch(new Request(request.url, { method: 'GET' }));
+          if (assetResponse && assetResponse.status !== 404) {
+            return assetResponse;
+          }
+        } catch (error) {
+          console.error('Failed to fetch index.html from Assets:', error);
+        }
+      }
+      const html = await getLandingHtml();
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
+      });
     }
 
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
