@@ -173,6 +173,105 @@ const TRANSLATIONS = {
   }
 };
 
+// --- I18N UTILITIES ---
+
+/**
+ * 扁平化对象，将嵌套对象转换为点号分隔的键值对
+ */
+const flattenObject = (obj: any, prefix = '') => {
+  const result: any = {};
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      if (Array.isArray(obj[key])) {
+        obj[key].forEach((item: any, index: number) => {
+          if (typeof item === 'object' && item !== null) {
+            Object.assign(result, flattenObject(item, `${newKey}.${index}`));
+          } else {
+            result[`${newKey}.${index}`] = item;
+          }
+        });
+      } else {
+        Object.assign(result, flattenObject(obj[key], newKey));
+      }
+    } else {
+      result[newKey] = obj[key];
+    }
+  }
+  return result;
+};
+
+/**
+ * 翻译工具函数
+ * 从本地 JSON 文件加载翻译并返回翻译函数
+ */
+const useTranslation = (lang: 'zh' | 'en') => {
+  // 使用内嵌的 TRANSLATIONS 作为初始值，避免加载时显示空内容
+  const [translations, setTranslations] = useState<any>(flattenObject(TRANSLATIONS[lang]));
+
+  useEffect(() => {
+    const loadTranslations = async () => {
+      try {
+        const response = await fetch(`/local/${lang}.json`);
+        const data = await response.json();
+        setTranslations(data);
+      } catch (error) {
+        console.error('Failed to load translations:', error);
+        // 如果加载失败，继续使用内嵌的 TRANSLATIONS
+      }
+    };
+
+    loadTranslations();
+  }, [lang]);
+
+  /**
+   * 翻译函数
+   * @param key - 翻译键（如 'nav.stats'）
+   * @param fallback - 回退文本
+   * @returns 翻译后的文本
+   */
+  const t = (key: string, fallback?: string) => {
+    if (!translations) {
+      // 如果翻译还未加载，返回键名或回退
+      return fallback || key;
+    }
+    return translations[key] || fallback || key;
+  };
+
+  /**
+   * 获取嵌套对象（用于处理数组数据）
+   * @param key - 翻译键前缀（如 'stats.items'）
+   * @returns 数组或对象
+   */
+  const getArray = (key: string): any[] => {
+    if (!translations) return [];
+    const result: any[] = [];
+    const prefix = `${key}.`;
+    Object.keys(translations).forEach(k => {
+      if (k.startsWith(prefix)) {
+        const rest = k.substring(prefix.length);
+        // 找到第一个点的位置，分离索引和子键
+        const dotIndex = rest.indexOf('.');
+        if (dotIndex === -1) {
+          // 简单数组项，如 "slogans.0"
+          const index = parseInt(rest);
+          result[index] = translations[k];
+        } else {
+          // 嵌套对象，如 "stats.items.0.label"
+          const index = parseInt(rest.substring(0, dotIndex));
+          const subKey = rest.substring(dotIndex + 1);
+          if (!result[index]) result[index] = {};
+          result[index][subKey] = translations[k];
+        }
+      }
+    });
+    return result;
+  };
+
+  return { t, getArray, isLoading: !translations };
+};
+
 // --- ICON COMPONENTS ---
 
 const IconScan = () => (
@@ -295,6 +394,8 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
 
 const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void }) => {
   const formRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (window.gsap && formRef.current) {
@@ -303,6 +404,7 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
   }, [isLogin]);
 
   const toggleMode = () => {
+    setError(null);
     if (window.gsap && formRef.current) {
       window.gsap.to(formRef.current, { opacity: 0, x: isLogin ? -20 : 20, duration: 0.3, ease: "power2.in", onComplete: () => {
         setIsLogin(!isLogin);
@@ -310,6 +412,74 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
       }});
     } else {
       setIsLogin(!isLogin);
+    }
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    const form = e.target as HTMLFormElement;
+    const formData = {
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      password: (form.elements.namedItem('password') as HTMLInputElement).value,
+      ...(isLogin ? {} : {
+        username: (form.elements.namedItem('username') as HTMLInputElement).value,
+        invitationCode: (form.elements.namedItem('invitationCode') as HTMLInputElement).value
+      })
+    };
+
+    // 简单验证
+    if (!formData.email || !formData.password) {
+      setError('请填写所有必填字段');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isLogin && (!formData.username || !formData.invitationCode)) {
+      setError('请填写用户名和邀请码');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // 获取 Worker URL（从当前页面获取）
+      const workerUrl = window.location.origin;
+      const endpoint = isLogin ? `${workerUrl}/api/auth/login` : `${workerUrl}/api/auth/register`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 保存 token
+        if (data.token) {
+          localStorage.setItem('rualive_token', data.token);
+        }
+        
+        // 保存用户信息
+        if (data.user) {
+          localStorage.setItem('rualive_user', JSON.stringify(data.user));
+        }
+
+        // 显示成功消息
+        alert(isLogin ? '登录成功！' : '注册成功！');
+        
+        // 返回首页
+        onBack();
+      } else {
+        setError(data.error || data.message || '认证失败，请重试');
+      }
+    } catch (err) {
+      console.error('[Auth] Network error:', err);
+      setError('网络错误，请检查连接后重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -324,40 +494,75 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
             {isLogin ? "继续你的动画受难之旅" : "注册以开启生存状态监测"}
           </p>
         </div>
-        <form className="space-y-5" onSubmit={e => e.preventDefault()}>
+        
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold text-center">
+            {error}
+          </div>
+        )}
+
+        <form className="space-y-5" onSubmit={handleAuth}>
           {!isLogin && (
             <>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">用户名 Username</label>
-                <input type="text" placeholder="K帧高手" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+                <input 
+                  type="text" 
+                  name="username"
+                  placeholder="K帧高手" 
+                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+                  disabled={isLoading}
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邀请码 Invitation Code</label>
-                <input type="text" placeholder="ALIVE-XXXX" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+                <input 
+                  type="text" 
+                  name="invitationCode"
+                  placeholder="ALIVE-XXXX" 
+                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+                  disabled={isLoading}
+                />
               </div>
             </>
           )}
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邮箱 Email</label>
-            <input type="email" placeholder="animator@rualive.com" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+            <input 
+              type="email" 
+              name="email"
+              placeholder="animator@rualive.com" 
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+              disabled={isLoading}
+            />
           </div>
           <div className="space-y-1">
             <div className="flex justify-between items-end mb-1">
               <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">密码 Password</label>
-              {isLogin && <button className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary">忘记密码？</button>}
+              {isLogin && <button type="button" className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary" disabled={isLoading}>忘记密码？</button>}
             </div>
-            <input type="password" placeholder="••••••••" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+            <input 
+              type="password" 
+              name="password"
+              placeholder="••••••••" 
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+              disabled={isLoading}
+            />
           </div>
-          <button className="w-full bg-primary hover:bg-primary-light text-white h-14 rounded-2xl font-black italic uppercase tracking-wider text-sm shadow-xl shadow-primary/20 transition-all active:scale-95 mt-4">
-            {isLogin ? "登录 LOGIN" : "创建账户 CREATE ACCOUNT"}
+          <button 
+            type="submit"
+            className={`w-full bg-primary hover:bg-primary-light text-white h-14 rounded-2xl font-black italic uppercase tracking-wider text-sm shadow-xl shadow-primary/20 transition-all active:scale-95 mt-4 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isLoading}
+          >
+            {isLoading ? '处理中...' : (isLogin ? "登录 LOGIN" : "创建账户 CREATE ACCOUNT")}
           </button>
         </form>
         <div className="mt-8 text-center">
           <p className="text-white/30 text-[11px] font-bold italic">
             {isLogin ? "还没有账号？" : "已经有账号了？"}
-            <button onClick={toggleMode} className="ml-2 text-primary hover:text-primary-light font-black uppercase underline decoration-primary/20">{isLogin ? "立即注册 REGISTER" : "立即登录 LOGIN"}</button>
+            <button onClick={toggleMode} className="ml-2 text-primary hover:text-primary-light font-black uppercase underline decoration-primary/20" disabled={isLoading}>{isLogin ? "立即注册 REGISTER" : "立即登录 LOGIN"}</button>
           </p>
-          <button onClick={onBack} className="mt-6 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">← 返回首页 BACK TO HOME</button>
+          <button onClick={onBack} className="mt-6 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors" disabled={isLoading}>← 返回首页 BACK TO HOME</button>
         </div>
       </div>
     </div>
@@ -387,7 +592,7 @@ const App = () => {
   const [view, setView] = useState<'landing' | 'auth'>('landing');
   const [isLogin, setIsLogin] = useState(true);
   const [lang, setLang] = useState<'zh' | 'en'>('zh');
-  const t = TRANSLATIONS[lang];
+  const { t, getArray, isLoading: isTranslationsLoading } = useTranslation(lang);
   const [popups, setPopups] = useState<Popup[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
@@ -407,10 +612,11 @@ const App = () => {
     if (target.closest('button, a, nav, summary, .showcase-slide, input')) return;
     if (Math.random() < 0.3) {
       const id = ++popupId.current;
-      setPopups(prev => [...prev, { id, x: e.clientX, y: e.clientY, text: t.slogans[Math.floor(Math.random() * t.slogans.length)] }]);
+      const slogans = getArray('slogans');
+      setPopups(prev => [...prev, { id, x: e.clientX, y: e.clientY, text: slogans[Math.floor(Math.random() * slogans.length)] }]);
       setTimeout(() => setPopups(prev => prev.filter(p => p.id !== id)), 1500);
     }
-  }, [t.slogans]);
+  }, [getArray]);
 
   useEffect(() => {
     window.addEventListener('click', handleClick);
@@ -438,7 +644,7 @@ const App = () => {
     return { step, centerOffset, count: slides.length };
   }, []);
 
-  const moveSlideToIndex = useCallback((index: number) => {
+const moveSlideToIndex = useCallback((index: number) => {
     if (isSliderAnimating.current) return;
     const metrics = getSliderMetrics();
     const draggable = sliderDraggable.current;
@@ -459,13 +665,22 @@ const App = () => {
       onDown: (self) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
-          // 检查是否在 showcase 页面且鼠标悬停在图片组件上
+          // 检查是否在 showcase 页面且鼠标在图片区域
           const isShowcaseSection = currentSectionRef.current === 5;
-          const isOnSlide = (self.event.target as HTMLElement).closest('.showcase-slide');
-          const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
+          const target = self.event.target as HTMLElement;
+          const isOnSlide = target.closest('.showcase-slide');
+          const isHeader = target.closest('#showcase-header');
+          const isSliderArea = target.closest('.showcase-slider-container');
           
           if (isShowcaseSection && isOnSlide && !isHeader && currentSlideIndexRef.current > 0) {
             moveSlideToIndex(currentSlideIndexRef.current - 1);
+          } else if (isShowcaseSection && isSliderArea && !isHeader) {
+            // 在 showcase 图片区域但不在具体图片上，检查是否可以继续滚动
+            if (currentSlideIndexRef.current > 0) {
+              moveSlideToIndex(currentSlideIndexRef.current - 1);
+            } else {
+              goToSection(currentSectionRef.current - 1);
+            }
           } else {
             goToSection(currentSectionRef.current - 1);
           }
@@ -474,13 +689,23 @@ const App = () => {
       onUp: (self) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
-          // 检查是否在 showcase 页面且鼠标悬停在图片组件上
+          // 检查是否在 showcase 页面且鼠标在图片区域
           const isShowcaseSection = currentSectionRef.current === 5;
-          const isOnSlide = (self.event.target as HTMLElement).closest('.showcase-slide');
-          const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
+          const target = self.event.target as HTMLElement;
+          const isOnSlide = target.closest('.showcase-slide');
+          const isHeader = target.closest('#showcase-header');
+          const isSliderArea = target.closest('.showcase-slider-container');
+          const showcaseItemsLength = getArray('showcase.items').length;
           
-          if (isShowcaseSection && isOnSlide && !isHeader && currentSlideIndexRef.current < t.showcase.items.length - 1) {
+          if (isShowcaseSection && isOnSlide && !isHeader && currentSlideIndexRef.current < showcaseItemsLength - 1) {
             moveSlideToIndex(currentSlideIndexRef.current + 1);
+          } else if (isShowcaseSection && isSliderArea && !isHeader) {
+            // 在 showcase 图片区域但不在具体图片上，检查是否可以继续滚动
+            if (currentSlideIndexRef.current < showcaseItemsLength - 1) {
+              moveSlideToIndex(currentSlideIndexRef.current + 1);
+            } else {
+              goToSection(currentSectionRef.current + 1);
+            }
           } else {
             goToSection(currentSectionRef.current + 1);
           }
@@ -500,17 +725,24 @@ const App = () => {
             const draggableInstance = window.Draggable.create(slider, {
                 type: "x", edgeResistance: 0.85, bounds: { minX: -(metrics.step * (metrics.count - 1)) + metrics.centerOffset, maxX: metrics.centerOffset }, inertia: true,
                 onDragStart: () => obs.disable(),
-                onDragEnd: function(this: any) { obs.enable(); const index = Math.round((this.x - metrics.centerOffset) / -metrics.step); currentSlideIndexRef.current = Math.max(0, Math.min(metrics.count - 1, index)); },
+                onDragEnd: function(this: any) {
+                    obs.enable();
+                    const index = Math.round((this.x - metrics.centerOffset) / -metrics.step);
+                    const clampedIndex = Math.max(0, Math.min(metrics.count - 1, index));
+                    currentSlideIndexRef.current = clampedIndex;
+                },
                 snap: (value: number) => { const index = Math.round((value - metrics.centerOffset) / -metrics.step); return -index * metrics.step + metrics.centerOffset; }
             })[0];
             sliderDraggable.current = draggableInstance;
-            window.gsap.set(slider, { x: metrics.centerOffset });
+            // 使用当前的 slideIndex 而不是重置为 0
+            const targetX = -currentSlideIndexRef.current * metrics.step + metrics.centerOffset;
+            window.gsap.set(slider, { x: targetX });
             draggableInstance.update();
         }
     }
 
     return () => { obs.kill(); if (sliderDraggable.current) sliderDraggable.current.kill(); };
-  }, [goToSection, mobileMenuOpen, lang, moveSlideToIndex, getSliderMetrics, t.showcase.items.length, view]);
+  }, [goToSection, mobileMenuOpen, lang, moveSlideToIndex, getSliderMetrics, getArray, view]);
 
   const switchView = (target: 'landing' | 'auth') => {
     if (window.gsap) {
@@ -564,18 +796,17 @@ const App = () => {
           </div>
           {view === 'landing' ? (
             <div className="hidden lg:flex items-center gap-6 text-[9px] font-black uppercase tracking-widest opacity-60">
-              <button onClick={() => goToSection(1)} className={`hover:text-primary transition-colors ${currentSection === 1 ? 'text-primary opacity-100' : ''}`}>{t.nav.stats}</button>
-              <button onClick={() => goToSection(2)} className={`hover:text-primary transition-colors ${currentSection === 2 ? 'text-primary opacity-100' : ''}`}>{t.nav.features}</button>
-              <button onClick={() => goToSection(3)} className={`hover:text-primary transition-colors ${currentSection === 3 ? 'text-primary opacity-100' : ''}`}>{t.nav.pain}</button>
-              <button onClick={() => goToSection(4)} className={`hover:text-primary transition-colors ${currentSection === 4 ? 'text-primary opacity-100' : ''}`}>{t.nav.faq}</button>
-              <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t.nav.showcase}</button>
-              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
+              <button onClick={() => goToSection(1)} className={`hover:text-primary transition-colors ${currentSection === 1 ? 'text-primary opacity-100' : ''}`}>{t('nav.stats')}</button>
+                          <button onClick={() => goToSection(2)} className={`hover:text-primary transition-colors ${currentSection === 2 ? 'text-primary opacity-100' : ''}`}>{t('nav.features')}</button>
+                          <button onClick={() => goToSection(3)} className={`hover:text-primary transition-colors ${currentSection === 3 ? 'text-primary opacity-100' : ''}`}>{t('nav.pain')}</button>
+                          <button onClick={() => goToSection(4)} className={`hover:text-primary transition-colors ${currentSection === 4 ? 'text-primary opacity-100' : ''}`}>{t('nav.faq')}</button>
+                          <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t('nav.showcase')}</button>              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
             </div>
           ) : (
             <button onClick={() => switchView('landing')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
           )}
           <div className="flex items-center gap-3">
-            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? switchView('auth') : switchView('landing')}>{view === 'landing' ? t.nav.start : 'EXIT'}</button>
+            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? switchView('auth') : switchView('landing')}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-1 opacity-80">{mobileMenuOpen ? <IconX /> : <IconMenu />}</button>
           </div>
         </div>
@@ -583,11 +814,11 @@ const App = () => {
           <div className={`lg:hidden absolute top-14 left-0 w-full bg-dark/95 backdrop-blur-xl border-b border-white/5 px-6 py-8 flex flex-col gap-6 transition-all duration-300`}>
             {view === 'landing' ? (
               <>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(1); }} className="text-left text-2xl font-black italic">{t.nav.stats}</button>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(2); }} className="text-left text-2xl font-black italic">{t.nav.features}</button>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(3); }} className="text-left text-2xl font-black italic">{t.nav.pain}</button>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(4); }} className="text-left text-2xl font-black italic">{t.nav.faq}</button>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(5); }} className="text-left text-2xl font-black italic">{t.nav.showcase}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(1); }} className="text-left text-2xl font-black italic">{t('nav.stats')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(2); }} className="text-left text-2xl font-black italic">{t('nav.features')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(3); }} className="text-left text-2xl font-black italic">{t('nav.pain')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(4); }} className="text-left text-2xl font-black italic">{t('nav.faq')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(5); }} className="text-left text-2xl font-black italic">{t('nav.showcase')}</button>
               </>
             ) : (
               <button onClick={() => { setMobileMenuOpen(false); switchView('landing'); }} className="text-left text-2xl font-black italic">返回首页 HOME</button>
@@ -602,15 +833,15 @@ const App = () => {
           {/* SECTION 0: HERO */}
           <section id="hero" className="h-screen flex flex-col items-center justify-center px-6 shrink-0 bg-transparent">
             <div className="container mx-auto text-center mt-12 sm:mt-0">
-              <div className="inline-block px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-[10px] font-black uppercase tracking-widest mb-6 animate-pulse">{t.hero.tag}</div>
+              <div className="inline-block px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-[10px] font-black uppercase tracking-widest mb-6 animate-pulse">{t('hero.tag')}</div>
               <h1 className="text-5xl sm:text-8xl md:text-[9rem] font-black leading-none tracking-tighter mb-4 italic uppercase whitespace-nowrap overflow-visible">
-                {t.hero.title}<span className="text-primary inline-block animate-breathing">{t.hero.titleAlive}</span><span className="text-primary">?</span>
+                {t('hero.title')}<span className="text-primary inline-block animate-breathing">{t('hero.titleAlive')}</span><span className="text-primary">?</span>
               </h1>
-              <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t.hero.subtitle}</p>
-              <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t.hero.desc}</p>
+              <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t('hero.subtitle')}</p>
+              <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t('hero.desc')}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(false); switchView('auth'); }}>{t.hero.btnPrimary}</button>
-                <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(true); switchView('auth'); }}>{t.hero.btnSecondary}</button>
+                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(false); switchView('auth'); }}>{t('hero.btnPrimary')}</button>
+                <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(true); switchView('auth'); }}>{t('hero.btnSecondary')}</button>
               </div>
             </div>
           </section>
@@ -618,11 +849,11 @@ const App = () => {
           {/* SECTION 1: STATS */}
           <section className="h-screen flex flex-col items-center justify-center bg-transparent px-6 shrink-0">
             <div className="container mx-auto max-w-5xl text-center mb-8 sm:mb-16">
-              <h2 className="text-4xl sm:text-7xl font-black italic uppercase mb-2 tracking-tighter leading-tight">{t.stats.title}</h2>
-              <p className="text-white/40 text-[10px] sm:text-lg font-bold italic uppercase tracking-widest">{t.stats.subtitle}</p>
+              <h2 className="text-4xl sm:text-7xl font-black italic uppercase mb-2 tracking-tighter leading-tight">{t('stats.title')}</h2>
+              <p className="text-white/40 text-[10px] sm:text-lg font-bold italic uppercase tracking-widest">{t('stats.subtitle')}</p>
             </div>
             <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
-              {t.stats.items.map((s, i) => (
+              {getArray('stats.items').map((s: any, i: number) => (
                 <div key={i} className="text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px]">
                   <div className="text-3xl sm:text-5xl md:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-3 py-4 overflow-visible h-auto flex items-center justify-center">
                     <span className="block">{s.value}</span>
@@ -637,11 +868,11 @@ const App = () => {
           <section id="features" className="h-screen flex flex-col items-center justify-center px-4 shrink-0 overflow-hidden bg-transparent">
             <div className="container mx-auto max-w-5xl h-full flex flex-col pt-20 pb-10">
               <div className="mb-6 text-center lg:text-left">
-                <h2 className="text-4xl sm:text-6xl font-black italic uppercase leading-none">{t.features.title}<span className="text-primary">{t.features.titleAccent}</span></h2>
-                <p className="text-white/40 text-xs sm:text-base font-bold italic">{t.features.desc}</p>
+                <h2 className="text-4xl sm:text-6xl font-black italic uppercase leading-none">{t('features.title')}<span className="text-primary">{t('features.titleAccent')}</span></h2>
+                <p className="text-white/40 text-xs sm:text-base font-bold italic">{t('features.desc')}</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 flex-grow content-start overflow-y-auto sm:overflow-visible pr-1 sm:pr-0">
-                {t.features.items.map((f, i) => (
+                {getArray('features.items').map((f: any, i: number) => (
                   <div key={i} className="group p-5 sm:p-8 rounded-3xl glass-card hover:border-primary/50 transition-all flex flex-col justify-between relative min-h-[160px] sm:min-h-[220px]">
                     <div className="mb-4"><IconComponent type={f.icon} /></div>
                     <h3 className="text-[12px] sm:text-xl font-black italic uppercase leading-tight truncate">{f.title}</h3>
@@ -657,9 +888,9 @@ const App = () => {
           <section className="h-screen flex flex-col items-center justify-center px-6 bg-transparent shrink-0">
             <div className="container mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 md:gap-20">
               <div className="text-center lg:text-left">
-                <h2 className="text-4xl sm:text-6xl font-black mb-8 italic uppercase leading-none tracking-tighter">{t.pain.title}<span className="text-primary">{t.pain.titleAccent}</span>{t.pain.titleSuffix}</h2>
-                <div className="space-y-6 sm:space-y-10 max-w-md mx-auto lg:mx-0">
-                  {t.pain.items.map((item, i) => (
+                <h2 className="text-4xl sm:text-6xl font-black mb-8 italic uppercase leading-none tracking-tighter">{t('pain.title')}<span className="text-primary">{t('pain.titleAccent')}</span>{t('pain.titleSuffix')}</h2>
+              <div className="space-y-6">
+                {getArray('pain.items').map((item: any, i: number) => (
                     <div key={i} className="flex gap-4 group text-left p-2 hover:bg-white/[0.03] rounded-2xl transition-all">
                       <div className="text-primary font-black text-3xl sm:text-5xl italic opacity-20 group-hover:opacity-100 transition-opacity leading-none shrink-0">0{i+1}</div>
                       <div className="flex flex-col gap-1">
@@ -676,9 +907,9 @@ const App = () => {
           {/* SECTION 4: FAQ */}
           <section id="faq" className="h-screen flex flex-col items-center justify-center px-4 shrink-0 bg-transparent">
             <div className="container mx-auto max-w-3xl h-full flex flex-col pt-20 pb-10">
-              <h2 className="text-4xl sm:text-7xl font-black mb-8 italic text-center uppercase tracking-tighter shrink-0">{t.faq.title}<span className="text-primary">{t.faq.titleAccent}</span></h2>
+              <h2 className="text-4xl sm:text-7xl font-black mb-8 italic text-center uppercase tracking-tighter shrink-0">{t('faq.title')}<span className="text-primary">{t('faq.titleAccent')}</span></h2>
               <div className="flex flex-col gap-4 flex-grow overflow-y-auto px-2 pb-10 no-scrollbar">
-                {t.faq.items.map((f, i) => (
+                {getArray('faq.items').map((f: any, i: number) => (
                   <details key={i} className="group glass-card rounded-2xl overflow-hidden border border-white/5 transition-all">
                     <summary className="flex items-center justify-between p-5 sm:p-8 cursor-pointer font-black italic text-[13px] sm:text-xl list-none select-none">{f.q}</summary>
                     <div className="px-8 pb-8 text-white/30 text-[11px] sm:text-base italic font-bold leading-relaxed border-t border-white/5 pt-6 bg-white/[0.01]">{f.a}</div>
@@ -692,12 +923,12 @@ const App = () => {
           <section id="showcase" className="h-screen flex flex-col items-center justify-center shrink-0 bg-transparent relative overflow-hidden">
               <div className="container mx-auto px-6 h-full flex flex-col pt-20">
                   <div id="showcase-header" className="text-center mb-6 cursor-ns-resize group select-none relative z-20">
-                      <h2 className="text-4xl sm:text-7xl font-black italic uppercase leading-none tracking-tighter mb-2 group-hover:text-primary transition-colors">{t.showcase.title}<span className="text-primary">{t.showcase.titleAccent}</span></h2>
-                      <p className="text-white/40 text-xs sm:text-base font-bold italic group-hover:text-white/60 transition-colors">{t.showcase.desc}</p>
+                      <h2 className="text-4xl sm:text-7xl font-black italic uppercase leading-none tracking-tighter mb-2 group-hover:text-primary transition-colors">{t('showcase.title')}<span className="text-primary">{t('showcase.titleAccent')}</span></h2>
+                      <p className="text-white/40 text-xs sm:text-base font-bold italic group-hover:text-white/60 transition-colors">{t('showcase.desc')}</p>
                   </div>
                   <div className="showcase-slider-container flex-grow relative overflow-visible">
                       <div className="showcase-slider flex items-center h-full will-change-transform">
-                          {t.showcase.items.map((item, i) => (
+                          {getArray('showcase.items').map((item: any, i: number) => (
                               <div key={i} className="showcase-slide">
                                   <div className="glass-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group shadow-2xl transition-all duration-500 hover:scale-[1.01]">
                                       <div className="aspect-[16/10] sm:aspect-[4/3] bg-white/5 relative overflow-hidden">
@@ -719,7 +950,7 @@ const App = () => {
                           ))}
                       </div>
                   </div>
-                  <div className="py-6 text-center opacity-40 text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em] italic animate-pulse shrink-0">{t.showcase.hint}</div>
+                  <div className="py-6 text-center opacity-40 text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em] italic animate-pulse shrink-0">{t('showcase.hint')}</div>
               </div>
           </section>
 
@@ -728,15 +959,15 @@ const App = () => {
             <div className="absolute inset-0 bg-black opacity-10 pattern-dots pointer-events-none"></div>
             <div className="container mx-auto text-center relative z-10 flex flex-col h-full pt-20">
               <div className="flex-grow flex flex-col justify-center items-center">
-                <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t.cta.title}<span className="text-black">?</span></h2>
-                <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t.cta.subtitle}</p>
-                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { setIsLogin(false); switchView('auth'); }}>{t.cta.btn}</button>
+                <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t('cta.title')}<span className="text-black">?</span></h2>
+                <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t('cta.subtitle')}</p>
+                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { setIsLogin(false); switchView('auth'); }}>{t('cta.btn')}</button>
               </div>
               <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                  <div>{t.footer.rights}</div>
+                  <div>{t('footer.rights')}</div>
                   <div className="flex gap-6 items-center">
-                    <span>{t.footer.copy}</span>
+                    <span>{t('footer.copy')}</span>
                     <button onClick={() => { navigator.clipboard.writeText('2655283737@qq.com'); alert('Email copied to clipboard'); }} className="flex items-center gap-2 hover:text-black transition-colors group">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
