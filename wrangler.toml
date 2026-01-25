@@ -2,6 +2,11 @@ name = "rualive-email-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
+# Assets 配置 - 用于部署静态文件（React 应用）
+[assets]
+directory = "public"
+binding = "ASSETS"
+
 # KV 命名空间绑定
 [[kv_namespaces]]
 binding = "KV"

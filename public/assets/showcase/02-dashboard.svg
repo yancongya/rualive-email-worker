@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <rect width="1200" height="800" fill="#0d0d0d"/>
+  <rect x="50" y="50" width="1100" height="700" fill="#1a1a1a" rx="20"/>
+  <rect x="70" y="70" width="200" height="40" fill="#ff6b35" rx="8"/>
+  <text x="170" y="95" fill="white" font-size="18" font-weight="bold" text-anchor="middle">Dashboard</text>
+  <rect x="70" y="130" width="350" height="280" fill="#2d2d2d" rx="10"/>
+  <rect x="440" y="130" width="350" height="280" fill="#2d2d2d" rx="10"/>
+  <rect x="810" y="130" width="310" height="280" fill="#2d2d2d" rx="10"/>
+  <rect x="70" y="430" width="530" height="300" fill="#2d2d2d" rx="10"/>
+  <rect x="620" y="430" width="500" height="300" fill="#2d2d2d" rx="10"/>
+  <text x="245" y="270" fill="#ff6b35" font-size="48" font-weight="bold" text-anchor="middle">99K+</text>
+  <text x="245" y="310" fill="#888" font-size="16" text-anchor="middle">Working Hours</text>
+  <text x="615" y="270" fill="#ff6b35" font-size="48" font-weight="bold" text-anchor="middle">1,234</text>
+  <text x="615" y="310" fill="#888" font-size="16" text-anchor="middle">Active Users</text>
+  <text x="965" y="270" fill="#ff6b35" font-size="48" font-weight="bold" text-anchor="middle">4.9/5</text>
+  <text x="965" y="310" fill="#888" font-size="16" text-anchor="middle">Rating</text>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <rect width="1200" height="800" fill="#0d0d0d"/>
+  <rect x="50" y="50" width="1100" height="700" fill="#1a1a1a" rx="20"/>
+  <rect x="70" y="70" width="200" height="40" fill="#ff6b35" rx="8"/>
+  <rect x="300" y="70" width="800" height="40" fill="#2d2d2d" rx="8"/>
+  <rect x="70" y="130" width="260" height="600" fill="#1a1a1a" rx="10"/>
+  <rect x="350" y="130" width="780" height="600" fill="#1a1a1a" rx="10"/>
+  <rect x="90" y="150" width="220" height="30" fill="#ff6b35" rx="5"/>
+  <rect x="90" y="200" width="220" height="40" fill="#2d2d2d" rx="5"/>
+  <rect x="90" y="260" width="220" height="40" fill="#2d2d2d" rx="5"/>
+  <rect x="90" y="320" width="220" height="40" fill="#2d2d2d" rx="5"/>
+  <rect x="370" y="150" width="740" height="200" fill="#2d2d2d" rx="10"/>
+  <rect x="370" y="380" width="350" height="330" fill="#2d2d2d" rx="10"/>
+  <rect x="760" y="380" width="350" height="330" fill="#2d2d2d" rx="10"/>
+  <text x="170" y="95" fill="white" font-size="18" font-weight="bold" text-anchor="middle">RuAlive Panel</text>
+</svg>

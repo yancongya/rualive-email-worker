@@ -1,0 +1,729 @@
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom/client';
+
+// Global GSAP declarations
+declare global {
+  interface Window {
+    gsap: any;
+    Observer: any;
+    Draggable: any;
+  }
+}
+
+// --- I18N DATA ---
+const TRANSLATIONS = {
+  zh: {
+    nav: { 
+      stats: "生存看板", 
+      features: "动画搭子", 
+      pain: "加班共鸣",
+      faq: "疑难杂症", 
+      showcase: "界面展示", 
+      start: "立即开始" 
+    },
+    hero: {
+      tag: "专为 AE 动画师打造",
+      title: "Ru",
+      titleAlive: "Alive",
+      subtitle: "你还Alive吗？",
+      desc: "希望你还在做着动画，但更重要的是活着。",
+      btnPrimary: "我还活着，去注册",
+      btnSecondary: "登录确认呼吸"
+    },
+    stats: {
+      title: "实时生存看板",
+      subtitle: "正在实时监测全网动画师存活体征",
+      items: [
+        { label: "累计搬砖时间", value: "99K+", unit: "小时" },
+        { label: "在线受难同胞", value: "1,234", unit: "位" },
+        { label: "虚假好评率", value: "4.9/5", unit: "分" },
+        { label: "预测生还率", value: "10.01%", unit: "🔥" }
+      ]
+    },
+    features: {
+      title: "你的动画",
+      titleAccent: "搭子",
+      desc: "关心体征，更懂摸鱼。",
+      items: [
+        { title: "生存扫描", desc: "实时监测你是否在线", benefit: "防石化", icon: "scan" },
+        { title: "搬砖计时", desc: "记录每个项目的运行时长", benefit: "精准级", icon: "timer" },
+        { title: "摸鱼统计", desc: "统计每个项目的信息", benefit: "最诚实", icon: "chart" },
+        { title: "工作汇报", desc: "每天自动提醒工作结果", benefit: "自动提醒", icon: "mail" },
+        { title: "最后的轻语", desc: "可以发送信息给紧急联络人", benefit: "紧急联络", icon: "heart" },
+        { title: "本地存储", desc: "除非你登录", benefit: "隐私满分", icon: "lock" }
+      ]
+    },
+    pain: {
+      title: "还在",
+      titleAccent: "K帧",
+      titleSuffix: "吗？",
+      items: [
+        { q: "加班快猝死了？", a: "RuAlive 提醒你喝水。" },
+        { q: "家人问死没死？", a: "让他们看你AE在动。" },
+        { q: "渲染无聊透顶？", a: "推送生存补给建议。" }
+      ]
+    },
+    faq: {
+      title: "疑难",
+      titleAccent: "杂症",
+      items: [
+        { q: "RuAlive 免费吗？", a: "完全免费。毕竟你穷。" },
+        { q: "隐私泄露吗？", a: "数据在本地，非常安全。" },
+        { q: "为何总问活着吗？", a: "三小时不动的视为飞升。" },
+        { q: "支持什么版本？", a: "能跑就行，放过旧版。" }
+      ]
+    },
+    showcase: {
+      title: "界面",
+      titleAccent: "展示",
+      desc: "部分扩展和用户页截图",
+      hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
+      items: [
+        { title: "AE 插件面板", img: "https://picsum.photos/1200/800?random=1" },
+        { title: "生存看板详情", img: "https://picsum.photos/1200/800?random=2" },
+        { title: "受难同胞地图", img: "https://picsum.photos/1200/800?random=3" },
+        { title: "遗言设置页面", img: "https://picsum.photos/1200/800?random=4" }
+      ]
+    },
+    cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
+    footer: { copy: "活着，为了做动画。", rights: "© 2026 RuAlive@烟囱鸭.", data: "本地存储", survival: "99% 生还预测" },
+    slogans: [
+      "还做动画吗？", "你还Alive吗？", "歇会儿吧", "K帧是死的", "动画师命也是命", "今天搬砖了吗？", "活着真好", "摸鱼是策略", "记得呼吸", "还在K帧？", "活着才有输出"
+    ]
+  },
+  en: {
+    nav: { 
+      stats: "Dashboard", 
+      features: "Buddy", 
+      pain: "Pain",
+      faq: "FAQ", 
+      showcase: "Showcase", 
+      start: "Start" 
+    },
+    hero: {
+      tag: "Built for AE Animators",
+      title: "Ru",
+      titleAlive: "Alive",
+      subtitle: "Are you still Alive?",
+      desc: "Hope you're still animating, but more importantly, you're alive.",
+      btnPrimary: "I'm Alive, Register",
+      btnSecondary: "Login to Confirm Pulse"
+    },
+    stats: {
+      title: "VITAL DASHBOARD",
+      subtitle: "Monitoring real-time animator vitals worldwide",
+      items: [
+        { label: "Working Time", value: "99K+", unit: "Hrs" },
+        { label: "Sufferers", value: "1,234", unit: "Users" },
+        { label: "Fake Ratings", value: "4.9/5", unit: "Pts" },
+        { label: "Survival Odds", value: "10%", unit: "🔥" }
+      ]
+    },
+    features: {
+      title: "Animation",
+      titleAccent: "Buddy",
+      desc: "Monitor vitals.",
+      items: [
+        { title: "Live Scan", desc: "Real-time presence monitoring", benefit: "Anti-petrify", icon: "scan" },
+        { title: "Project Timer", desc: "Records project active time", benefit: "Precision", icon: "timer" },
+        { title: "Stat Hub", desc: "Aggregates project info", benefit: "Insights", icon: "chart" },
+        { title: "Reports", desc: "Daily automatic work results", benefit: "Auto-notify", icon: "mail" },
+        { title: "Final Whisper", desc: "Message to emergency contacts", benefit: "Emergency", icon: "heart" },
+        { title: "Local Store", desc: "Local only unless logged in", benefit: "Privacy", icon: "lock" }
+      ]
+    },
+    pain: {
+      title: "Still",
+      titleAccent: "K-framing",
+      titleSuffix: "?",
+      items: [
+        { q: "Half-dead at midnight?", a: "RuAlive reminds you to breathe." },
+        { q: "Family pulse checks?", a: "Show your AE is moving." },
+        { q: "Boring long renders?", a: "Get jokes nightly." }
+      ]
+    },
+    faq: {
+      title: "The",
+      titleAccent: "Symptoms",
+      items: [
+        { q: "Is it free?", a: "Totally. You're broke." },
+        { q: "Privacy leak?", a: "Local data only." },
+        { q: "Why keep asking?", a: "3 hrs no move: ascended?" },
+        { q: "AE Version?", a: "If it runs, it works." }
+      ]
+    },
+    showcase: {
+      title: "UI",
+      titleAccent: "Showcase",
+      desc: "UI screenshots & dashboard previews",
+      hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
+      items: [
+        { title: "AE Extension Panel", img: "https://picsum.photos/1200/800?random=1" },
+        { title: "Vital Dashboard", img: "https://picsum.photos/1200/800?random=2" },
+        { title: "Global Map", img: "https://picsum.photos/1200/800?random=3" },
+        { title: "Setup Page", img: "https://picsum.photos/1200/800?random=4" }
+      ]
+    },
+    cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
+    footer: { copy: "Live to animate.", rights: "© 2026 RuAlive@ChimneyDuck.", data: "Local", survival: "99% Odds" },
+    slogans: [
+      "Still animating?", "RuAlive?", "Rest a bit", "Frames are dead", "Life matters", "Did you grind?", "Good to live", "Slack is strat", "Breathe now", "K-framing?", "Output needs life"
+    ]
+  }
+};
+
+// --- ICON COMPONENTS ---
+
+const IconScan = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+    <path className="animate-dash" strokeDasharray="100" strokeDashoffset="100" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
+    <line x1="4" y1="12" x2="20" y2="12" className="animate-dash-fast" strokeDasharray="20" />
+  </svg>
+);
+
+const IconTimer = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <path className="animate-spin-slow origin-center" d="M12 6v6l4 2" strokeLinecap="round" />
+  </svg>
+);
+
+const IconChart = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="10" width="4" height="11" className="animate-pulse-y" />
+    <rect x="10" y="5" width="4" height="16" className="animate-pulse-y [animation-delay:0.5s]" />
+    <rect x="17" y="13" width="4" height="8" className="animate-pulse-y [animation-delay:1s]" />
+  </svg>
+);
+
+const IconMail = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <path className="animate-mail-open" strokeDasharray="30" strokeDashoffset="30" d="M22 6l-10 7L2 6" />
+  </svg>
+);
+
+const IconHeart = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary animate-pulse" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+  </svg>
+);
+
+const IconLock = () => (
+  <svg viewBox="0 0 24 24" className="w-8 h-8 sm:w-12 sm:h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path className="animate-swing origin-top" d="M7 11V7a5 5 0 0110 0v4" />
+  </svg>
+);
+
+const IconComponent = ({ type }: { type: string }) => {
+  switch (type) {
+    case 'scan': return <IconScan />;
+    case 'timer': return <IconTimer />;
+    case 'chart': return <IconChart />;
+    case 'mail': return <IconMail />;
+    case 'heart': return <IconHeart />;
+    case 'lock': return <IconLock />;
+    default: return null;
+  }
+};
+
+// --- DYNAMIC BACKGROUND LINE ---
+
+const BackgroundLine = ({ currentSection, view }: { currentSection: number, view: string }) => {
+  const pathRef = useRef<SVGPathElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const paths = [
+    // 0: Hero - Heartbeat
+    "M 0,400 C 100,400 120,400 140,400 C 150,400 155,200 160,200 C 170,200 180,600 190,600 C 200,600 205,400 215,400 C 300,400 320,400 340,400 C 350,400 355,50 360,50 C 375,50 385,750 400,750 C 415,750 425,400 440,400 L 800,400",
+    // 1: Stats - Stable Pulse
+    "M 0,400 C 100,400 120,400 140,400 C 200,400 250,400 300,400 C 310,400 315,350 320,350 C 330,350 340,450 350,450 C 365,450 370,400 380,400 L 800,400",
+    // 2: Features (Buddy) - Infinity Loop
+    "M 400,400 C 150,150 150,650 400,400 C 650,150 650,650 400,400",
+    // 3: Pain - Motion Curve
+    "M 100,700 C 100,700 400,700 400,400 C 400,100 700,100 700,100",
+    // 4: FAQ - Question Mark
+    "M 350,300 C 350,150 550,150 550,300 C 550,450 450,450 450,550 C 450,600 450,650 450,700",
+    // 5: Showcase - Circle
+    "M 400,100 C 600,100 700,200 700,400 C 700,600 600,700 400,700 C 200,700 100,600 100,400 C 100,200 200,100 399.9,100",
+    // 6: CTA - Spiral Vortex
+    "M 400,400 C 450,350 350,300 300,400 C 220,530 550,600 650,400 C 780,150 100,50 50,450"
+  ];
+
+  const authPath = "M 0,400 C 100,400 120,200 160,200 C 250,200 350,600 450,600 C 550,600 700,400 800,400";
+
+  const transforms = [
+    { x: '0vw', y: '0vh', scale: 1.1, rotate: 0, opacity: 0.25 },    // Hero
+    { x: '-5vw', y: '5vh', scale: 0.9, rotate: 0, opacity: 0.25 },   // Stats
+    { x: '5vw', y: '-5vh', scale: 1.6, rotate: 0, opacity: 0.25 },   // Buddy
+    { x: '-10vw', y: '10vh', scale: 1.8, rotate: 10, opacity: 0.25 },// Pain
+    { x: '10vw', y: '0vh', scale: 0.9, rotate: 0, opacity: 0.25 },   // FAQ
+    { x: '0vw', y: '0vh', scale: 1.5, rotate: 90, opacity: 0.55 },   // Showcase
+    { x: '-2vw', y: '5vh', scale: 2.5, rotate: 180, opacity: 0.25 }  // CTA
+  ];
+
+  useEffect(() => {
+    if (pathRef.current && svgRef.current && window.gsap) {
+      if (view === 'auth') {
+        window.gsap.to(pathRef.current, { attr: { d: authPath }, duration: 1.5, ease: "power3.inOut" });
+        window.gsap.to(svgRef.current, { x: '5vw', y: '-5vh', scale: 1.2, rotate: 15, opacity: 0.15, duration: 1.5, ease: "power3.inOut" });
+      } else {
+        const config = transforms[currentSection] || transforms[0];
+        const tl = window.gsap.timeline();
+        tl.to(svgRef.current, { scale: config.scale * 1.3, opacity: 0.1, duration: 0.5, ease: "power2.in" })
+          .to(pathRef.current, { attr: { d: paths[currentSection] || paths[0] }, duration: 1.1, ease: "power3.inOut" }, "-=0.3")
+          .to(svgRef.current, { x: config.x, y: config.y, scale: config.scale, rotation: config.rotate, opacity: config.opacity, duration: 1.2, ease: "elastic.out(1, 0.85)" }, "-=0.4");
+      }
+    }
+  }, [currentSection, view]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-dark">
+      <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }}></div>
+      <div className="absolute inset-0 flex items-center justify-center overflow-visible">
+        <svg ref={svgRef} viewBox="0 0 800 800" className="w-[130vw] h-[130vw] sm:w-[100vw] sm:h-[100vw] text-primary" style={{ transformOrigin: 'center center', opacity: 0.25 }}>
+          <path ref={pathRef} fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="16 16" strokeLinecap="round" className="animate-marching-ants" />
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+// --- AUTH COMPONENT ---
+
+const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void }) => {
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (window.gsap && formRef.current) {
+      window.gsap.fromTo(formRef.current, { opacity: 0, y: 30, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power4.out" });
+    }
+  }, [isLogin]);
+
+  const toggleMode = () => {
+    if (window.gsap && formRef.current) {
+      window.gsap.to(formRef.current, { opacity: 0, x: isLogin ? -20 : 20, duration: 0.3, ease: "power2.in", onComplete: () => {
+        setIsLogin(!isLogin);
+        window.gsap.fromTo(formRef.current, { opacity: 0, x: isLogin ? 20 : -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" });
+      }});
+    } else {
+      setIsLogin(!isLogin);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative px-6 z-20 overflow-y-auto no-scrollbar py-20 sm:py-0">
+      <div ref={formRef} className="glass-card rounded-[2rem] p-8 sm:p-12 w-full max-w-md shadow-2xl">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter mb-2">
+            {isLogin ? "欢迎回来" : "开始存活"}<span className="text-primary">.</span>
+          </h2>
+          <p className="text-white/40 text-xs font-bold italic uppercase tracking-wider">
+            {isLogin ? "继续你的动画受难之旅" : "注册以开启生存状态监测"}
+          </p>
+        </div>
+        <form className="space-y-5" onSubmit={e => e.preventDefault()}>
+          {!isLogin && (
+            <>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">用户名 Username</label>
+                <input type="text" placeholder="K帧高手" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邀请码 Invitation Code</label>
+                <input type="text" placeholder="ALIVE-XXXX" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+              </div>
+            </>
+          )}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邮箱 Email</label>
+            <input type="email" placeholder="animator@rualive.com" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between items-end mb-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">密码 Password</label>
+              {isLogin && <button className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary">忘记密码？</button>}
+            </div>
+            <input type="password" placeholder="••••••••" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" />
+          </div>
+          <button className="w-full bg-primary hover:bg-primary-light text-white h-14 rounded-2xl font-black italic uppercase tracking-wider text-sm shadow-xl shadow-primary/20 transition-all active:scale-95 mt-4">
+            {isLogin ? "登录 LOGIN" : "创建账户 CREATE ACCOUNT"}
+          </button>
+        </form>
+        <div className="mt-8 text-center">
+          <p className="text-white/30 text-[11px] font-bold italic">
+            {isLogin ? "还没有账号？" : "已经有账号了？"}
+            <button onClick={toggleMode} className="ml-2 text-primary hover:text-primary-light font-black uppercase underline decoration-primary/20">{isLogin ? "立即注册 REGISTER" : "立即登录 LOGIN"}</button>
+          </p>
+          <button onClick={onBack} className="mt-6 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">← 返回首页 BACK TO HOME</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN APP ---
+
+const IconX = () => (
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
+const IconMenu = () => (
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12"></line>
+    <line x1="3" y1="6" x2="21" y2="6"></line>
+    <line x1="3" y1="18" x2="21" y2="18"></line>
+  </svg>
+);
+
+interface Popup { id: number; x: number; y: number; text: string; }
+
+const App = () => {
+  const [view, setView] = useState<'landing' | 'auth'>('landing');
+  const [isLogin, setIsLogin] = useState(true);
+  const [lang, setLang] = useState<'zh' | 'en'>('zh');
+  const t = TRANSLATIONS[lang];
+  const [popups, setPopups] = useState<Popup[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentSection, setCurrentSection] = useState(0);
+  const currentSectionRef = useRef(0);
+  const popupId = useRef(0);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const isAnimating = useRef(false);
+  const isSliderAnimating = useRef(false);
+  const sectionCount = 7;
+
+  const sliderDraggable = useRef<any>(null);
+  const sectionObserver = useRef<any>(null);
+  const currentSlideIndexRef = useRef(0);
+
+  const handleClick = useCallback((e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, nav, summary, .showcase-slide, input')) return;
+    if (Math.random() < 0.3) {
+      const id = ++popupId.current;
+      setPopups(prev => [...prev, { id, x: e.clientX, y: e.clientY, text: t.slogans[Math.floor(Math.random() * t.slogans.length)] }]);
+      setTimeout(() => setPopups(prev => prev.filter(p => p.id !== id)), 1500);
+    }
+  }, [t.slogans]);
+
+  useEffect(() => {
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [handleClick]);
+
+  const goToSection = useCallback((index: number) => {
+    if (isAnimating.current || index < 0 || index >= sectionCount) return;
+    isAnimating.current = true;
+    currentSectionRef.current = index;
+    setCurrentSection(index);
+    if (window.gsap && wrapperRef.current) {
+      window.gsap.to(wrapperRef.current, { y: -index * 100 + "%", duration: 1.2, ease: "power4.inOut", onComplete: () => { isAnimating.current = false; } });
+    }
+  }, []);
+
+  const getSliderMetrics = useCallback(() => {
+    const slides = document.querySelectorAll(".showcase-slide");
+    const sliderContainer = document.querySelector(".showcase-slider-container");
+    if (!slides.length || !sliderContainer) return null;
+    const slideWidth = slides[0].clientWidth;
+    const gap = parseInt(window.getComputedStyle(slides[0]).marginRight) || 0;
+    const step = slideWidth + gap;
+    const centerOffset = (sliderContainer.clientWidth / 2) - (slideWidth / 2);
+    return { step, centerOffset, count: slides.length };
+  }, []);
+
+  const moveSlideToIndex = useCallback((index: number) => {
+    if (isSliderAnimating.current) return;
+    const metrics = getSliderMetrics();
+    const draggable = sliderDraggable.current;
+    if (!metrics || !draggable) return;
+    const clampedIndex = Math.max(0, Math.min(metrics.count - 1, index));
+    if (clampedIndex === currentSlideIndexRef.current) return;
+    isSliderAnimating.current = true;
+    currentSlideIndexRef.current = clampedIndex;
+    window.gsap.to(draggable.target, { x: -clampedIndex * metrics.step + metrics.centerOffset, duration: 1.0, ease: "power3.out", onUpdate: () => draggable.update(), onComplete: () => { setTimeout(() => { isSliderAnimating.current = false; }, 150); } });
+  }, [getSliderMetrics]);
+
+  useEffect(() => {
+    if (!window.gsap || !window.Observer || !window.Draggable) return;
+    try { window.gsap.registerPlugin(window.Observer, window.Draggable); } catch (e) {}
+
+    const obs = window.Observer.create({
+      target: window, type: "wheel,touch,pointer", wheelSpeed: -1,
+      onDown: (self) => { 
+        if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
+        if (!mobileMenuOpen) {
+          const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
+          if (currentSectionRef.current === 5 && currentSlideIndexRef.current > 0 && !isHeader) moveSlideToIndex(currentSlideIndexRef.current - 1);
+          else goToSection(currentSectionRef.current - 1);
+        }
+      },
+      onUp: (self) => { 
+        if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
+        if (!mobileMenuOpen) {
+          const isHeader = (self.event.target as HTMLElement).closest('#showcase-header');
+          if (currentSectionRef.current === 5 && currentSlideIndexRef.current < t.showcase.items.length - 1 && !isHeader) moveSlideToIndex(currentSlideIndexRef.current + 1);
+          else goToSection(currentSectionRef.current + 1);
+        }
+      },
+      tolerance: 50, preventDefault: true
+    });
+    sectionObserver.current = obs;
+    
+    if (view === 'auth') obs.disable(); else obs.enable();
+
+    const slider = document.querySelector(".showcase-slider");
+    const container = document.querySelector(".showcase-slider-container");
+    if (slider && container && view === 'landing') {
+        const metrics = getSliderMetrics();
+        if (metrics) {
+            const draggableInstance = window.Draggable.create(slider, {
+                type: "x", edgeResistance: 0.85, bounds: { minX: -(metrics.step * (metrics.count - 1)) + metrics.centerOffset, maxX: metrics.centerOffset }, inertia: true,
+                onDragStart: () => obs.disable(),
+                onDragEnd: function(this: any) { obs.enable(); const index = Math.round((this.x - metrics.centerOffset) / -metrics.step); currentSlideIndexRef.current = Math.max(0, Math.min(metrics.count - 1, index)); },
+                snap: (value: number) => { const index = Math.round((value - metrics.centerOffset) / -metrics.step); return -index * metrics.step + metrics.centerOffset; }
+            })[0];
+            sliderDraggable.current = draggableInstance;
+            window.gsap.set(slider, { x: metrics.centerOffset });
+            draggableInstance.update();
+        }
+    }
+
+    return () => { obs.kill(); if (sliderDraggable.current) sliderDraggable.current.kill(); };
+  }, [goToSection, mobileMenuOpen, lang, moveSlideToIndex, getSliderMetrics, t.showcase.items.length, view]);
+
+  const switchView = (target: 'landing' | 'auth') => {
+    if (window.gsap) {
+      window.gsap.to(document.body, { opacity: 0, duration: 0.3, onComplete: () => {
+        setView(target);
+        if (target === 'landing') {
+          // Explicitly reset section state to landing start
+          currentSectionRef.current = 0;
+          setCurrentSection(0);
+          if (wrapperRef.current) {
+            window.gsap.set(wrapperRef.current, { y: "0%" });
+          }
+          // Reset observer manually just in case
+          if (sectionObserver.current) {
+            sectionObserver.current.enable();
+          }
+        } else {
+          // Disable observer when in auth
+          if (sectionObserver.current) {
+            sectionObserver.current.disable();
+          }
+        }
+        window.gsap.to(document.body, { opacity: 1, duration: 0.5 });
+      }});
+    } else {
+      setView(target);
+      if (target === 'landing') {
+        currentSectionRef.current = 0;
+        setCurrentSection(0);
+      }
+    }
+  };
+
+  return (
+    <div className="app-container overflow-hidden h-screen bg-dark text-white font-sans">
+      <BackgroundLine currentSection={currentSection} view={view} />
+
+      {/* Popups */}
+      {popups.map(p => (
+        <div key={p.id} style={{ left: p.x, top: p.y }} className="fixed pointer-events-none -translate-x-1/2 z-[100] text-primary font-black italic text-base sm:text-2xl tracking-tighter select-none animate-float-up-fade mix-blend-screen">{p.text}</div>
+      ))}
+
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-[60] bg-dark/60 backdrop-blur-md border-b border-white/5 h-14 flex items-center">
+        <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => switchView('landing')}>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center rotate-3 shadow-lg shadow-primary/30 group-hover:rotate-0 transition-transform">
+               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <span className="text-xl font-black tracking-tighter uppercase italic">RuAlive</span>
+          </div>
+          {view === 'landing' ? (
+            <div className="hidden lg:flex items-center gap-6 text-[9px] font-black uppercase tracking-widest opacity-60">
+              <button onClick={() => goToSection(1)} className={`hover:text-primary transition-colors ${currentSection === 1 ? 'text-primary opacity-100' : ''}`}>{t.nav.stats}</button>
+              <button onClick={() => goToSection(2)} className={`hover:text-primary transition-colors ${currentSection === 2 ? 'text-primary opacity-100' : ''}`}>{t.nav.features}</button>
+              <button onClick={() => goToSection(3)} className={`hover:text-primary transition-colors ${currentSection === 3 ? 'text-primary opacity-100' : ''}`}>{t.nav.pain}</button>
+              <button onClick={() => goToSection(4)} className={`hover:text-primary transition-colors ${currentSection === 4 ? 'text-primary opacity-100' : ''}`}>{t.nav.faq}</button>
+              <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t.nav.showcase}</button>
+              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
+            </div>
+          ) : (
+            <button onClick={() => switchView('landing')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
+          )}
+          <div className="flex items-center gap-3">
+            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? switchView('auth') : switchView('landing')}>{view === 'landing' ? t.nav.start : 'EXIT'}</button>
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-1 opacity-80">{mobileMenuOpen ? <IconX /> : <IconMenu />}</button>
+          </div>
+        </div>
+        {mobileMenuOpen && (
+          <div className={`lg:hidden absolute top-14 left-0 w-full bg-dark/95 backdrop-blur-xl border-b border-white/5 px-6 py-8 flex flex-col gap-6 transition-all duration-300`}>
+            {view === 'landing' ? (
+              <>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(1); }} className="text-left text-2xl font-black italic">{t.nav.stats}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(2); }} className="text-left text-2xl font-black italic">{t.nav.features}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(3); }} className="text-left text-2xl font-black italic">{t.nav.pain}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(4); }} className="text-left text-2xl font-black italic">{t.nav.faq}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(5); }} className="text-left text-2xl font-black italic">{t.nav.showcase}</button>
+              </>
+            ) : (
+              <button onClick={() => { setMobileMenuOpen(false); switchView('landing'); }} className="text-left text-2xl font-black italic">返回首页 HOME</button>
+            )}
+            <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="text-left text-lg font-bold opacity-60">LANGUAGE: {lang === 'zh' ? 'EN' : 'ZH'}</button>
+          </div>
+        )}
+      </nav>
+
+      {view === 'landing' ? (
+        <div className="sections-wrapper h-full flex flex-col will-change-transform relative z-10" ref={wrapperRef}>
+          {/* SECTION 0: HERO */}
+          <section id="hero" className="h-screen flex flex-col items-center justify-center px-6 shrink-0 bg-transparent">
+            <div className="container mx-auto text-center mt-12 sm:mt-0 cursor-pointer" onClick={() => switchView('auth')}>
+              <div className="inline-block px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-[10px] font-black uppercase tracking-widest mb-6 animate-pulse">{t.hero.tag}</div>
+              <h1 className="text-5xl sm:text-8xl md:text-[9rem] font-black leading-none tracking-tighter mb-4 italic uppercase whitespace-nowrap overflow-visible">
+                {t.hero.title}<span className="text-primary inline-block animate-breathing">{t.hero.titleAlive}</span><span className="text-primary">?</span>
+              </h1>
+              <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t.hero.subtitle}</p>
+              <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t.hero.desc}</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(false); switchView('auth'); }}>{t.hero.btnPrimary}</button>
+                <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(true); switchView('auth'); }}>{t.hero.btnSecondary}</button>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 1: STATS */}
+          <section className="h-screen flex flex-col items-center justify-center bg-transparent px-6 shrink-0">
+            <div className="container mx-auto max-w-5xl text-center mb-8 sm:mb-16">
+              <h2 className="text-4xl sm:text-7xl font-black italic uppercase mb-2 tracking-tighter leading-tight">{t.stats.title}</h2>
+              <p className="text-white/40 text-[10px] sm:text-lg font-bold italic uppercase tracking-widest">{t.stats.subtitle}</p>
+            </div>
+            <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
+              {t.stats.items.map((s, i) => (
+                <div key={i} className="text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px]">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-3 py-4 overflow-visible h-auto flex items-center justify-center">
+                    <span className="block">{s.value}</span>
+                  </div>
+                  <div className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 italic leading-tight">{s.label} <span className="text-primary/60">{s.unit}</span></div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* SECTION 2: FEATURES */}
+          <section id="features" className="h-screen flex flex-col items-center justify-center px-4 shrink-0 overflow-hidden bg-transparent">
+            <div className="container mx-auto max-w-5xl h-full flex flex-col pt-20 pb-10">
+              <div className="mb-6 text-center lg:text-left">
+                <h2 className="text-4xl sm:text-6xl font-black italic uppercase leading-none">{t.features.title}<span className="text-primary">{t.features.titleAccent}</span></h2>
+                <p className="text-white/40 text-xs sm:text-base font-bold italic">{t.features.desc}</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 flex-grow content-start overflow-y-auto sm:overflow-visible pr-1 sm:pr-0">
+                {t.features.items.map((f, i) => (
+                  <div key={i} className="group p-5 sm:p-8 rounded-3xl glass-card hover:border-primary/50 transition-all flex flex-col justify-between relative min-h-[160px] sm:min-h-[220px]">
+                    <div className="mb-4"><IconComponent type={f.icon} /></div>
+                    <h3 className="text-[12px] sm:text-xl font-black italic uppercase leading-tight truncate">{f.title}</h3>
+                    <p className="text-white/30 text-[9px] sm:text-sm font-medium italic leading-relaxed line-clamp-2">{f.desc}</p>
+                    <div className="mt-4 text-[7px] sm:text-[10px] font-black uppercase tracking-wider text-primary-light bg-primary/10 px-2 py-1 rounded-full inline-block self-start border border-primary/20">{f.benefit}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 3: PAIN */}
+          <section className="h-screen flex flex-col items-center justify-center px-6 bg-transparent shrink-0">
+            <div className="container mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 md:gap-20">
+              <div className="text-center lg:text-left">
+                <h2 className="text-4xl sm:text-6xl font-black mb-8 italic uppercase leading-none tracking-tighter">{t.pain.title}<span className="text-primary">{t.pain.titleAccent}</span>{t.pain.titleSuffix}</h2>
+                <div className="space-y-6 sm:space-y-10 max-w-md mx-auto lg:mx-0">
+                  {t.pain.items.map((item, i) => (
+                    <div key={i} className="flex gap-4 group text-left p-2 hover:bg-white/[0.03] rounded-2xl transition-all">
+                      <div className="text-primary font-black text-3xl sm:text-5xl italic opacity-20 group-hover:opacity-100 transition-opacity leading-none shrink-0">0{i+1}</div>
+                      <div className="flex flex-col gap-1">
+                        <h4 className="text-[14px] sm:text-xl font-black italic leading-tight group-hover:text-primary transition-colors">{item.q}</h4>
+                        <p className="text-white/40 text-[11px] sm:text-base font-bold italic leading-snug">{item.a}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 4: FAQ */}
+          <section id="faq" className="h-screen flex flex-col items-center justify-center px-4 shrink-0 bg-transparent">
+            <div className="container mx-auto max-w-3xl h-full flex flex-col pt-20 pb-10">
+              <h2 className="text-4xl sm:text-7xl font-black mb-8 italic text-center uppercase tracking-tighter shrink-0">{t.faq.title}<span className="text-primary">{t.faq.titleAccent}</span></h2>
+              <div className="flex flex-col gap-4 flex-grow overflow-y-auto px-2 pb-10 no-scrollbar">
+                {t.faq.items.map((f, i) => (
+                  <details key={i} className="group glass-card rounded-2xl overflow-hidden border border-white/5 transition-all">
+                    <summary className="flex items-center justify-between p-5 sm:p-8 cursor-pointer font-black italic text-[13px] sm:text-xl list-none select-none">{f.q}</summary>
+                    <div className="px-8 pb-8 text-white/30 text-[11px] sm:text-base italic font-bold leading-relaxed border-t border-white/5 pt-6 bg-white/[0.01]">{f.a}</div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 5: SHOWCASE */}
+          <section id="showcase" className="h-screen flex flex-col items-center justify-center shrink-0 bg-transparent relative overflow-hidden">
+              <div className="container mx-auto px-6 h-full flex flex-col pt-20">
+                  <div id="showcase-header" className="text-center mb-6 cursor-ns-resize group select-none relative z-20">
+                      <h2 className="text-4xl sm:text-7xl font-black italic uppercase leading-none tracking-tighter mb-2 group-hover:text-primary transition-colors">{t.showcase.title}<span className="text-primary">{t.showcase.titleAccent}</span></h2>
+                      <p className="text-white/40 text-xs sm:text-base font-bold italic group-hover:text-white/60 transition-colors">{t.showcase.desc}</p>
+                  </div>
+                  <div className="showcase-slider-container flex-grow relative overflow-visible">
+                      <div className="showcase-slider flex items-center h-full will-change-transform">
+                          {t.showcase.items.map((item, i) => (
+                              <div key={i} className="showcase-slide">
+                                  <div className="glass-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group shadow-2xl transition-all duration-500 hover:scale-[1.02]">
+                                      <div className="aspect-[16/10] sm:aspect-[4/3] bg-white/5 relative overflow-hidden">
+                                          <img src={item.img} alt={item.title} className="w-full h-full object-cover pointer-events-none group-hover:scale-105 transition-transform duration-1000" />
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 sm:p-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                              <h4 className="text-lg sm:text-3xl font-black italic uppercase text-white tracking-tighter">{item.title}</h4>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <div className="py-6 text-center opacity-40 text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em] italic animate-pulse shrink-0">{t.showcase.hint}</div>
+              </div>
+          </section>
+
+          {/* SECTION 6: CTA + FOOTER */}
+          <section className="h-screen flex flex-col items-center justify-center relative bg-primary/90 px-6 overflow-hidden shrink-0">
+            <div className="absolute inset-0 bg-black opacity-10 pattern-dots pointer-events-none"></div>
+            <div className="container mx-auto text-center relative z-10 flex flex-col h-full pt-20">
+              <div className="flex-grow flex flex-col justify-center items-center">
+                <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t.cta.title}<span className="text-black">?</span></h2>
+                <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t.cta.subtitle}</p>
+                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { setIsLogin(false); switchView('auth'); }}>{t.cta.btn}</button>
+              </div>
+              <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <div>{t.footer.rights}</div>
+                  <div className="flex gap-6 items-center"><span>{t.footer.copy}</span><a href="#" className="underline decoration-black/20 hover:text-black transition-colors">GITHUB</a></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : (
+        <AuthView isLogin={isLogin} setIsLogin={setIsLogin} onBack={() => switchView('landing')} />
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')!).render(<App />);
