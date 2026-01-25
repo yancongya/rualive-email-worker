@@ -392,7 +392,7 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
 
 // --- AUTH COMPONENT ---
 
-const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void }) => {
+const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boolean, setIsLogin: (v: boolean) => void, onBack: () => void, goToSection: (index: number) => void }) => {
   const formRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -461,7 +461,7 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
         if (data.token) {
           localStorage.setItem('rualive_token', data.token);
         }
-        
+
         // 保存用户信息
         if (data.user) {
           localStorage.setItem('rualive_user', JSON.stringify(data.user));
@@ -469,9 +469,12 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
 
         // 显示成功消息
         alert(isLogin ? '登录成功！' : '注册成功！');
-        
-        // 返回首页
+
+        // 返回首页并跳转到生存看板
         onBack();
+        setTimeout(() => {
+          goToSection(1);
+        }, 100);
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
@@ -501,39 +504,42 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
           </div>
         )}
 
-        <form className="space-y-5" onSubmit={handleAuth}>
+        <form className="space-y-5" onSubmit={handleAuth} autoComplete="off">
           {!isLogin && (
             <>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">用户名 Username</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="username"
-                  placeholder="K帧高手" 
-                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+                  placeholder="K帧高手"
+                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
                   disabled={isLoading}
+                  autoComplete="off"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邀请码 Invitation Code</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="invitationCode"
-                  placeholder="ALIVE-XXXX" 
-                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+                  placeholder="ALIVE-XXXX"
+                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
                   disabled={isLoading}
+                  autoComplete="off"
                 />
               </div>
             </>
           )}
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">邮箱 Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               name="email"
-              placeholder="animator@rualive.com" 
-              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+              placeholder="animator@rualive.com"
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
               disabled={isLoading}
+              autoComplete="off"
             />
           </div>
           <div className="space-y-1">
@@ -541,12 +547,13 @@ const AuthView = ({ isLogin, setIsLogin, onBack }: { isLogin: boolean, setIsLogi
               <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">密码 Password</label>
               {isLogin && <button type="button" className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary" disabled={isLoading}>忘记密码？</button>}
             </div>
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="password"
-              placeholder="••••••••" 
-              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all" 
+              placeholder="••••••••"
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
               disabled={isLoading}
+              autoComplete="off"
             />
           </div>
           <button 
@@ -982,7 +989,7 @@ const moveSlideToIndex = useCallback((index: number) => {
           </section>
         </div>
       ) : (
-        <AuthView isLogin={isLogin} setIsLogin={setIsLogin} onBack={() => switchView('landing')} />
+        <AuthView isLogin={isLogin} setIsLogin={setIsLogin} onBack={() => switchView('landing')} goToSection={goToSection} />
       )}
     </div>
   );
