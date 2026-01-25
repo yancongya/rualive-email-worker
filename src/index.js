@@ -360,6 +360,25 @@ export default {
       });
     }
 
+    if (path === '/user') {
+      // 返回根路径的 index.html，前端会自动切换到用户视图
+      if (ASSETS) {
+        try {
+          const rootUrl = new URL('/', request.url);
+          const assetResponse = await ASSETS.fetch(new Request(rootUrl, { method: 'GET' }));
+          if (assetResponse && assetResponse.status !== 404) {
+            return assetResponse;
+          }
+        } catch (error) {
+          console.error('Failed to fetch index.html from Assets:', error);
+        }
+      }
+      const html = await getLandingHtml();
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
+      });
+    }
+
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
       // 直接返回管理仪表板HTML，让前端自己处理验证
       const adminHtml = `<!DOCTYPE html>
