@@ -675,13 +675,15 @@ const App = () => {
   useEffect(() => {
     const path = window.location.pathname;
     const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
-    if (redirectToStats === 'true' && path === '/') {
+    console.log('[App] Check redirect - path:', path, 'redirectToStats:', redirectToStats, 'view:', view);
+    if (redirectToStats === 'true' && path === '/' && view === 'landing') {
       localStorage.removeItem('rualive_redirect_to_stats');
+      console.log('[App] Redirecting to stats section');
       setTimeout(() => {
         goToSection(1);
       }, 500);
     }
-  }, [goToSection]);
+  }, [goToSection, view]);
 
   // 监听 URL 变化
   useEffect(() => {
