@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => {
       root: '.',
       publicDir: false, // 禁用默认的 public 目录
       build: {
-        outDir: './',
-        emptyOutDir: false,
+        outDir: 'dist',
+        emptyOutDir: true,
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
