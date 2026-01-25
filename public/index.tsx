@@ -77,18 +77,17 @@ const TRANSLATIONS = {
       ]
     },
     showcase: {
-      title: "界面",
-      titleAccent: "展示",
-      desc: "部分扩展和用户页截图",
-      hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
-      items: [
-        { title: "AE 插件面板", img: "/assets/showcase/01-panel.png" },
-        { title: "生存看板详情", img: "/assets/showcase/02-dashboard.png" },
-        { title: "受难同胞地图", img: "/assets/showcase/03-map.png" },
-        { title: "遗言设置页面", img: "/assets/showcase/04-setup.png" }
-      ]
-    },
-    cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
+        title: "界面",
+        titleAccent: "展示",
+        desc: "部分扩展和用户页截图",
+        hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
+        items: [
+          { title: "AE 插件面板", img: "/assets/showcase/01-panel.svg" },
+          { title: "生存看板详情", img: "/assets/showcase/02-dashboard.svg" },
+          { title: "受难同胞地图", img: "/assets/showcase/03-map.svg" },
+          { title: "遗言设置页面", img: "/assets/showcase/04-setup.svg" }
+        ]
+      },    cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
     footer: { copy: "活着，为了做动画。", rights: "© 2026 RuAlive@烟囱鸭.", data: "本地存储", survival: "99% 生还预测" },
     slogans: [
       "还做动画吗？", "你还Alive吗？", "歇会儿吧", "K帧是死的", "动画师命也是命", "今天搬砖了吗？", "活着真好", "摸鱼是策略", "记得呼吸", "还在K帧？", "活着才有输出"
@@ -156,18 +155,17 @@ const TRANSLATIONS = {
       ]
     },
     showcase: {
-      title: "UI",
-      titleAccent: "Showcase",
-      desc: "UI screenshots & dashboard previews",
-      hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
-      items: [
-        { title: "AE Extension Panel", img: "/assets/showcase/01-panel.png" },
-        { title: "Vital Dashboard", img: "/assets/showcase/02-dashboard.png" },
-        { title: "Global Map", img: "/assets/showcase/03-map.png" },
-        { title: "Setup Page", img: "/assets/showcase/04-setup.png" }
-      ]
-    },
-    cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
+        title: "UI",
+        titleAccent: "Showcase",
+        desc: "UI screenshots & dashboard previews",
+        hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
+        items: [
+          { title: "AE Extension Panel", img: "/assets/showcase/01-panel.svg" },
+          { title: "Vital Dashboard", img: "/assets/showcase/02-dashboard.svg" },
+          { title: "Global Map", img: "/assets/showcase/03-map.svg" },
+          { title: "Setup Page", img: "/assets/showcase/04-setup.svg" }
+        ]
+      },    cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
     footer: { copy: "Live to animate.", rights: "© 2026 RuAlive@ChimneyDuck.", data: "Local", survival: "99% Odds" },
     slogans: [
       "Still animating?", "RuAlive?", "Rest a bit", "Frames are dead", "Life matters", "Did you grind?", "Good to live", "Slack is strat", "Breathe now", "K-framing?", "Output needs life"
