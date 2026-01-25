@@ -342,9 +342,8 @@ export default {
     
 
     if (path === '/login') {
-      return new Response(generateLoginPage(), {
-        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-      });
+      // 重定向到主页面，登录功能已集成到主页面
+      return Response.redirect(new URL('/', request.url), 302);
     }
 
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {

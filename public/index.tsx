@@ -472,9 +472,10 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
 
         // 返回首页并跳转到生存看板
         onBack();
+        // 等待视图切换完成后再跳转（switchView 需要约 800ms）
         setTimeout(() => {
           goToSection(1);
-        }, 100);
+        }, 1000);
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
