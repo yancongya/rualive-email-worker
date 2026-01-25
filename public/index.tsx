@@ -470,12 +470,9 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
         // 显示成功消息
         alert(isLogin ? '登录成功！' : '注册成功！');
 
-        // 返回首页并跳转到生存看板
-        onBack();
-        // 等待视图切换完成后再跳转（switchView 需要约 800ms）
-        setTimeout(() => {
-          goToSection(1);
-        }, 1000);
+        // 跳转到首页并保存状态，然后跳转到生存看板
+        localStorage.setItem('rualive_redirect_to_stats', 'true');
+        window.location.href = '/';
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
@@ -636,11 +633,27 @@ const App = () => {
 
   // 检查 URL，如果是 /login 路由，自动切换到登录视图
   useEffect(() => {
-    if (window.location.pathname === '/login') {
-      setIsLogin(true);
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+
+    if (path === '/login') {
+      setIsLogin(mode !== 'register');
+      setView('auth');
+    } else if (path === '/register') {
+      setIsLogin(false);
       setView('auth');
     }
-  }, []);
+
+    // 检查是否需要重定向到生存看板
+    const redirectToStats = localStorage.getItem('rualive_redirect_to_stats');
+    if (redirectToStats === 'true' && path === '/') {
+      localStorage.removeItem('rualive_redirect_to_stats');
+      setTimeout(() => {
+        goToSection(1);
+      }, 500);
+    }
+  }, [goToSection]);
 
   useEffect(() => {
     window.addEventListener('click', handleClick);
@@ -830,7 +843,7 @@ const moveSlideToIndex = useCallback((index: number) => {
             <button onClick={() => switchView('landing')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
           )}
           <div className="flex items-center gap-3">
-            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? switchView('auth') : switchView('landing')}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
+            <button className="hidden sm:block bg-white text-black px-4 py-1.5 rounded-full font-black text-xs uppercase tracking-tighter hover:bg-primary hover:text-white transition-all active:scale-95" onClick={() => view === 'landing' ? window.location.href = '/login' : window.location.href = '/'}>{view === 'landing' ? t('nav.start') : 'EXIT'}</button>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-1 opacity-80">{mobileMenuOpen ? <IconX /> : <IconMenu />}</button>
           </div>
         </div>
@@ -864,9 +877,8 @@ const moveSlideToIndex = useCallback((index: number) => {
               <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t('hero.subtitle')}</p>
               <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t('hero.desc')}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(false); switchView('auth'); }}>{t('hero.btnPrimary')}</button>
-                <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setIsLogin(true); switchView('auth'); }}>{t('hero.btnSecondary')}</button>
-              </div>
+                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.href = '/login?mode=register'; }}>{t('hero.btnPrimary')}</button>
+                          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.href = '/login'; }}>{t('hero.btnSecondary')}</button>              </div>
             </div>
           </section>
 
@@ -985,7 +997,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               <div className="flex-grow flex flex-col justify-center items-center">
                 <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t('cta.title')}<span className="text-black">?</span></h2>
                 <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t('cta.subtitle')}</p>
-                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { setIsLogin(false); switchView('auth'); }}>{t('cta.btn')}</button>
+                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { window.location.href = '/login?mode=register'; }}>{t('cta.btn')}</button>
               </div>
               <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
