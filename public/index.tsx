@@ -516,6 +516,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
                   className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
                   disabled={isLoading}
                   autoComplete="off"
+                  readOnly
+                  onFocus={(e) => e.currentTarget.removeAttribute('readOnly')}
                 />
               </div>
               <div className="space-y-1">
@@ -527,6 +529,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
                   className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
                   disabled={isLoading}
                   autoComplete="off"
+                  readOnly
+                  onFocus={(e) => e.currentTarget.removeAttribute('readOnly')}
                 />
               </div>
             </>
@@ -540,6 +544,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
               disabled={isLoading}
               autoComplete="off"
+              readOnly
+              onFocus={(e) => e.currentTarget.removeAttribute('readOnly')}
             />
           </div>
           <div className="space-y-1">
@@ -553,7 +559,9 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection }: { isLogin: boole
               placeholder="••••••••"
               className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 font-bold text-sm focus:border-primary focus:outline-none transition-all"
               disabled={isLoading}
-              autoComplete="off"
+              autoComplete="new-password"
+              readOnly
+              onFocus={(e) => e.currentTarget.removeAttribute('readOnly')}
             />
           </div>
           <button 
