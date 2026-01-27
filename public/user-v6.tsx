@@ -510,16 +510,22 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
     const maxValue = Math.max(...values);
     const minValue = Math.min(...values);
 
-    // 使用对数平滑，将数值映射到 0-6 范围
-    // log 平滑：Math.log10(value + 1) 可以压缩大数值的影响
+    // 使用对数平滑，将数值映射到 4 个档位（1、2、3、4）
     const smoothValue = (value: number) => {
       const logValue = Math.log10(value + 1);
       const maxLog = Math.log10(maxValue + 1);
       const minLog = Math.log10(minValue + 1);
 
-      // 归一化到 0-6 范围
-      if (maxLog === minLog) return 3; // 如果所有值相同，返回中间值
-      return ((logValue - minLog) / (maxLog - minLog)) * 6;
+      // 归一化到 0-1 范围
+      if (maxLog === minLog) return 2.5; // 如果所有值相同，返回中间值
+      const normalized = (logValue - minLog) / (maxLog - minLog);
+
+      // 映射到 4 个档位（1、2、3、4）
+      // normalized: 0 → tier 1
+      // normalized: 0.33 → tier 2
+      // normalized: 0.67 → tier 3
+      // normalized: 1 → tier 4
+      return Math.round(normalized * 3) + 1;
     };
 
     return filteredEntries.map(([key, value]) => {
@@ -530,8 +536,8 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
 
         return {
             subject: mappedLabel,
-            A: Math.round(tierValue * 10) / 10, // 保留一位小数
-            fullMark: 6,
+            A: tierValue,
+            fullMark: 4,
             rawValue: value, // 保留原始值用于 tooltip
         };
     });
@@ -543,7 +549,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
           <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
-          <PolarRadiusAxis angle={30} domain={[0, 6]} tick={false} axisLine={false} />
+          <PolarRadiusAxis angle={30} domain={[0, 4]} tick={false} axisLine={false} />
           <Radar
             name={TRANS[lang].totalLayers}
             dataKey="A"
