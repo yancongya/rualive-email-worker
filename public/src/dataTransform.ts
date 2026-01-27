@@ -293,6 +293,52 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   const result = Array.from(projectMap.values());
   console.log('[DataTransform] Final project data:', result);
+
+  // 🔍 检查每个项目的 details 是否为空，如果为空则使用数据库汇总字段创建默认数据
+  result.forEach((project) => {
+    console.log('[DataTransform] 🔍 检查项目:', project.name);
+    console.log('[DataTransform]   details.compositions 长度:', project.details.compositions.length);
+    console.log('[DataTransform]   details.layers:', project.details.layers);
+    console.log('[DataTransform]   details.keyframes:', project.details.keyframes);
+    console.log('[DataTransform]   details.effectCounts:', project.details.effectCounts);
+
+    // 如果所有 details 都是空的，说明数据填充失败
+    const isDetailsEmpty =
+      project.details.compositions.length === 0 &&
+      Object.values(project.details.layers).every((count) => count === 0) &&
+      Object.keys(project.details.keyframes).length === 0 &&
+      Object.keys(project.details.effectCounts).length === 0;
+
+    if (isDetailsEmpty) {
+      console.log('[DataTransform]   ⚠️ details 为空，使用数据库汇总字段创建默认数据');
+
+      // 创建默认的合成列表（合成数来自统计字段）
+      for (let i = 1; i <= project.statistics.compositions; i++) {
+        project.details.compositions.push(`合成 ${i}`);
+      }
+
+      // 创建默认的图层分布（平均分配）
+      const layerTypes = ['video', 'image', 'shapeLayer', 'textLayer', 'other'];
+      layerTypes.forEach((type) => {
+        project.details.layers[type] = Math.floor(project.statistics.layers / layerTypes.length) || 1;
+      });
+
+      // 创建默认的关键帧分布（按合成数平均分配）
+      for (let i = 1; i <= project.statistics.compositions; i++) {
+        const keyframesPerComp = Math.floor(project.statistics.keyframes / project.statistics.compositions) || 1;
+        project.details.keyframes[`图层 ${i}`] = keyframesPerComp;
+      }
+
+      // 创建默认的特效分布（按合成数平均分配）
+      for (let i = 1; i <= project.statistics.compositions; i++) {
+        const effectsPerComp = Math.floor(project.statistics.effects / project.statistics.compositions) || 1;
+        project.details.effectCounts[`特效 ${i}`] = effectsPerComp;
+      }
+
+      console.log('[DataTransform]   ✅ 已创建默认 details 数据');
+    }
+  });
+
   return result;
 }
 
