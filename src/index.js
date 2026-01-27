@@ -2536,21 +2536,38 @@ async function saveWorkData(userId, workData, env, date) {
         }
       }
 
-      // 关键帧列表 - 扩展发送的是对象数组 [{layerName: "Layer1", keyframeCount: 5}, ...]
+      // 关键帧列表 - 支持多种格式
       if (project.details && project.details.keyframes) {
         if (Array.isArray(project.details.keyframes)) {
-          // 对象数组格式（扩展发送的格式）
+          // 对象数组格式 - 可能是统计格式 [{layerName: "Layer1", keyframeCount: 5}, ...]
           project.details.keyframes.forEach(kf => {
-            if (kf && kf.layerName && kf.keyframeCount) {
-              allKeyframes.push({
-                project: project.name,
-                layer: kf.layerName,
-                count: kf.keyframeCount
-              });
+            if (kf && kf.layerName) {
+              // 统计格式
+              if (kf.keyframeCount !== undefined) {
+                allKeyframes.push({
+                  project: project.name,
+                  layer: kf.layerName,
+                  count: kf.keyframeCount
+                });
+              } 
+              // 原始格式 [{id: 1, layerName: "Layer1", propertyName: "Position", ...}]
+              else if (kf.layerName && kf.propertyName) {
+                // 按图层分组统计
+                const existing = allKeyframes.find(item => item.project === project.name && item.layer === kf.layerName);
+                if (existing) {
+                  existing.count++;
+                } else {
+                  allKeyframes.push({
+                    project: project.name,
+                    layer: kf.layerName,
+                    count: 1
+                  });
+                }
+              }
             }
           });
         } else if (typeof project.details.keyframes === 'object' && !Array.isArray(project.details.keyframes)) {
-          // 对象格式（兼容旧数据）
+          // 对象格式（兼容旧数据） - {"Layer1": 5, "Layer2": 3}
           Object.keys(project.details.keyframes).forEach(layerName => {
             allKeyframes.push({
               project: project.name,
