@@ -610,7 +610,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
     
 
-    // 只显示 Top 12 高频特效，不显示"其他"类别
+    // 只显示 Top 12 高频特效
 
     const TOP_COUNT = 12;
 
@@ -624,7 +624,9 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 
 
-  const total = Object.values(data).reduce((a, b) => a + b, 0);
+  // 计算总数量（所有特效的使用次数总和）
+
+  const total = Object.values(data).reduce((sum, value) => sum + value, 0);
 
   
 
@@ -727,36 +729,6 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
               ))}
 
             </Pie>
-
-            <Tooltip
-
-              cursor={false}
-
-              contentStyle={{ backgroundColor: '#050505', border: '1px solid #333' }}
-
-              itemStyle={{ color: '#FF6B35' }}
-
-              formatter={(value: any, name: string) => {
-
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-
-                return [
-
-                  <div key="tooltip">
-
-                    <div>{name}: {value}</div>
-
-                    <div className="text-xs text-gray-400">{percentage}%</div>
-
-                  </div>,
-
-                  TRANS[lang].count
-
-                ];
-
-              }}
-
-            />
 
           </PieChart>
 
