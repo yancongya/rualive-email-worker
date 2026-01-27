@@ -500,14 +500,39 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
 
 export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
   const chartData = useMemo(() => {
-    return Object.entries(data).map(([key, value]) => {
-        const rawLabel = key.replace(/([A-Z])/g, ' $1').toUpperCase(); 
+    // 过滤掉值为 0 的类别
+    const filteredEntries = Object.entries(data).filter(([_, value]) => value > 0);
+
+    // 计算分档值
+    const maxValue = Math.max(...Object.values(data) as number[]);
+    const tiers = [
+      { threshold: 0, label: 'L0', value: 0 },
+      { threshold: 10, label: 'L1', value: 1 },
+      { threshold: 50, label: 'L2', value: 2 },
+      { threshold: 100, label: 'L3', value: 3 },
+      { threshold: 200, label: 'L4', value: 4 },
+      { threshold: 500, label: 'L5', value: 5 },
+      { threshold: 1000, label: 'L6', value: 6 }
+    ];
+
+    return filteredEntries.map(([key, value]) => {
+        const rawLabel = key.replace(/([A-Z])/g, ' $1').toUpperCase();
         const mappedLabel = TRANS[lang][key as keyof typeof TRANS.EN] || rawLabel;
-        
+
+        // 计算档位值
+        let tierValue = 0;
+        for (let i = tiers.length - 1; i >= 0; i--) {
+          if (value >= tiers[i].threshold) {
+            tierValue = tiers[i].value;
+            break;
+          }
+        }
+
         return {
             subject: mappedLabel,
-            A: value,
-            fullMark: 150, 
+            A: tierValue,
+            fullMark: 6,
+            rawValue: value, // 保留原始值用于 tooltip
         };
     });
   }, [data, lang]);
@@ -518,7 +543,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
           <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
-          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+          <PolarRadiusAxis angle={30} domain={[0, 6]} tick={false} axisLine={false} />
           <Radar
             name={TRANS[lang].totalLayers}
             dataKey="A"
@@ -533,6 +558,10 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
              cursor={false}
              contentStyle={{ backgroundColor: '#050505', border: '1px solid #333' }}
              itemStyle={{ color: '#FF6B35' }}
+             formatter={(value: any, name: string, props: any) => {
+               // 显示原始值而不是档位值
+               return [props.payload.rawValue, TRANS[lang].count];
+             }}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -654,7 +683,10 @@ export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, 
         return data.map(item => ({ name: item, value: 0 }));
     }
     const entries = Object.entries(data);
-    return entries.map(([name, value]) => ({ name, value }));
+    // 过滤掉值为 0 的项目
+    return entries
+      .filter(([_, value]) => value > 0)
+      .map(([name, value]) => ({ name, value }));
   }, [data]);
 
   useEffect(() => {
