@@ -13,6 +13,9 @@ import {
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
+import { getWorkLogs, getWorkLogsByRange } from './src/api';
+import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
+import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
 
 // --- TYPES ---
 
@@ -1448,7 +1451,7 @@ const AnalyticsTable = ({
     );
 };
 
-export const AnalyticsView = ({ 
+export const AnalyticsView = ({
     lang, 
     displayMode = 'chart', 
     setAnalyticsMode,
@@ -1461,11 +1464,14 @@ export const AnalyticsView = ({
     searchQuery?: string,
     onNavigate: (date: string, projectName?: string) => void
 }) => {
-    const [cursorDate, setCursorDate] = useState<Date>(new Date('2026-01-26'));
+    const [cursorDate, setCursorDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('week');
     
     const [showDaily, setShowDaily] = useState(false);
     const [normalizeData, setNormalizeData] = useState(true);
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [workLogs, setWorkLogs] = useState<any[]>([]);
 
     const [visibleMetrics, setVisibleMetrics] = useState({
         compositions: true,
@@ -1492,10 +1498,38 @@ export const AnalyticsView = ({
         setCursorDate(newDate);
     };
 
-    const { data: rawData, label: timeLabel } = useMemo(() => 
-        getAnalyticsData(viewMode, cursorDate, showDaily)
-    , [viewMode, cursorDate, showDaily]);
+    // Load work logs based on date range
+    useEffect(() => {
+        async function loadWorkLogs() {
+            setIsLoading(true);
+            try {
+                const { startDate, endDate } = getDateRange(viewMode, cursorDate);
+                console.log('[AnalyticsView] Loading work logs:', { startDate, endDate, viewMode });
+                const response = await getWorkLogsByRange(startDate, endDate, false);
+                console.log('[AnalyticsView] API response:', response);
+                if (response.success && response.data) {
+                    console.log('[AnalyticsView] Work logs loaded:', response.data.length, 'records');
+                    setWorkLogs(response.data);
+                } else {
+                    console.log('[AnalyticsView] No work logs found');
+                    setWorkLogs([]);
+                }
+            } catch (error) {
+                console.error('Failed to load work logs for analytics:', error);
+                setWorkLogs([]);
+            } finally {
+                setIsLoading(false);
+            }
+        }
 
+        loadWorkLogs();
+    }, [viewMode, cursorDate]);
+
+    const { data: rawData, label: timeLabel } = useMemo(() => {
+        const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, workLogs);
+        console.log('[AnalyticsView] Aggregated data:', result);
+        return result;
+    }, [viewMode, cursorDate, showDaily, lang, workLogs]);
 
     const filteredRawData = useMemo(() => {
         if (!searchQuery.trim()) return rawData;
@@ -1909,7 +1943,13 @@ const App = () => {
     }
   }, []);
 
-  const [currentDate, setCurrentDate] = useState<string>('2026-01-26');
+  const [currentDate, setCurrentDate] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [selectedProjectIndex, setSelectedProjectIndex] = useState<number>(0);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1933,20 +1973,41 @@ const App = () => {
      setCurrentView('dashboard');
   };
 
-  const dailyData: DailyData = useMemo(() => {
-    if (MOCK_DATA[currentDate]) return MOCK_DATA[currentDate];
-    
-    // Logic updated: Always generate data for dynamic dates to match Analytics view consistency
-    // Removed the 'if (r > 0.3)' check that simulated random empty days
-    
-    const projects = [];
-    // Ensure the count generation seed matches analytics logic roughly
-    const count = Math.floor(seededRandom(currentDate + 'count') * 3) + 2; 
-    for(let i=0; i<count; i++) {
-            projects.push(generateDynamicProject(currentDate, i));
-    }
-    return { date: currentDate, projects };
+  const [dailyData, setDailyData] = useState<DailyData>({ date: currentDate, projects: [] });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load data from API when currentDate changes
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        console.log('[UserV6] Loading data for date:', currentDate);
+        const response = await getWorkLogs(currentDate, false); // Disable cache for immediate data
+        console.log('[UserV6] API response:', response);
+        
+        if (response.success && response.data && response.data.length > 0) {
+          const workLog = response.data[0];
+          console.log('[UserV6] Work log data:', workLog);
+          const transformedData = workLogToDailyData(workLog);
+          console.log('[UserV6] Transformed data:', transformedData);
+          setDailyData(transformedData);
+        } else {
+          // No data for this date
+          console.log('[UserV6] No data found for date:', currentDate);
+          setDailyData({ date: currentDate, projects: [] });
+        }
+      } catch (err) {
+        console.error('Failed to load work logs:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        setDailyData({ date: currentDate, projects: [] });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
   }, [currentDate]);
   
   const filteredProjects = useMemo(() => {
@@ -2051,11 +2112,31 @@ const App = () => {
               </>
             ) : (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-ru-textDim opacity-50">
-                   <div className="mb-4">
-                       <Activity size={48} className="text-ru-primary animate-pulse" />
-                   </div>
-                   <h2 className="text-xl font-black italic tracking-widest mb-2">{TRANS[lang].noDataTitle}</h2>
-                   <p className="font-mono text-xs">{TRANS[lang].noDataDesc}</p>
+                   {isLoading ? (
+                       <>
+                           <div className="mb-4">
+                               <Activity size={48} className="text-ru-primary animate-spin" />
+                           </div>
+                           <h2 className="text-xl font-black italic tracking-widest mb-2">LOADING DATA</h2>
+                           <p className="font-mono text-xs">Fetching work logs...</p>
+                       </>
+                   ) : error ? (
+                       <>
+                           <div className="mb-4">
+                               <ShieldAlert size={48} className="text-red-500" />
+                           </div>
+                           <h2 className="text-xl font-black italic tracking-widest mb-2">ERROR</h2>
+                           <p className="font-mono text-xs">{error}</p>
+                       </>
+                   ) : (
+                       <>
+                           <div className="mb-4">
+                               <Activity size={48} className="text-ru-primary animate-pulse" />
+                           </div>
+                           <h2 className="text-xl font-black italic tracking-widest mb-2">{TRANS[lang].noDataTitle}</h2>
+                           <p className="font-mono text-xs">{TRANS[lang].noDataDesc}</p>
+                       </>
+                   )}
                 </div>
             )
         ) : currentView === 'analytics' ? (

@@ -1064,6 +1064,10 @@ export default {
       return handleGetLogs(request, env);
     }
 
+    if (path === '/api/work-logs/range' && request.method === 'GET') {
+      return handleGetWorkLogsRange(request, env);
+    }
+
     if (path === '/api/work-logs' && request.method === 'GET') {
       return handleGetWorkLogs(request, env);
     }
@@ -2180,6 +2184,37 @@ async function handleGetLogs(request, env) {
   }
 }
 
+async function handleGetWorkLogsRange(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  try {
+    // 从token获取用户ID
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const url = new URL(request.url);
+    const startDate = url.searchParams.get('start_date');
+    const endDate = url.searchParams.get('end_date');
+    
+    if (!startDate || !endDate) {
+      return Response.json({ error: '缺少 start_date 或 end_date 参数' }, { status: 400 });
+    }
+    
+    // 获取日期范围内的工作日志（包含详细数据）
+    const result = await DB.prepare(
+      'SELECT * FROM work_logs WHERE user_id = ? AND work_date BETWEEN ? AND ? ORDER BY work_date DESC'
+    ).bind(userId, startDate, endDate).all();
+    
+    return Response.json({ success: true, data: result.results || [] });
+  } catch (error) {
+    console.error('handleGetWorkLogsRange error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
 async function handleGetWorkLogs(request, env) {
   const DB = env.DB || env.rualive;
   
@@ -2503,6 +2538,96 @@ async function saveWorkData(userId, workData, env, date) {
     workHoursJson = allWorkHours.length > 0 ? JSON.stringify(allWorkHours) : null;
   }
 
+  // 检查是否已存在同一天的数据
+  const existingData = await DB.prepare(
+    'SELECT compositions_json, effects_json, layers_json, keyframes_json, projects_json, work_hours_json FROM work_logs WHERE user_id = ? AND work_date = ?'
+  ).bind(userId, workDate).first();
+
+  // 如果已存在数据，需要合并
+  if (existingData) {
+    try {
+      // 解析现有数据
+      const existingCompositions = existingData.compositions_json ? JSON.parse(existingData.compositions_json) : [];
+      const existingEffects = existingData.effects_json ? JSON.parse(existingData.effects_json) : [];
+      const existingLayers = existingData.layers_json ? JSON.parse(existingData.layers_json) : [];
+      const existingKeyframes = existingData.keyframes_json ? JSON.parse(existingData.keyframes_json) : [];
+      const existingProjects = existingData.projects_json ? JSON.parse(existingData.projects_json) : [];
+      const existingWorkHours = existingData.work_hours_json ? JSON.parse(existingData.work_hours_json) : [];
+
+      // 合并项目（去重）
+      const existingProjectNames = new Set(existingProjects.map(function(p) { return p.name; }));
+      const newProjects = allProjects.filter(function(p) { return !existingProjectNames.has(p.name); });
+      const mergedProjects = existingProjects.concat(newProjects);
+
+      // 合并所有数据
+      const mergedCompositions = existingCompositions.concat(allCompositions);
+      const mergedEffects = existingEffects.concat(allEffects);
+      const mergedLayers = existingLayers.concat(allLayers);
+      const mergedKeyframes = existingKeyframes.concat(allKeyframes);
+      const mergedWorkHours = existingWorkHours.concat(allWorkHours);
+
+      // 更新 JSON 字符串
+      compositionsJson = mergedCompositions.length > 0 ? JSON.stringify(mergedCompositions) : null;
+      effectsJson = mergedEffects.length > 0 ? JSON.stringify(mergedEffects) : null;
+      layersJson = mergedLayers.length > 0 ? JSON.stringify(mergedLayers) : null;
+      keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
+      projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
+      workHoursJson = mergedWorkHours.length > 0 ? JSON.stringify(mergedWorkHours) : null;
+
+      // 重新计算总数
+      const mergedStats = {
+        compositions: mergedCompositions.reduce(function(acc, c) { return acc + c.count; }, 0),
+        layers: mergedLayers.reduce(function(acc, l) { return acc + l.count; }, 0),
+        keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + k.count; }, 0),
+        effects: mergedEffects.length,
+        work_hours: mergedWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
+      };
+
+      // 更新数据库
+      await DB.prepare(`
+        UPDATE work_logs SET
+          work_hours = ?,
+          keyframe_count = ?,
+          json_size = ?,
+          project_count = ?,
+          composition_count = ?,
+          layer_count = ?,
+          effect_count = ?,
+          compositions_json = ?,
+          effects_json = ?,
+          layers_json = ?,
+          keyframes_json = ?,
+          projects_json = ?,
+          work_hours_json = ?
+        WHERE user_id = ? AND work_date = ?
+      `)
+        .bind(
+          mergedStats.work_hours,
+          mergedStats.keyframes,
+          workData.json_size || 0,
+          mergedProjects.length,
+          mergedStats.compositions,
+          mergedStats.layers,
+          mergedStats.effects,
+          compositionsJson,
+          effectsJson,
+          layersJson,
+          keyframesJson,
+          projectsJson,
+          workHoursJson,
+          userId,
+          workDate
+        )
+        .run();
+
+      return;
+    } catch (error) {
+      console.error('Failed to merge existing data:', error);
+      // 如果合并失败，继续执行插入（会覆盖旧数据）
+    }
+  }
+
+  // 如果不存在或合并失败，执行插入或覆盖
   await DB.prepare(`
     INSERT INTO work_logs (
       user_id, work_date, work_hours, keyframe_count, json_size,
