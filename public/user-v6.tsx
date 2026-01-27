@@ -503,34 +503,34 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
     // 过滤掉值为 0 的类别
     const filteredEntries = Object.entries(data).filter(([_, value]) => value > 0);
 
-    // 计算分档值
-    const maxValue = Math.max(...Object.values(data) as number[]);
-    const tiers = [
-      { threshold: 0, label: 'L0', value: 0 },
-      { threshold: 10, label: 'L1', value: 1 },
-      { threshold: 50, label: 'L2', value: 2 },
-      { threshold: 100, label: 'L3', value: 3 },
-      { threshold: 200, label: 'L4', value: 4 },
-      { threshold: 500, label: 'L5', value: 5 },
-      { threshold: 1000, label: 'L6', value: 6 }
-    ];
+    if (filteredEntries.length === 0) return [];
+
+    // 使用动态分档：根据实际数据范围计算相对值
+    const values = filteredEntries.map(([_, value]) => value as number);
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+
+    // 使用对数平滑，将数值映射到 0-6 范围
+    // log 平滑：Math.log10(value + 1) 可以压缩大数值的影响
+    const smoothValue = (value: number) => {
+      const logValue = Math.log10(value + 1);
+      const maxLog = Math.log10(maxValue + 1);
+      const minLog = Math.log10(minValue + 1);
+
+      // 归一化到 0-6 范围
+      if (maxLog === minLog) return 3; // 如果所有值相同，返回中间值
+      return ((logValue - minLog) / (maxLog - minLog)) * 6;
+    };
 
     return filteredEntries.map(([key, value]) => {
         const rawLabel = key.replace(/([A-Z])/g, ' $1').toUpperCase();
         const mappedLabel = TRANS[lang][key as keyof typeof TRANS.EN] || rawLabel;
 
-        // 计算档位值
-        let tierValue = 0;
-        for (let i = tiers.length - 1; i >= 0; i--) {
-          if (value >= tiers[i].threshold) {
-            tierValue = tiers[i].value;
-            break;
-          }
-        }
+        const tierValue = smoothValue(value as number);
 
         return {
             subject: mappedLabel,
-            A: tierValue,
+            A: Math.round(tierValue * 10) / 10, // 保留一位小数
             fullMark: 6,
             rawValue: value, // 保留原始值用于 tooltip
         };
