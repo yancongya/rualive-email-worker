@@ -221,10 +221,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   compositionsJson.forEach((c) => {
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(c.project);
-    console.log('[DataTransform]   原始项目名:', c.project);
-    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
     const project = projectMap.get(decodedProjectName);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.compositions.push(c.name);
       // 如果 JSON 数据存在，更新统计（取最大值）
@@ -232,16 +229,16 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     }
   });
 
-  // 填充图层数据（需要分类）
+  // 填充图层数据（Worker 后端已经处理过分类）
   layersJson.forEach((l) => {
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(l.project);
     const project = projectMap.get(decodedProjectName);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
-      const layerType = classifyLayer(l.name);
-      project.details.layers[layerType]++;
-      console.log('[DataTransform]   ✅ 添加图层:', l.name, '类型:', layerType, '到项目:', project.name);
+      // Worker 后端已经将图层分类，l.name 就是图层类型（video, image, etc.）
+      const layerType = l.name;
+      const count = l.count || 1;
+      project.details.layers[layerType] = (project.details.layers[layerType] || 0) + count;
       // 如果 JSON 数据存在，更新统计
       project.statistics.layers = Math.max(project.statistics.layers, Object.values(project.details.layers).reduce((a, b) => a + b, 0));
     }
@@ -257,7 +254,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
       project.statistics.keyframes += k.count;
       totalKeyframesFromJson += k.count;
-      console.log('[DataTransform]   ✅ 添加关键帧:', k.layer, '数量:', k.count, '到项目:', project.name);
     }
   });
 
