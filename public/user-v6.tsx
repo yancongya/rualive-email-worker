@@ -615,34 +615,31 @@ export const Header = ({
                 />
             </div>
 
-            <div className="hidden md:flex bg-white/5 rounded p-0.5 border border-white/10 gap-0.5">
-                <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
-                    <LayoutGrid size={14} />
-                    <span>{TRANS[lang].dashboard}</span>
-                </button>
-                <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
-                    <BarChart3 size={14} />
-                    <span>{TRANS[lang].analytics}</span>
-                </button>
-                <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
-                    <Settings size={14} />
-                    <span>{TRANS[lang].settings}</span>
-                </button>
-            </div>
-
-            {currentView === 'dashboard' ? (
+            <div className="hidden md:flex items-center gap-0.5">
                 <button 
                     onClick={onCalendarClick}
-                    className="flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-4 md:py-2 bg-white/5 border border-white/10 rounded hover:border-ru-primary hover:bg-white/10 transition-all group shrink-0"
+                    className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-l-sm hover:border-ru-primary hover:bg-white/10 transition-all group"
                     title={TRANS[lang].missionLog}
                 >
-                    <CalendarIcon size={14} className="md:w-4 md:h-4 text-ru-textDim group-hover:text-ru-primary" />
-                    <span className="font-mono font-bold text-[10px] md:text-sm text-white hidden sm:block">{dateDisplay}</span>
+                    <CalendarIcon size={14} className="text-ru-textDim group-hover:text-ru-primary" />
+                    <span className="font-mono font-bold text-xs text-white">{dateDisplay}</span>
                 </button>
-            ) : (
-                <div className="w-0 md:w-4"></div>
-            )}
-            
+                <div className="bg-white/5 border-y border-r border-white/10 rounded-r-sm flex gap-0.5">
+                    <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
+                        <LayoutGrid size={14} />
+                        <span>{TRANS[lang].dashboard}</span>
+                    </button>
+                    <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
+                        <BarChart3 size={14} />
+                        <span>{TRANS[lang].analytics}</span>
+                    </button>
+                    <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
+                        <Settings size={14} />
+                        <span>{TRANS[lang].settings}</span>
+                    </button>
+                </div>
+            </div>
+
             <button 
                 onClick={() => setLang(l => l === 'EN' ? 'ZH' : 'EN')}
                 className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"

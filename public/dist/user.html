@@ -5,6 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RuAlive - User Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!--
+  RuAlive User Dashboard - 完整功能用户仪表板
+  =========================================
+  功能：
+  - 工作数据统计（工作时长、合成数量、关键帧数量、工作天数）
+  - 图表展示（使用 Chart.js，支持日/月/年视图）
+  - AE 状态监控（在线/离线状态、项目信息、合成信息）
+  - 邮件配置（启用/禁用通知、紧急联系人、工作阈值）
+  - 工作历史记录
+  - 深色模式支持
+  - 实时数据更新
+
+  认证：
+  - 使用 localStorage.getItem('rualive_token') 进行认证
+  - 使用 localStorage.getItem('rualive_user') 获取用户信息
+
+  API 端点：
+  - /api/work-logs - 获取工作日志
+  - /api/config - 获取/保存用户配置
+  - /api/send-now - 发送测试邮件
+  - /api/heartbeat - 发送心跳
+  - /api/ae-status - 获取/更新 AE 状态
+
+  注意：此文件从原始的 user_page.html 复制而来，并修复了以下问题：
+  1. Token 键名从 'token' 改为 'rualive_token' 以与主应用保持一致
+  2. 添加了完整的 CSS 变量定义以支持浅色/深色主题
+  -->
   
   
 <style>
