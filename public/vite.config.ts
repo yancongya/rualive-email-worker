@@ -25,7 +25,8 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             auth: path.resolve(__dirname, 'auth.html'),
-            user: path.resolve(__dirname, 'user.html')
+            user: path.resolve(__dirname, 'user.html'),
+            userV6: path.resolve(__dirname, 'user-v6.html')
           },
           output: {
             assetFileNames: 'assets/[name]-[hash][extname]',

@@ -170,6 +170,23 @@ export default {
       return new Response('Not Found', { status: 404 });
     }
 
+    if (path === '/user-v6') {
+      // 返回新的 user-v6.html 文件（AI Studio 生成的用户页）
+      if (ASSETS) {
+        try {
+          const userV6Url = new URL('/user-v6.html', request.url);
+          const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
+          if (assetResponse && assetResponse.status !== 404) {
+            return assetResponse;
+          }
+        } catch (error) {
+          console.error('Failed to fetch user-v6.html from Assets:', error);
+        }
+      }
+      // 如果 Assets 失败，返回 404
+      return new Response('Not Found', { status: 404 });
+    }
+
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
       // 直接返回管理仪表板HTML，让前端自己处理验证
       const adminHtml = `<!DOCTYPE html>
