@@ -97,6 +97,12 @@ export function workLogToDailyData(workLog: WorkLog): DailyData {
  */
 export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   console.log('[DataTransform] Processing work log:', workLog);
+  console.log('[DataTransform] Database summary fields:', {
+    composition_count: workLog.composition_count,
+    layer_count: workLog.layer_count,
+    keyframe_count: workLog.keyframe_count,
+    effect_count: workLog.effect_count
+  });
   
   // 解析 JSON 数据
   const projectsJson = safeParseJSON<ProjectInfo[]>(workLog.projects_json || '[]');
@@ -223,7 +229,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const project = projectMap.get(c.project);
     if (project) {
       project.details.compositions.push(c.name);
-      // 如果 JSON 数据存在，使用 JSON 数据
+      // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.compositions = Math.max(project.statistics.compositions, project.details.compositions.length);
     }
   });
@@ -234,25 +240,33 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     if (project) {
       const layerType = classifyLayer(l.name);
       project.details.layers[layerType]++;
-      // 如果 JSON 数据存在，使用 JSON 数据
+      // 如果 JSON 数据存在，更新统计
       project.statistics.layers = Math.max(project.statistics.layers, Object.values(project.details.layers).reduce((a, b) => a + b, 0));
     }
   });
 
   // 填充关键帧数据
+  let totalKeyframesFromJson = 0;
   keyframesJson.forEach((k) => {
     const project = projectMap.get(k.project);
     if (project) {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
       project.statistics.keyframes += k.count;
+      totalKeyframesFromJson += k.count;
     }
   });
+
+  // 如果 JSON 中的关键帧总数与数据库汇总字段不匹配，使用数据库汇总字段
+  if (totalKeyframesFromJson > 0 && totalKeyframesFromJson !== (workLog.keyframe_count || 0)) {
+    console.log('[DataTransform] Keyframe count mismatch - JSON:', totalKeyframesFromJson, 'Database:', workLog.keyframe_count);
+  }
 
   // 填充特效数据
   effectsJson.forEach((e) => {
     const project = projectMap.get(e.project);
     if (project) {
       project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
+      // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
     }
   });
