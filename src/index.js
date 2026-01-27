@@ -2481,11 +2481,32 @@ async function saveWorkData(userId, workData, env, date) {
       }
 
       // 合成列表
-      if (project.statistics && project.statistics.compositions) {
-        allCompositions.push({
-          project: project.name,
-          count: project.statistics.compositions
-        });
+      if (project.details && project.details.compositions) {
+        if (Array.isArray(project.details.compositions)) {
+          // 数组格式：["Comp 1", "Comp 2", ...]
+          project.details.compositions.forEach(compName => {
+            allCompositions.push({
+              project: project.name,
+              name: compName
+            });
+          });
+        } else if (typeof project.details.compositions === 'object' && !Array.isArray(project.details.compositions)) {
+          // 对象格式：{"Comp 1": {...}, "Comp 2": {...}}
+          Object.keys(project.details.compositions).forEach(compName => {
+            allCompositions.push({
+              project: project.name,
+              name: compName
+            });
+          });
+        } else if (project.statistics && project.statistics.compositions) {
+          // 如果 details.compositions 不存在，但有统计数据，生成默认名称
+          for (let i = 1; i <= project.statistics.compositions; i++) {
+            allCompositions.push({
+              project: project.name,
+              name: `合成 ${i}`
+            });
+          }
+        }
       }
 
       // 效果列表 - 扩展发送的是对象数组 [{effectName: "Gaussian Blur", ...}]
