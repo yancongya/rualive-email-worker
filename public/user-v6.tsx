@@ -140,7 +140,6 @@ export const TRANS = {
     refresh: "REFRESH",
     refreshTooltip: "Refresh data from server"
   },
-  },
   ZH: {
     subtitle: "系统在线 // 监控中",
     compositions: "合成数量",
@@ -208,8 +207,6 @@ export const TRANS = {
     settings: "系统设置",
     refresh: "刷新",
     refreshTooltip: "从服务器刷新数据"
-  }
-};
   }
 };
 
