@@ -13,6 +13,40 @@ declare global {
   }
 }
 
+// --- USER VIEW COMPONENT ---
+// UserView component for authenticated users - v2
+function UserView() {
+  console.log('[UserView] Component mounted - fixed-v2');
+  
+  useEffect(() => {
+    console.log('[UserView] Checking authentication - fixed-v2');
+    const token = localStorage.getItem('rualive_token');
+    const user = localStorage.getItem('rualive_user');
+    
+    if (!token || !user) {
+      console.log('[UserView] Not authenticated, redirecting to login - fixed-v2');
+      window.location.href = '/login';
+    } else {
+      console.log('[UserView] User authenticated successfully - fixed-v2');
+    }
+  }, []);
+
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-black mb-4">用户页面 User Page (Fixed)</h1>
+        <p className="text-white/40">欢迎回来！Welcome back!</p>
+        <button 
+          onClick={() => window.location.assign('/')}
+          className="mt-8 bg-primary text-white px-6 py-3 rounded-xl font-black hover:bg-primary-light transition-all"
+        >
+          返回首页 Back to Home
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- I18N DATA ---
 const TRANSLATIONS = {
   zh: {
@@ -470,8 +504,17 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection, onAuthSuccess }: {
         // 显示成功消息
         alert(isLogin ? '登录成功！' : '注册成功！');
 
-        // 调用登录成功回调
-        onAuthSuccess();
+        // 根据用户角色跳转到不同页面
+        console.log('[Auth] User data:', data);
+        console.log('[Auth] BUILD_TIMESTAMP_20260126_1200');
+        if (data.user && data.user.role === 'admin') {
+          console.log('[Auth] Redirecting to /admin');
+          window.location.href = '/admin';
+        } else {
+          console.log('[Auth] Redirecting to /user');
+          window.location.href = '/user';
+        }
+        return; // 防止继续执行
       } else {
         setError(data.error || data.message || '认证失败，请重试');
       }
@@ -604,18 +647,38 @@ const App = () => {
   const [view, setView] = useState<'landing' | 'auth' | 'user'>(() => {
     // 根据初始 URL 设置初始视图
     const path = window.location.pathname;
-    console.log('[App] Initial path:', path);
-    if (path === '/login' || path === '/register') {
-      console.log('[App] Setting initial view to auth');
+    console.log('[App] Initial path:', path, 'v3');
+    console.log('[App] Path length:', path.length);
+    console.log('[App] Path starts with /user:', path.startsWith('/user'));
+    // 使用 startsWith 处理路径末尾可能有斜杠的情况
+    if (path.startsWith('/login') || path.startsWith('/register')) {
+      console.log('[App] Setting initial view to auth', 'v3');
       return 'auth';
     }
-    if (path === '/user') {
-      console.log('[App] Setting initial view to user');
+    if (path.startsWith('/user')) {
+      console.log('[App] Setting initial view to user', 'v3');
       return 'user';
     }
-    console.log('[App] Setting initial view to landing');
+    console.log('[App] Setting initial view to landing', 'v3');
     return 'landing';
   });
+
+  // 强制更新视图以确保路由正确 - v3
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      console.log('[App] PopState - Path:', path);
+      if (path.startsWith('/user')) {
+        setView('user');
+      } else if (path.startsWith('/login') || path.startsWith('/register')) {
+        setView('auth');
+      } else {
+        setView('landing');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [isLogin, setIsLogin] = useState(() => {
     // 根据初始 URL 设置登录/注册模式
     const path = window.location.pathname;
@@ -692,13 +755,13 @@ const App = () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const mode = params.get('mode');
-      
+
       console.log('[App] URL changed - path:', path, 'mode:', mode);
-      
-      if (path === '/login' || path === '/register') {
-        setIsLogin(path === '/register' || (path === '/login' && mode === 'register'));
+
+      if (path.startsWith('/login') || path.startsWith('/register')) {
+        setIsLogin(path.startsWith('/register') || (path.startsWith('/login') && mode === 'register'));
         setView('auth');
-      } else if (path === '/user') {
+      } else if (path.startsWith('/user')) {
         setView('user');
       } else {
         setView('landing');
@@ -1108,18 +1171,7 @@ const moveSlideToIndex = useCallback((index: number) => {
           </section>
         </div>
       ) : view === 'user' ? (
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl font-black mb-4">用户页面 User Page</h1>
-            <p className="text-white/40">欢迎回来！Welcome back!</p>
-            <button 
-              onClick={() => window.location.assign('/')}
-              className="mt-8 bg-primary text-white px-6 py-3 rounded-xl font-black hover:bg-primary-light transition-all"
-            >
-              返回首页 Back to Home
-            </button>
-          </div>
-        </div>
+        <UserView />
       ) : (
         <AuthView 
           isLogin={isLogin} 

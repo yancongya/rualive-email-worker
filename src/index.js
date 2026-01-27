@@ -78,213 +78,6 @@ const authModule = {
   }
 };
 
-// Landing 页 HTML 内容
-const LANDING_HTML = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="RuAlive 是一款专为 After Effects 动画师设计的智能工作追踪工具，自动统计工作量、实时监控项目进度，让你的动画'活'起来">
-  <meta name="keywords" content="After Effects, AE, 动画, 工作追踪, 时间统计, AE扩展">
-  <meta name="author" content="RuAlive@烟囱鸭">
-  <meta name="robots" content="index, follow">
-  <title>RuAlive - After Effects 智能工作追踪工具</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- GSAP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-  <!-- AOS -->
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: { DEFAULT: '#ff6b35', light: '#ff8c42', dark: '#e55a2b' },
-            secondary: '#2d2d2d',
-            accent: '#ff6b35',
-            dark: { DEFAULT: '#1a1a1a', card: 'rgba(45, 45, 45, 0.9)' },
-          },
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          borderRadius: { 'card': '16px', 'button': '8px' },
-          boxShadow: { 'card': '0 4px 6px -1px rgba(0, 0, 0, 0.3)', 'card-hover': '0 10px 25px -5px rgba(0, 0, 0, 0.4)' },
-        },
-      },
-    }
-  </script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); min-height: 100vh; color: #ffffff; overflow-x: hidden; }
-    html { scroll-behavior: smooth; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #1a1a1a; }
-    ::-webkit-scrollbar-thumb { background: #ff6b35; border-radius: 4px; }
-    .glass-effect { background: rgba(45, 45, 45, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .gradient-text { background: linear-gradient(135deg, #ff6b35, #ff8c42); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .slogan-popup { position: fixed; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: white; padding: 12px 24px; border-radius: 20px; font-size: 16px; font-weight: 600; pointer-events: none; z-index: 9999; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); white-space: nowrap; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-    @media (max-width: 768px) { .slogan-popup { font-size: 14px; padding: 10px 20px; } }
-    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-    .faq-item.active .faq-answer { max-height: 500px; }
-    .faq-item.active .faq-icon { transform: rotate(180deg); }
-    .stat-number { font-variant-numeric: tabular-nums; }
-    .nav-hidden { transform: translateY(-100%); }
-    .nav-visible { transform: translateY(0); }
-  </style>
-</head>
-<body>
-  <nav class="fixed top-0 left-0 right-0 z-50 glass-effect transition-transform duration-300">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center"><span class="text-2xl">🔥</span><span class="ml-2 text-xl font-bold gradient-text">RuAlive</span></div>
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="#features" class="text-gray-300 hover:text-white transition-colors">功能特性</a>
-          <a href="#how-it-works" class="text-gray-300 hover:text-white transition-colors">使用场景</a>
-          <a href="#testimonials" class="text-gray-300 hover:text-white transition-colors">用户评价</a>
-          <a href="#faq" class="text-gray-300 hover:text-white transition-colors">FAQ</a>
-        </div>
-        <a href="/login" class="px-4 py-2 bg-primary hover:bg-primary-dark rounded-button font-semibold transition-colors duration-200 cursor-pointer">立即开始（免费）</a>
-      </div>
-    </div>
-  </nav>
-  <section class="min-h-screen flex items-center justify-center pt-16 px-4">
-    <div class="max-w-7xl mx-auto text-center">
-      <h1 class="hero-title text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">你今天动了吗？</h1>
-      <p class="hero-subtitle text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">专为 After Effects 动画师设计，实时追踪你的'存活状态'，让你的动画搭子知道你还在努力搬砖</p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/login" class="cta-button px-8 py-4 bg-primary hover:bg-primary-dark rounded-button font-bold text-lg transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-0.5">立即注册</a>
-        <a href="/login" class="cta-button px-8 py-4 bg-transparent border-2 border-primary hover:bg-primary hover:text-white rounded-button font-bold text-lg transition-all duration-200 cursor-pointer">已有账号？登录</a>
-      </div>
-    </div>
-  </section>
-  <section class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto">
-      <div class="glass-effect rounded-card p-8 mb-8">
-        <p class="text-center text-gray-400 mb-8">⚠️ 以下数据纯属虚构，如有雷同，纯属巧合</p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div class="text-center"><div class="stat-number text-4xl md:text-5xl font-bold gradient-text mb-2">50,000+</div><p class="text-gray-400">已追踪搬砖时间（瞎吹的）</p></div>
-          <div class="text-center"><div class="stat-number text-4xl md:text-5xl font-bold gradient-text mb-2">1,000+</div><p class="text-gray-400">动画搭子在线（可能是我编的）</p></div>
-          <div class="text-center"><div class="stat-number text-4xl md:text-5xl font-bold gradient-text mb-2">4.9/5</div><p class="text-gray-400">动画师好评（朋友给的）</p></div>
-          <div class="text-center"><div class="stat-number text-4xl md:text-5xl font-bold gradient-text mb-2">99.9%</div><p class="text-gray-400">存活率（希望如此）</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-  <section class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">动画师的日常困境</h2>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">🫠</div><h3 class="text-xl font-bold mb-2">每天加班到深夜</h3><p class="text-gray-400">感觉快要猝死了，但项目deadline一个接一个</p></div>
-        <div class="glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">🤔</div><h3 class="text-xl font-bold mb-2">家人朋友的关心</h3><p class="text-gray-400">天天问"你还在做动画吗？"，都不知道我死没死</p></div>
-        <div class="glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">🔄</div><h3 class="text-xl font-bold mb-2">工作生活失衡</h3><p class="text-gray-400">想平衡生活和工作，但根本停不下来</p></div>
-        <div class="glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">👀</div><h3 class="text-xl font-bold mb-2">朋友的猜测</h3><p class="text-gray-400">朋友想关心我，但不知道我什么时候有空，只能看着朋友圈猜测</p></div>
-      </div>
-    </div>
-  </section>
-  <section class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto text-center">
-      <h2 class="text-3xl md:text-4xl font-bold mb-6">RuAlive 来了，你的动画搭子已上线 🚀</h2>
-      <p class="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">自动追踪，让你专注于'搞事'而不是'记事' 📝<br>数据说话，再也不用'我觉得'了 💯</p>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="glass-effect rounded-card p-8"><div class="text-5xl mb-4">⚡</div><h3 class="text-xl font-bold mb-2">自动扫描</h3><p class="text-gray-400">你负责动，我负责数</p></div>
-        <div class="glass-effect rounded-card p-8"><div class="text-5xl mb-4">📊</div><h3 class="text-xl font-bold mb-2">数据可视化</h3><p class="text-gray-400">关键帧数、合成数，一个都不能少</p></div>
-        <div class="glass-effect rounded-card p-8"><div class="text-5xl mb-4">🔔</div><h3 class="text-xl font-bold mb-2">智能提醒</h3><p class="text-gray-400">该休息了，但甲方还在催</p></div>
-      </div>
-    </div>
-  </section>
-  <section id="features" class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">功能特性</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">⚡</div><h3 class="text-xl font-bold mb-2">自动扫描</h3><p class="text-gray-400 mb-4">你负责动，我负责数</p><p class="text-primary font-semibold">节省每天 30+ 分钟</p></div>
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">⏰</div><h3 class="text-xl font-bold mb-2">运行时间</h3><p class="text-gray-400 mb-4">今天搬砖几小时，一目了然</p><p class="text-primary font-semibold">精确到秒级</p></div>
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">📊</div><h3 class="text-xl font-bold mb-2">工作统计</h3><p class="text-gray-400 mb-4">关键帧数、合成数，一个都不能少</p><p class="text-primary font-semibold">数据可视化</p></div>
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">🔔</div><h3 class="text-xl font-bold mb-2">智能提醒</h3><p class="text-gray-400 mb-4">该休息了，但甲方还在催</p><p class="text-primary font-semibold">从不错过</p></div>
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">📧</div><h3 class="text-xl font-bold mb-2">邮件通知</h3><p class="text-gray-400 mb-4">给动画搭子报个信，让监督更轻松</p><p class="text-primary font-semibold">自动提醒</p></div>
-        <div class="feature-card glass-effect rounded-card p-6 hover:shadow-card-hover transition-all duration-300 cursor-pointer"><div class="text-4xl mb-4">💾</div><h3 class="text-xl font-bold mb-2">数据保存</h3><p class="text-gray-400 mb-4">你的努力，我都记着呢</p><p class="text-primary font-semibold">本地存储</p></div>
-      </div>
-    </div>
-  </section>
-  <section id="how-it-works" class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">三步开始使用</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="text-center"><div class="glass-effect rounded-card p-8 mb-4"><div class="text-5xl mb-4">1️⃣</div><h3 class="text-xl font-bold mb-2">安装扩展</h3><p class="text-gray-400">三步搞定，比煮泡面还快</p></div></div>
-        <div class="text-center"><div class="glass-effect rounded-card p-8 mb-4"><div class="text-5xl mb-4">2️⃣</div><h3 class="text-xl font-bold mb-2">注册登录</h3><p class="text-gray-400">填个邮箱，就能开始</p></div></div>
-        <div class="text-center"><div class="glass-effect rounded-card p-8 mb-4"><div class="text-5xl mb-4">3️⃣</div><h3 class="text-xl font-bold mb-2">开始追踪</h3><p class="text-gray-400">打开 AE，自动干活</p></div></div>
-      </div>
-    </div>
-  </section>
-  <section id="testimonials" class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-7xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">用户评价</h2>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="testimonial-card glass-effect rounded-card p-6"><p class="text-gray-300 mb-4">"终于不用担心猝死了，朋友看到我的工作数据，都会提醒我休息"</p><p class="text-primary font-semibold">— 某加班动画师 🫠</p></div>
-        <div class="testimonial-card glass-effect rounded-card p-6"><p class="text-gray-300 mb-4">"妈妈再也不用担心我了，她能看到我还在努力活着"</p><p class="text-primary font-semibold">— 孝顺动画师 👨‍👩‍👧</p></div>
-        <div class="testimonial-card glass-effect rounded-card p-6"><p class="text-gray-300 mb-4">"朋友通过 RuAlive 知道我什么时候有空，终于可以约饭了"</p><p class="text-primary font-semibold">— 社交动画师 🍻</p></div>
-        <div class="testimonial-card glass-effect rounded-card p-6"><p class="text-gray-300 mb-4">"工作搭子们互相监督，谁偷懒一目了然"</p><p class="text-primary font-semibold">— 团队动画师 👥</p></div>
-      </div>
-    </div>
-  </section>
-  <section id="faq" class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-3xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">常见问题</h2>
-      <div class="space-y-4">
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">RuAlive 是免费的吗？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">是的，完全免费，比甲方画的大饼还实在 🥞</p></div></div>
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">需要联网吗？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">扫描功能离线可用，邮件通知需要联网（毕竟要给搭子报信）📧</p></div></div>
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">支持哪些版本的 AE？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">支持 CC 2015 及以上，老古董就别来了吧 😅</p></div></div>
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">数据保存在哪里？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">保存在本地，比你的甲方还可靠 🤫</p></div></div>
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">如何开始使用？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">三步搞定：下载 → 安装 → 开搞，比点外卖还简单 🍔</p></div></div>
-        <div class="faq-item glass-effect rounded-card overflow-hidden"><div class="faq-question p-6 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors"><h3 class="text-lg font-semibold">有使用限制吗？</h3><i class="faq-icon fas fa-chevron-down transition-transform duration-300"></i></div><div class="faq-answer px-6 pb-6"><p class="text-gray-400">没有，想怎么用就怎么用，就像你对待甲方一样（开玩笑的）😜</p></div></div>
-      </div>
-    </div>
-  </section>
-  <section class="py-20 px-4" data-aos="fade-up">
-    <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl md:text-4xl font-bold mb-6">别让你的动画'死'在半路上</h2>
-      <p class="text-xl text-gray-300 mb-8">加入 1,000+ 动画师，让你的动画搭子知道你还在努力活着</p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/login" class="px-8 py-4 bg-primary hover:bg-primary-dark rounded-button font-bold text-lg transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-0.5">立即注册</a>
-        <a href="/login" class="px-8 py-4 bg-transparent border-2 border-primary hover:bg-primary hover:text-white rounded-button font-bold text-lg transition-all duration-200 cursor-pointer">已有账号？登录</a>
-      </div>
-    </div>
-  </section>
-  <footer class="py-12 px-4 border-t border-white/10">
-    <div class="max-w-7xl mx-auto">
-      <div class="grid md:grid-cols-4 gap-8 mb-8">
-        <div><div class="flex items-center mb-4"><span class="text-2xl">🔥</span><span class="ml-2 text-xl font-bold gradient-text">RuAlive</span></div><p class="text-gray-400">活着，就是为了做动画</p></div>
-        <div><h4 class="font-bold mb-4">产品</h4><ul class="space-y-2"><li><a href="#features" class="text-gray-400 hover:text-white transition-colors">功能特性</a></li><li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">使用场景</a></li><li><a href="#testimonials" class="text-gray-400 hover:text-white transition-colors">用户评价</a></li></ul></div>
-        <div><h4 class="font-bold mb-4">支持</h4><ul class="space-y-2"><li><a href="#faq" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li><li><a href="#" class="text-gray-400 hover:text-white transition-colors">使用文档</a></li><li><a href="#" class="text-gray-400 hover:text-white transition-colors">联系我们</a></li></ul></div>
-        <div><h4 class="font-bold mb-4">信任标识</h4><ul class="space-y-2"><li class="text-gray-400">🛡️ 数据安全</li><li class="text-gray-400">🔒 隐私保护</li><li class="text-gray-400">✅ 完全免费</li><li class="text-gray-400">🚀 99.9% 正常运行</li></ul></div>
-      </div>
-      <div class="border-t border-white/10 pt-8 text-center text-gray-400"><p>&copy; 2026 RuAlive@烟囱鸭. All rights reserved.</p><p class="mt-2">活着，就是为了做动画</p></div>
-    </div>
-  </footer>
-  <script>
-    // Landing Page JS
-    const CONSTANTS = { SLOGANS: ["你今天动了吗？","活着，就是为了做动画","别让你的动画'死'在半路上","搬砖也要搬得有仪式感","你的动画搭子正在看着你","加班归加班，身体要紧","猝死是不可能猝死的","今天也是努力搬砖的一天呢","动画师永不言弃","活着真好","你还在做动画吗？","RuAlive：你的动画搭子","为了梦想，加油","休息一下，别累坏了","你的努力，我都记着呢","动画师，冲鸭！","活着，才有动画","别让梦想'死'在半路上","今天搬砖了吗？","动画师永不加班（才怪）"], TRIGGER_PROBABILITY: { DESKTOP: 0.2, MOBILE: 0.1 }, DISPLAY_DURATION: 2000, ANIMATION: { POP_IN_DURATION: 0.3, POP_OUT_DURATION: 0.3, POP_IN_EASE: 'back.out(1.7)', POP_OUT_EASE: 'power2.in' } };
-    const Utils = { random: (min, max) => Math.random() * (max - min) + min, randomChoice: (array) => array[Math.floor(Math.random() * array.length)], isMobile: () => window.innerWidth < 768, isInteractiveElement: (element) => element.closest('button, a, .faq-question, input, select, textarea'), getBoundedPosition: (x, y, width, height) => { const margin = 20; const maxLeft = window.innerWidth - width - margin; const maxTop = window.innerHeight - height - margin; return { x: Math.min(Math.max(x - width / 2, margin), maxLeft), y: Math.min(Math.max(y - height - 20, margin), maxTop) }; } };
-    class SloganManager { constructor() { this.slogans = CONSTANTS.SLOGANS; this.init(); } init() { document.addEventListener('click', this.handleClick.bind(this)); } handleClick(e) { if (Utils.isInteractiveElement(e.target)) return; const probability = Utils.isMobile() ? CONSTANTS.TRIGGER_PROBABILITY.MOBILE : CONSTANTS.TRIGGER_PROBABILITY.DESKTOP; if (Math.random() < probability) { const slogan = Utils.randomChoice(this.slogans); this.showSlogan(e.clientX, e.clientY, slogan); } } showSlogan(x, y, text) { const sloganEl = this.createSloganElement(text); document.body.appendChild(sloganEl); const position = Utils.getBoundedPosition(x, y, sloganEl.offsetWidth, sloganEl.offsetHeight); sloganEl.style.left = position.x + 'px'; sloganEl.style.top = position.y + 'px'; this.animateSlogan(sloganEl); } createSloganElement(text) { const el = document.createElement('div'); el.className = 'slogan-popup'; el.textContent = text; return el; } animateSlogan(element) { gsap.fromTo(element, { opacity: 0, scale: 0.5, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: CONSTANTS.ANIMATION.POP_IN_DURATION, ease: CONSTANTS.ANIMATION.POP_IN_EASE }); setTimeout(() => { gsap.to(element, { opacity: 0, scale: 0.8, y: -10, duration: CONSTANTS.ANIMATION.POP_OUT_DURATION, ease: CONSTANTS.ANIMATION.POP_OUT_EASE, onComplete: () => element.remove() }); }, CONSTANTS.DISPLAY_DURATION); } }
-    class FAQManager { constructor() { this.init(); } init() { document.querySelectorAll('.faq-question').forEach(question => { question.addEventListener('click', this.handleClick.bind(this)); }); } handleClick(e) { const faqItem = e.target.closest('.faq-item'); const isActive = faqItem.classList.contains('active'); document.querySelectorAll('.faq-item').forEach(item => { item.classList.remove('active'); }); if (!isActive) faqItem.classList.add('active'); } }
-    class SmoothScrollManager { constructor() { this.init(); } init() { document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', this.handleClick.bind(this)); }); } handleClick(e) { e.preventDefault(); const target = document.querySelector(e.target.getAttribute('href')); if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
-    class NavigationManager { constructor() { this.nav = document.querySelector('nav'); this.lastScroll = 0; this.init(); } init() { window.addEventListener('scroll', this.handleScroll.bind(this)); } handleScroll() { const currentScroll = window.pageYOffset; if (currentScroll > this.lastScroll && currentScroll > 100) this.nav.style.transform = 'translateY(-100%)'; else this.nav.style.transform = 'translateY(0)'; this.lastScroll = currentScroll; } }
-    class AnimationManager { constructor() { this.init(); } init() { this.initGSAP(); this.initAOS(); } initGSAP() { gsap.registerPlugin(ScrollTrigger); this.animateHero(); this.animateFeatures(); this.animateTestimonials(); this.animateStats(); } animateHero() { gsap.fromTo('.hero-title', { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }); gsap.fromTo('.hero-subtitle', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3, ease: 'power3.out' }); gsap.fromTo('.cta-button', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.2, delay: 0.6, ease: 'power3.out' }); } animateFeatures() { gsap.fromTo('.feature-card', { opacity: 0, y: 50 }, { opacity: 1, y: 0, scrollTrigger: { trigger: '#features', start: 'top 80%' }, duration: 0.8, stagger: 0.2, ease: 'power3.out' }); } animateTestimonials() { gsap.fromTo('.testimonial-card', { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, scrollTrigger: { trigger: '#testimonials', start: 'top 80%' }, duration: 0.8, stagger: 0.2, ease: 'back.out' }); } animateStats() { gsap.fromTo('.stat-number', { opacity: 0 }, { opacity: 1, scrollTrigger: { trigger: '.py-20', start: 'top 80%' }, onStart: () => { document.querySelectorAll('.stat-number').forEach(el => { const text = el.textContent; const match = text.match(/[\\d,]+/); if (match) { const target = parseInt(match[0].replace(/,/g, '')); this.animateNumber(el, target, text); } }); } }); } animateNumber(element, target, originalText) { let start = 0; const increment = target / 50; function updateNumber() { start += increment; if (start < target) { const formatted = Math.floor(start).toLocaleString(); element.textContent = originalText.replace(/[\\d,]+/, formatted); requestAnimationFrame(updateNumber); } else { element.textContent = originalText.replace(/[\\d,]+/, target.toLocaleString()); } } updateNumber(); } initAOS() { AOS.init({ duration: 800, easing: 'ease-out-cubic', once: true, offset: 100 }); } }
-    class LandingApp { constructor() { this.managers = []; this.init(); } init() { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => this.setup()); else this.setup(); } setup() { this.managers.push(new SloganManager()); this.managers.push(new FAQManager()); this.managers.push(new SmoothScrollManager()); this.managers.push(new NavigationManager()); this.managers.push(new AnimationManager()); console.log('RuAlive Landing Page initialized'); } destroy() { this.managers.forEach(manager => { if (manager.destroy) manager.destroy(); }); } }
-    const landingApp = new LandingApp();
-  </script>
-</body>
-</html>`;
-
-// Landing 页函数
-async function getLandingHtml() {
-  return LANDING_HTML;
-}
-
 export default {
   async fetch(request, env) {
     // 兼容不同binding名称
@@ -296,8 +89,9 @@ export default {
 
     // 处理静态文件（从 Assets 绑定）
     // 只对非 API 路径使用 Assets，避免消耗 request body
-    // 排除 /login 和 /user 路由，这些路由需要返回 index.html
-    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user') {
+    // 排除 /login、/user 和 /admin/login 路由，这些路由需要返回 index.html
+    // 注意：/admin 路由不排除，因为它需要返回后端生成的管理员仪表板 HTML
+    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/admin/login') {
       try {
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
@@ -343,41 +137,37 @@ export default {
     
 
     if (path === '/login') {
-      // 返回根路径的 index.html，前端会自动切换到登录视图
+      // 返回 auth.html
       if (ASSETS) {
         try {
-          const rootUrl = new URL('/', request.url);
-          const assetResponse = await ASSETS.fetch(new Request(rootUrl, { method: 'GET' }));
+          const authUrl = new URL('/auth.html', request.url);
+          const assetResponse = await ASSETS.fetch(new Request(authUrl, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
             return assetResponse;
           }
         } catch (error) {
-          console.error('Failed to fetch index.html from Assets:', error);
+          console.error('Failed to fetch auth.html from Assets:', error);
         }
       }
-      const html = await getLandingHtml();
-      return new Response(html, {
-        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-      });
+      // 如果 Assets 失败，返回错误
+      return new Response('Auth page not found', { status: 404 });
     }
 
     if (path === '/user') {
-      // 返回根路径的 index.html，前端会自动切换到用户视图
+      // 返回独立的 user.html 文件
       if (ASSETS) {
         try {
-          const rootUrl = new URL('/', request.url);
-          const assetResponse = await ASSETS.fetch(new Request(rootUrl, { method: 'GET' }));
+          const userUrl = new URL('/user.html', request.url);
+          const assetResponse = await ASSETS.fetch(new Request(userUrl, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
             return assetResponse;
           }
         } catch (error) {
-          console.error('Failed to fetch index.html from Assets:', error);
+          console.error('Failed to fetch user.html from Assets:', error);
         }
       }
-      const html = await getLandingHtml();
-      return new Response(html, {
-        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-      });
+      // 如果 Assets 失败，返回 404
+      return new Response('Not Found', { status: 404 });
     }
 
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
@@ -823,10 +613,10 @@ export default {
           loadLogs();
           loadApiKey();
         } else {
-          window.location.href = '/admin/login';
+          window.location.href = '/login';
         }
       } catch (error) {
-        window.location.href = '/admin/login';
+        window.location.href = '/login';
       }
     }
 
@@ -1161,32 +951,6 @@ export default {
 </body>
 </html>`;
       return new Response(adminHtml, {
-        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-      });
-    }
-
-    if (path === '/user' || path === '/user.html') {
-      try {
-        const dashboardHtml = await KV.get('user-dashboard-inline');
-        if (dashboardHtml) {
-          return new Response(dashboardHtml, {
-            headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-          });
-        } else {
-          return new Response(generateUserDashboard(), {
-            headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-          });
-        }
-      } catch (error) {
-        return new Response(generateUserDashboard(), {
-          headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-        });
-      }
-    }
-
-    // 添加管理员登录页面路由
-    if (path === '/admin/login') {
-      return new Response(generateAdminLoginPage(), {
         headers: { 'Content-Type': 'text/html;charset=UTF-8' }
       });
     }
@@ -3400,236 +3164,6 @@ function generateLoginPage() {
 </html>`;
 }
 
-function generateAdminLoginPage() {
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RuAlive - 管理员登录</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .login-container {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      padding: 40px;
-      width: 100%;
-      max-width: 400px;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .logo h1 {
-      font-size: 28px;
-      color: #f5576c;
-      margin-bottom: 8px;
-    }
-    .logo p {
-      color: #6b7280;
-      font-size: 14px;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      color: #374151;
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: border-color 0.3s;
-    }
-    .form-group input:focus {
-      outline: none;
-      border-color: #f5576c;
-      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
-    }
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: #f5576c;
-      color: white;
-    }
-    .btn:hover {
-      background: #e04659;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
-    }
-    .btn:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .alert {
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      display: none;
-    }
-    .alert.show {
-      display: block;
-    }
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-    .loading {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 0.6s linear infinite;
-      margin-right: 8px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      color: #6b7280;
-      font-size: 12px;
-    }
-    .footer a {
-      color: #f5576c;
-      text-decoration: none;
-    }
-    .footer a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="login-container">
-    <div class="logo">
-      <h1>🔐 管理员登录</h1>
-      <p>RuAlive 管理后台</p>
-    </div>
-
-    <div id="alert" class="alert"></div>
-
-    <div class="form-group">
-      <label>管理员邮箱</label>
-      <input type="email" id="adminEmail" placeholder="admin@rualive.com">
-    </div>
-    <div class="form-group">
-      <label>密码</label>
-      <input type="password" id="adminPassword" placeholder="请输入管理员密码">
-    </div>
-    <button class="btn" id="loginBtn" onclick="handleLogin()">登录</button>
-
-    <div class="footer">
-      <a href="/">返回用户登录</a>
-    </div>
-  </div>
-
-  <script>
-    const API_BASE = window.location.origin;
-
-    function showAlert(message, type = 'error') {
-      const alert = document.getElementById('alert');
-      alert.className = 'alert alert-' + type + ' show';
-      alert.textContent = message;
-      setTimeout(() => alert.classList.remove('show'), 4000);
-    }
-
-    async function handleLogin() {
-      const email = document.getElementById('adminEmail').value.trim();
-      const password = document.getElementById('adminPassword').value;
-      const btn = document.getElementById('loginBtn');
-
-      if (!email || !password) {
-        showAlert('请填写邮箱和密码');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>登录中...';
-
-      try {
-        const response = await fetch(API_BASE + '/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          if (data.user.role !== 'admin') {
-            showAlert('此账户不是管理员账户');
-            btn.disabled = false;
-            btn.textContent = '登录';
-            return;
-          }
-
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          window.location.href = '/admin';
-        } else {
-          showAlert(data.error || '登录失败');
-        }
-      } catch (error) {
-        showAlert('登录失败: ' + error.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '登录';
-      }
-    }
-
-    // 检查是否已登录
-    window.onload = function() {
-      const token = localStorage.getItem('token');
-      if (token) {
-        fetch(API_BASE + '/api/auth/me', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.user && data.user.role === 'admin') {
-            window.location.href = '/admin';
-          }
-        })
-        .catch(() => {});
-      }
-    };
-  </script>
-</body>
-</html>`;
-}
-
 function generateUserDashboard() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -4236,7 +3770,7 @@ function generateUserDashboard() {
     }
 
     function getAuthHeader() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('rualive_token');
       return { 'Authorization': 'Bearer ' + token };
     }
 

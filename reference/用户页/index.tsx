@@ -1,0 +1,2072 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import { 
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip
+} from 'recharts';
+import { 
+  LayoutGrid, Layers, Hexagon, Activity, Calendar as CalendarIcon, 
+  Globe, ChevronRight, X, ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw,
+  LineChart as LucideLineChart, BarChart3, Search, Table, TrendingUp,
+  Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
+  Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap
+} from 'lucide-react';
+import { SettingsView } from './settings';
+
+// --- TYPES ---
+
+export interface ProjectStats {
+  compositions: number;
+  layers: number;
+  keyframes: number;
+  effects: number;
+}
+
+export interface LayerDistribution {
+  video: number;
+  image: number;
+  designFile: number;
+  sourceFile: number;
+  nullSolidLayer: number;
+  [key: string]: number;
+}
+
+export interface KeyframeData {
+  [layerName: string]: number;
+}
+
+export interface EffectCountData {
+  [effectName: string]: number;
+}
+
+export interface ProjectDetails {
+  compositions: string[];
+  layers: LayerDistribution;
+  keyframes: KeyframeData;
+  effectCounts: EffectCountData;
+}
+
+export interface ProjectData {
+  projectId: string;
+  name: string;
+  dailyRuntime: string;
+  accumulatedRuntime: number; // in seconds
+  statistics: ProjectStats;
+  details: ProjectDetails;
+}
+
+export interface DailyData {
+  date: string; // ISO format YYYY-MM-DD
+  projects: ProjectData[];
+}
+
+export type LangType = 'EN' | 'ZH';
+export type ViewType = 'dashboard' | 'analytics' | 'settings';
+export type AnalyticsMode = 'chart' | 'table';
+export type ViewMode = 'week' | 'month' | 'quarter' | 'year' | 'all';
+
+// --- TRANSLATIONS ---
+
+export const TRANS = {
+  EN: {
+    subtitle: "SYSTEM ONLINE // MONITORED",
+    compositions: "COMPOSITIONS",
+    totalLayers: "TOTAL LAYERS",
+    keyframes: "KEYFRAMES",
+    effects: "EFFECTS APPLIED",
+    layerDist: "LAYER DISTRIBUTION",
+    effectFreq: "EFFECT FREQUENCY",
+    uniqueEffects: "UNIQUE EFFECTS",
+    top8: "TOP 8",
+    total: "TOTAL",
+    keyframeDensity: "KEYFRAME DENSITY",
+    activeComps: "ACTIVE COMPOSITIONS",
+    items: "ITEMS",
+    missionLog: "CALENDAR PANEL",
+    retrieveData: "Select a date to retrieve data.",
+    low: "Low",
+    mid: "Med",
+    high: "High",
+    noDataTitle: "NO VITAL SIGNS DETECTED",
+    noDataDesc: "Select a different date from the calendar.",
+    id: "ID",
+    jumpToday: "TODAY",
+    // Layer types mapping
+    video: "VIDEO",
+    image: "IMAGE",
+    designFile: "DESIGN FILE",
+    sourceFile: "SOURCE FILE",
+    nullSolidLayer: "NULL/SOLID",
+    // Sorting
+    sortName: "NAME",
+    sortValue: "VAL",
+    months: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+    // Analytics
+    analytics: "ANALYTICS",
+    dashboard: "DASHBOARD",
+    runtime: "RUNTIME",
+    viewweek: "WEEK",
+    viewmonth: "MONTH",
+    viewquarter: "QUARTER",
+    viewyear: "YEAR",
+    viewall: "ALL TIME",
+    trendAnalysis: "TREND ANALYSIS",
+    distribution: "DISTRIBUTION MATRIX",
+    // Analytics Controls
+    dailyDetails: "DAILY DETAILS",
+    normalizeCurves: "NORMALIZE CURVES",
+    normalized: "NORMALIZED",
+    toggleSoloHint: "Left Click: Toggle / Right Click: Solo",
+    viewweek_short: "WK",
+    viewmonth_short: "MO",
+    viewquarter_short: "QT",
+    viewyear_short: "YR",
+    viewall_short: "ALL",
+    searchPlaceholder: "SEARCH PROJECT...",
+    searchAnalyticsPlaceholder: "FILTER DATA...",
+    viewChart: "CHART VIEW",
+    viewTable: "DATA TABLE",
+    chart: "CHART",
+    table: "TABLE",
+    page: "PAGE",
+    of: "OF",
+    projectCount: "PROJECT COUNT",
+    // Settings
+    settings: "SETTINGS"
+  },
+  ZH: {
+    subtitle: "系统在线 // 监控中",
+    compositions: "合成数量",
+    totalLayers: "图层总数",
+    keyframes: "关键帧数",
+    effects: "特效应用",
+    layerDist: "图层类型分布",
+    effectFreq: "特效使用频率",
+    uniqueEffects: "独立特效",
+    top8: "前8名",
+    total: "总计",
+    keyframeDensity: "关键帧密度",
+    activeComps: "活跃合成",
+    items: "项",
+    missionLog: "日历面板",
+    retrieveData: "选择日期以读取数据。",
+    low: "低",
+    mid: "中",
+    high: "高",
+    noDataTitle: "未检测到生命体征",
+    noDataDesc: "请从日历中选择其他日期。",
+    id: "编号",
+    jumpToday: "回到今日",
+    // Layer types mapping
+    video: "视频素材",
+    image: "图片素材",
+    designFile: "设计源文件",
+    sourceFile: "通用源文件",
+    nullSolidLayer: "纯色/空对象",
+    // Sorting
+    sortName: "名称",
+    sortValue: "数值",
+    months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+    // Analytics
+    analytics: "数据分析",
+    dashboard: "监控看板",
+    runtime: "运行时长",
+    viewweek: "周视图",
+    viewmonth: "月视图",
+    viewquarter: "季视图",
+    viewyear: "年视图",
+    viewall: "全部",
+    trendAnalysis: "趋势分析",
+    distribution: "分布矩阵",
+    // Analytics Controls
+    dailyDetails: "每日详情",
+    normalizeCurves: "归一化曲线",
+    normalized: "已归一化",
+    toggleSoloHint: "左键：切换 / 右键：独显",
+    viewweek_short: "周",
+    viewmonth_short: "月",
+    viewquarter_short: "季",
+    viewyear_short: "年",
+    viewall_short: "全",
+    searchPlaceholder: "搜索项目名称...",
+    searchAnalyticsPlaceholder: "筛选数据...",
+    viewChart: "图表视图",
+    viewTable: "数据列表",
+    chart: "图表",
+    table: "列表",
+    page: "页",
+    of: "/",
+    projectCount: "项目数量",
+    // Settings
+    settings: "系统设置"
+  }
+};
+
+// --- CONSTANTS & GENERATORS ---
+
+const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+
+export const seededRandom = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; 
+    }
+    const x = Math.sin(hash) * 10000;
+    return x - Math.floor(x);
+};
+
+const PROJECT_PREFIXES = ["Cyber", "Neon", "Glitch", "Void", "Quantum", "Hyper", "Mech", "Flux", "Aero", "Synapse", "Echo", "Veloc", "Omni", "Null"];
+const PROJECT_SUFFIXES = ["HUD", "UI", "Vlog", "Intro", "Promo", "System", "Dashboard", "Protocol", "Scan", "Loop", "Render", "Comp", "Asset"];
+const EFFECT_NAMES = ['Deep Glow', 'Saber', 'Glitchify', 'Optical Flares', 'Particular', 'Curves', 'Fill', 'Tint', 'Transform', 'Gaussian Blur', 'Mosaic'];
+const LAYER_NAMES = ['Shape Layer 1', 'Null 5', 'Camera Control', 'BG_texture.png', 'Logo_final.ai', 'Adjustment Layer', 'Particle Emitter'];
+const COMP_NAMES = ['Main_Render', 'Pre-comp 1', 'Intro_Seq', 'Lower_Thirds', 'Transition_A', 'Transition_B', 'Outro_Card'];
+
+const generateProjectName = (seed: string) => {
+    const r1 = seededRandom(seed + 'n1');
+    const r2 = seededRandom(seed + 'n2');
+    const p = PROJECT_PREFIXES[Math.floor(r1 * PROJECT_PREFIXES.length)];
+    const s = PROJECT_SUFFIXES[Math.floor(r2 * PROJECT_SUFFIXES.length)];
+    const v = Math.floor(r1 * 10) + 1;
+    return `${p}_${s}_v${v}.aep`;
+};
+
+// Basic generator for MOCK_DATA
+const generateProject = (id: string, name: string): ProjectData => {
+  const layerStats = {
+    video: randomInt(0, 10),
+    image: randomInt(10, 80),
+    designFile: randomInt(5, 120),
+    sourceFile: randomInt(0, 5),
+    nullSolidLayer: randomInt(2, 20),
+  };
+
+  const totalLayers = Object.values(layerStats).reduce((a, b) => a + b, 0);
+  
+  const keyframes: Record<string, number> = {};
+  for(let i=0; i<20; i++) {
+    keyframes[`${LAYER_NAMES[randomInt(0, LAYER_NAMES.length-1)]} ${i}`] = randomInt(5, 150);
+  }
+  const totalKeys = Object.values(keyframes).reduce((a,b) => a+b, 0);
+
+  const effects: Record<string, number> = {};
+  for(let i=0; i<15; i++) {
+    const eff = EFFECT_NAMES[randomInt(0, EFFECT_NAMES.length-1)];
+    effects[eff] = (effects[eff] || 0) + randomInt(1, 10);
+  }
+  const totalEffects = Object.values(effects).reduce((a,b) => a+b, 0);
+
+  const comps = Array.from({length: randomInt(5, 20)}, (_, i) => `${COMP_NAMES[randomInt(0, COMP_NAMES.length-1)]}_${i}`);
+
+  const runtimeSeconds = randomInt(7200, 43200); // Between 2h and 12h
+  const h = Math.floor(runtimeSeconds / 3600);
+  const m = Math.floor((runtimeSeconds % 3600) / 60);
+
+  return {
+    projectId: id,
+    name: name,
+    dailyRuntime: `${h}h ${m}m`,
+    accumulatedRuntime: runtimeSeconds, 
+    statistics: {
+      compositions: comps.length,
+      layers: totalLayers,
+      keyframes: totalKeys,
+      effects: totalEffects,
+    },
+    details: {
+      compositions: comps,
+      layers: layerStats,
+      keyframes: keyframes,
+      effectCounts: effects,
+    }
+  };
+};
+
+const generateDynamicProject = (dateStr: string, index: number): ProjectData => {
+    const seed = `${dateStr}_p${index}`;
+    const name = generateProjectName(seed);
+    const id = seed.split('').reduce((a,b)=>a+b.charCodeAt(0),0).toString(16);
+    return generateProject(id, name);
+}
+
+// Updated Mock Data for Jan 2026
+const MOCK_DATA: Record<string, DailyData> = {
+  '2026-01-24': { date: '2026-01-24', projects: [generateProject('55a', 'Weekend_Vlog.aep')] },
+  '2026-01-25': { date: '2026-01-25', projects: [generateProject('66b', 'Sunday_Stream_Overlay.aep')] },
+  '2026-01-26': { 
+    date: '2026-01-26', 
+    projects: [
+        generateProject('503a075b', 'Cyberpunk_HUD_Main.aep'),
+        generateProject('129b882a', 'Glitch_Intro_v2.aep')
+    ]
+  },
+};
+
+// --- ANALYTICS DATA GENERATORS (Ported) ---
+
+const generateBaseStats = (seedKey: string, multiplier: number = 1) => {
+    const r1 = seededRandom(seedKey + '_comps');
+    const r2 = seededRandom(seedKey + '_layers');
+    const r3 = seededRandom(seedKey + '_keys');
+    const r4 = seededRandom(seedKey + '_fx');
+    const r5 = seededRandom(seedKey + '_time');
+
+    return {
+        compositions: Math.floor((2 + r1 * 10) * multiplier),
+        layers: Math.floor((10 + r2 * 50) * multiplier),
+        keyframes: Math.floor((50 + r3 * 400) * multiplier),
+        effects: Math.floor((2 + r4 * 15) * multiplier),
+        runtime: Math.floor((1800 + r5 * 7200) * multiplier),
+    };
+};
+
+const generateRowData = (seedKey: string, multiplier: number) => {
+    const projectCount = Math.floor(seededRandom(seedKey + 'count') * 3) + 2; 
+    
+    const projects = [];
+    let totals = { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0 };
+
+    for(let i=0; i<projectCount; i++) {
+        const pSeed = `${seedKey}_p${i}`;
+        const pStats = generateBaseStats(pSeed, multiplier / (projectCount * 0.8)); 
+        
+        // Generate Details for charts
+        const layerStats = {
+             video: Math.floor(pStats.layers * 0.1),
+             image: Math.floor(pStats.layers * 0.25),
+             designFile: Math.floor(pStats.layers * 0.4),
+             sourceFile: Math.floor(pStats.layers * 0.05),
+             nullSolidLayer: Math.floor(pStats.layers * 0.2),
+        };
+        // Ensure total match roughly
+        layerStats.nullSolidLayer = Math.max(0, pStats.layers - (layerStats.video + layerStats.image + layerStats.designFile + layerStats.sourceFile));
+
+        const keyframes: Record<string, number> = {};
+        for(let k=0; k<8; k++) {
+             const name = LAYER_NAMES[Math.floor(seededRandom(pSeed + 'k' + k) * LAYER_NAMES.length)];
+             keyframes[name] = Math.floor(pStats.keyframes / 8); 
+        }
+
+        const effectCounts: Record<string, number> = {};
+        for(let e=0; e<6; e++) {
+             const name = EFFECT_NAMES[Math.floor(seededRandom(pSeed + 'e' + e) * EFFECT_NAMES.length)];
+             effectCounts[name] = (effectCounts[name] || 0) + Math.floor(pStats.effects / 4);
+        }
+
+        const comps = [];
+        for(let c=0; c< Math.min(pStats.compositions, 10); c++) {
+            comps.push(COMP_NAMES[Math.floor(seededRandom(pSeed + 'c' + c) * COMP_NAMES.length)] + `_${c}`);
+        }
+
+        const project = {
+            id: pSeed,
+            name: generateProjectName(pSeed),
+            ...pStats,
+            details: {
+                layers: layerStats,
+                keyframes,
+                effectCounts,
+                compositions: comps
+            }
+        };
+        projects.push(project);
+
+        totals.compositions += pStats.compositions;
+        totals.layers += pStats.layers;
+        totals.keyframes += pStats.keyframes;
+        totals.effects += pStats.effects;
+        totals.runtime += pStats.runtime;
+    }
+
+    return { ...totals, projects };
+};
+
+const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+const getAnalyticsData = (mode: ViewMode, cursorDate: Date, forceDaily: boolean) => {
+    const data = [];
+    let label = "";
+    
+    const year = cursorDate.getFullYear();
+    const month = cursorDate.getMonth();
+
+    let startDate: Date;
+    let endDate: Date;
+    
+    if (mode === 'week') {
+        const day = cursorDate.getDay();
+        const diff = cursorDate.getDate() - day + (day === 0 ? -6 : 1); 
+        startDate = new Date(cursorDate);
+        startDate.setDate(diff); // Set to Monday
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        label = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+    } 
+    else if (mode === 'month') {
+        startDate = new Date(year, month, 1);
+        endDate = new Date(year, month + 1, 0);
+        label = startDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    } 
+    else if (mode === 'quarter') {
+        const quarterIdx = Math.floor(month / 3);
+        startDate = new Date(year, quarterIdx * 3, 1);
+        endDate = new Date(year, (quarterIdx * 3) + 3, 0);
+        label = `Q${quarterIdx + 1} ${year}`;
+    } 
+    else if (mode === 'year') {
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31);
+        label = `${year}`;
+    }
+    else { // 'all'
+        startDate = new Date(year - 4, 0, 1);
+        endDate = new Date(year, 11, 31);
+        label = `${year - 4} - ${year}`;
+    }
+
+    const current = new Date(startDate);
+    
+    if (forceDaily || mode === 'week') {
+        while (current <= endDate) {
+            const dateStr = formatDate(current);
+            const rowData = generateRowData(dateStr, 1);
+            
+            data.push({
+                date: dateStr,
+                isoDate: dateStr,
+                displayX: mode === 'week' ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][current.getDay()] : current.getDate(),
+                fullLabel: dateStr,
+                ...rowData
+            });
+            current.setDate(current.getDate() + 1);
+        }
+    } else {
+        if (mode === 'month') {
+            let weekIdx = 1;
+            while (current <= endDate) {
+                const weekSeed = `${year}-${current.getMonth()}-w${weekIdx}`;
+                const rowData = generateRowData(weekSeed, 4);
+                const startOfPeriod = formatDate(current);
+                
+                let weekEnd = new Date(current);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                if (weekEnd > endDate) weekEnd = endDate;
+
+                data.push({
+                    date: weekSeed,
+                    isoDate: startOfPeriod,
+                    displayX: `W${weekIdx}`,
+                    fullLabel: `${formatDate(current)} - ${formatDate(weekEnd)}`,
+                    ...rowData
+                });
+                current.setDate(current.getDate() + 7);
+                weekIdx++;
+            }
+        } else if (mode === 'year' || mode === 'quarter') {
+            while (current <= endDate) {
+                 const mSeed = `${year}-${current.getMonth()}`;
+                 const rowData = generateRowData(mSeed, 12);
+                 const startOfPeriod = formatDate(current);
+                 
+                 data.push({
+                    date: mSeed,
+                    isoDate: startOfPeriod,
+                    displayX: current.toLocaleString('default', { month: 'short' }),
+                    fullLabel: current.toLocaleString('default', { month: 'long', year: 'numeric' }),
+                    ...rowData
+                 });
+                 current.setMonth(current.getMonth() + 1);
+            }
+        } else {
+             while (current <= endDate) {
+                 const currentY = current.getFullYear();
+                 const ySeed = `${currentY}`;
+                 const rowData = generateRowData(ySeed, 100); 
+                 const startOfPeriod = `${currentY}-01-01`;
+                 
+                 data.push({
+                    date: ySeed,
+                    isoDate: startOfPeriod, 
+                    displayX: `${currentY}`,
+                    fullLabel: `${currentY}`,
+                    ...rowData
+                 });
+                 current.setFullYear(current.getFullYear() + 1);
+            }
+        }
+    }
+
+    return { data, label };
+};
+
+// --- HELPER COMPONENTS ---
+
+export const NumberTicker = ({ value }: { value: number }) => {
+  const [displayValue, setDisplayValue] = useState(value);
+  
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const duration = 600; // ms
+    const startValue = displayValue;
+    const endValue = value;
+    
+    if (startValue === endValue) return;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      
+      const current = Math.floor(startValue + (endValue - startValue) * ease);
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    
+    window.requestAnimationFrame(step);
+  }, [value]); 
+
+  return <>{displayValue.toLocaleString()}</>;
+};
+
+export const Header = ({ 
+    lang, 
+    setLang, 
+    dateDisplay, 
+    onCalendarClick, 
+    currentView,
+    onChangeView,
+    searchQuery,
+    setSearchQuery,
+}: { 
+    lang: LangType, 
+    setLang: React.Dispatch<React.SetStateAction<LangType>>, 
+    dateDisplay?: string, 
+    onCalendarClick?: () => void,
+    currentView: ViewType,
+    onChangeView: (view: ViewType) => void,
+    searchQuery: string,
+    setSearchQuery: (s: string) => void,
+}) => {
+    
+    const isDashboard = currentView === 'dashboard';
+    const isAnalytics = currentView === 'analytics';
+    const isSettings = currentView === 'settings';
+
+    const getBtnClass = (active: boolean) => `
+        relative px-3 py-1.5 md:px-4 md:py-2 rounded text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2
+        ${active 
+            ? 'bg-ru-primary text-black shadow-[0_0_15px_-5px_#FF6B35]' 
+            : 'text-ru-textDim hover:text-white hover:bg-white/5'
+        }
+    `;
+
+    return (
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 md:px-8 md:py-6 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-4 md:gap-0">
+        <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="flex items-center gap-2 md:gap-4">
+                <div 
+                    className="relative w-9 h-9 md:w-12 md:h-12 flex items-center justify-center border border-white/20 rounded-full group cursor-pointer"
+                    onClick={() => onChangeView('dashboard')}
+                >
+                <div className="absolute inset-0 rounded-full border-t border-ru-primary animate-spin"></div>
+                <span className="font-bold text-base md:text-lg">A</span>
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-black rounded-full"></div>
+                </div>
+                <div>
+                <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
+                    RUALIVE <span className="text-ru-primary text-xs md:text-sm not-italic font-mono align-top">V6</span>
+                </h1>
+                <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
+                    {TRANS[lang].subtitle} {currentView !== 'dashboard' && ` // ${TRANS[lang][currentView]}`}
+                </p>
+                </div>
+            </div>
+            
+            <div className="flex md:hidden bg-white/5 rounded p-0.5 border border-white/10 gap-0.5">
+                <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
+                    <LayoutGrid size={16} />
+                </button>
+                <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
+                    <BarChart3 size={16} />
+                </button>
+                <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
+                    <Settings size={16} />
+                </button>
+            </div>
+        </div>
+
+        <div className="flex items-center gap-3 md:gap-6 w-full md:w-auto justify-end">
+            <div className="relative group flex-1 md:w-48 transition-all focus-within:w-64">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ru-textMuted group-focus-within:text-ru-primary transition-colors">
+                    <Search size={14} />
+                </div>
+                <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={currentView === 'dashboard' ? TRANS[lang].searchPlaceholder : TRANS[lang].searchAnalyticsPlaceholder}
+                    disabled={currentView === 'settings'}
+                    className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-sm py-2 pl-9 pr-3 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50 disabled:opacity-30 disabled:cursor-not-allowed"
+                />
+            </div>
+
+            <div className="hidden md:flex bg-white/5 rounded p-0.5 border border-white/10 gap-0.5">
+                <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
+                    <LayoutGrid size={14} />
+                    <span>{TRANS[lang].dashboard}</span>
+                </button>
+                <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
+                    <BarChart3 size={14} />
+                    <span>{TRANS[lang].analytics}</span>
+                </button>
+                <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
+                    <Settings size={14} />
+                    <span>{TRANS[lang].settings}</span>
+                </button>
+            </div>
+
+            {currentView === 'dashboard' ? (
+                <button 
+                    onClick={onCalendarClick}
+                    className="flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-4 md:py-2 bg-white/5 border border-white/10 rounded hover:border-ru-primary hover:bg-white/10 transition-all group shrink-0"
+                    title={TRANS[lang].missionLog}
+                >
+                    <CalendarIcon size={14} className="md:w-4 md:h-4 text-ru-textDim group-hover:text-ru-primary" />
+                    <span className="font-mono font-bold text-[10px] md:text-sm text-white hidden sm:block">{dateDisplay}</span>
+                </button>
+            ) : (
+                <div className="w-0 md:w-4"></div>
+            )}
+            
+            <button 
+                onClick={() => setLang(l => l === 'EN' ? 'ZH' : 'EN')}
+                className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
+            >
+            <Globe size={14} />
+            {lang}
+            </button>
+        </div>
+        </header>
+    );
+};
+
+export const BouncyDot = (props: any) => {
+  const { cx, cy, stroke } = props;
+  return (
+    <g className="pointer-events-none">
+       <circle 
+          cx={cx} cy={cy} r={6} 
+          fill={stroke} 
+          stroke="#fff" strokeWidth={2}
+          className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center scale-0 animate-[popup_0.4s_ease-out_forwards]"
+          style={{ transformBox: 'fill-box' }}
+       />
+       <circle 
+          cx={cx} cy={cy} r={12} 
+          fill="none" 
+          stroke={stroke} strokeWidth={1}
+          className="opacity-40"
+       />
+    </g>
+  );
+};
+
+
+// --- SHARED UI COMPONENTS ---
+
+interface DashboardPanelProps {
+    title: string;
+    count: number | React.ReactNode;
+    countLabel: string;
+    children: React.ReactNode;
+    extraAction?: React.ReactNode;
+    className?: string;
+}
+
+export const DashboardPanel: React.FC<DashboardPanelProps> = ({ title, count, countLabel, children, extraAction, className = "h-[400px]" }) => (
+    <div className={`bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md flex flex-col hover:border-white/20 transition-colors duration-300 ${className}`}>
+       <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2 flex-shrink-0">
+         <div className="flex items-center gap-2 md:gap-3">
+             <h3 className="text-base md:text-lg font-bold italic font-sans text-white truncate">{title}</h3>
+             {extraAction}
+         </div>
+         <div className="text-xs font-mono text-ru-primary flex items-baseline gap-1">
+            <span className="text-white font-bold text-lg md:text-xl">
+              {typeof count === 'number' ? <NumberTicker value={count} /> : count}
+            </span>
+            <span className="opacity-70">{countLabel}</span>
+         </div>
+       </div>
+       <div className="flex-1 min-h-0 relative">
+          {children}
+       </div>
+    </div>
+);
+
+const VitalCard = ({ label, value, icon: Icon, delay }: { label: string, value: number, icon: any, delay: number }) => (
+  <div 
+    className="relative group overflow-hidden bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md transition-all duration-500 hover:border-ru-primary/50 hover:bg-white/5"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <div className="absolute top-0 right-0 p-2 md:p-4 opacity-20 group-hover:opacity-100 group-hover:text-ru-primary transition-all duration-300">
+        <Icon size={24} className="md:w-8 md:h-8" strokeWidth={1.5} />
+    </div>
+    <h3 className="text-ru-textMuted uppercase text-[10px] md:text-xs font-bold tracking-widest mb-1 md:mb-2 font-sans">{label}</h3>
+    <div className="text-2xl md:text-4xl font-mono font-black text-white group-hover:text-ru-primary transition-colors duration-300">
+      <NumberTicker value={value} />
+    </div>
+    <div className="absolute bottom-0 left-0 w-full h-1 bg-ru-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+  </div>
+);
+
+interface ProjectSelectorProps {
+  projects: ProjectData[];
+  selectedIndex: number;
+  onSelect: (index: number) => void;
+  lang: LangType;
+}
+
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang }) => {
+  return (
+    <div className="w-full mb-6 md:mb-8">
+      <div className="flex w-full gap-1 h-16 md:h-24">
+        {projects.map((proj, idx) => {
+          const isActive = idx === selectedIndex;
+          
+          return (
+            <button
+              key={proj.projectId}
+              onClick={() => onSelect(idx)}
+              style={{ flex: `${proj.accumulatedRuntime} 1 0px` }}
+              className={`
+                relative h-full flex flex-col justify-between p-2 md:p-4 text-left transition-all duration-300 group
+                border border-ru-glassBorder backdrop-blur-sm overflow-hidden min-w-0
+                ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
+              `}
+            >
+              <div className="flex justify-between items-start w-full min-w-0">
+                 <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 w-full ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
+                   {proj.name}
+                 </span>
+                 {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 flex-shrink-0 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
+              </div>
+              
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto min-w-0">
+                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{proj.dailyRuntime}</span>
+                 <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{TRANS[lang].id}: {proj.projectId}</span>
+              </div>
+
+              <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  );
+};
+
+export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
+  const chartData = useMemo(() => {
+    return Object.entries(data).map(([key, value]) => {
+        const rawLabel = key.replace(/([A-Z])/g, ' $1').toUpperCase(); 
+        const mappedLabel = TRANS[lang][key as keyof typeof TRANS.EN] || rawLabel;
+        
+        return {
+            subject: mappedLabel,
+            A: value,
+            fullMark: 150, 
+        };
+    });
+  }, [data, lang]);
+
+  return (
+    <div className="w-full h-full relative">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
+          <PolarGrid stroke="rgba(255,255,255,0.1)" />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
+          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+          <Radar
+            name={TRANS[lang].totalLayers}
+            dataKey="A"
+            stroke="#FF6B35"
+            strokeWidth={2}
+            fill="#FF6B35"
+            fillOpacity={0.3}
+            activeDot={<BouncyDot />}
+            isAnimationActive={true}
+          />
+          <Tooltip 
+             cursor={false}
+             contentStyle={{ backgroundColor: '#050505', border: '1px solid #333' }}
+             itemStyle={{ color: '#FF6B35' }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang: LangType }) => {
+  const [hoveredName, setHoveredName] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const chartData = useMemo(() => {
+    const entries = Object.entries(data);
+    entries.sort((a, b) => b[1] - a[1]);
+    const top8 = entries.slice(0, 8);
+    return top8.map(([name, value]) => ({ name, value }));
+  }, [data]);
+
+  const total = Object.values(data).reduce((a, b) => a + b, 0);
+  
+  // Find data for center display based on hovered name
+  const activeItem = hoveredName ? chartData.find(d => d.name === hoveredName) : null;
+  const displayData = activeItem || { name: TRANS[lang].total, value: total };
+
+  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000'];
+  const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  return (
+    <div className="w-full h-full relative flex flex-col items-center justify-center">
+      <div className="relative w-full flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={90}
+              paddingAngle={2}
+              dataKey="value"
+              stroke="none"
+              onMouseEnter={(_, index) => setHoveredName(chartData[index].name)}
+              onMouseLeave={() => setHoveredName(null)}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={COLORS[index % COLORS.length]} 
+                  className="transition-all duration-300 outline-none"
+                  style={{ 
+                      opacity: hoveredName && hoveredName !== entry.name ? 0.3 : 1,
+                      filter: hoveredName === entry.name ? 'drop-shadow(0 0 4px rgba(255,107,53,0.5))' : 'none'
+                  }}
+                  stroke={hoveredName === entry.name ? '#FFF' : 'none'}
+                  strokeWidth={2}
+                />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span className="text-ru-textMuted text-xs uppercase tracking-wider mb-1 max-w-[80%] truncate">
+            {displayData.name}
+          </span>
+          <span className="text-2xl font-mono font-black text-white">
+            <NumberTicker value={displayData.value} />
+          </span>
+          <span className="text-[10px] text-ru-primary font-mono mt-1 bg-ru-primary/10 px-1 rounded">
+             {percentage}%
+          </span>
+        </div>
+      </div>
+      
+      <div 
+         ref={scrollRef}
+         className="w-full overflow-x-auto whitespace-nowrap pb-2 px-4 mt-2 h-8 scrollbar-none"
+         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+          {chartData.map((entry, idx) => (
+            <span 
+                key={idx} 
+                className={`inline-block mr-4 text-[10px] uppercase cursor-pointer transition-all duration-200 ${hoveredName === entry.name ? 'text-white font-bold scale-110' : 'text-ru-textDim hover:text-white'}`}
+                onMouseEnter={() => setHoveredName(entry.name)}
+                onMouseLeave={() => setHoveredName(null)}
+            >
+              <span className="inline-block w-2 h-2 mr-1 rounded-full" style={{backgroundColor: COLORS[idx]}}></span>
+              {entry.name}
+            </span>
+          ))}
+          <style>{`
+             .scrollbar-none::-webkit-scrollbar {
+               display: none;
+             }
+          `}</style>
+      </div>
+    </div>
+  );
+};
+
+export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list' }) => {
+  const [sortKey, setSortKey] = useState<'name' | 'value'>('value');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const rawItems = useMemo(() => {
+    if (Array.isArray(data)) {
+        return data.map(item => ({ name: item, value: 0 }));
+    }
+    const entries = Object.entries(data);
+    return entries.map(([name, value]) => ({ name, value }));
+  }, [data]);
+
+  useEffect(() => {
+      if (type === 'list') {
+          setSortKey('name');
+          setSortDir('asc');
+      } else {
+          setSortKey('value');
+          setSortDir('desc');
+      }
+  }, [type, data]);
+
+  const sortedItems = useMemo(() => {
+      const items = [...rawItems];
+      items.sort((a, b) => {
+          let res = 0;
+          if (sortKey === 'name') {
+              res = a.name.localeCompare(b.name, lang === 'ZH' ? 'zh' : 'en');
+          } else {
+              res = a.value - b.value;
+          }
+          return sortDir === 'asc' ? res : -res;
+      });
+      return items;
+  }, [rawItems, sortKey, sortDir, lang]);
+
+  const toggleSort = (key: 'name' | 'value') => {
+      if (sortKey === key) {
+          setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+      } else {
+          setSortKey(key);
+          setSortDir(key === 'value' ? 'desc' : 'asc'); 
+      }
+  };
+
+  const maxVal = Math.max(...rawItems.map(i => i.value));
+  const SortIcon = ({ active, dir }: { active: boolean, dir: 'asc' | 'desc' }) => {
+      if (!active) return <ArrowUpDown size={10} className="opacity-30" />;
+      return dir === 'asc' ? <ArrowUp size={10} className="text-ru-primary" /> : <ArrowDown size={10} className="text-ru-primary" />;
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col">
+       <div className="flex justify-between items-center text-[10px] text-ru-textMuted uppercase tracking-wider mb-2 px-2 select-none">
+           <button 
+             onClick={() => toggleSort('name')} 
+             className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'name' ? 'text-white font-bold' : ''}`}
+           >
+             {TRANS[lang].sortName} <SortIcon active={sortKey === 'name'} dir={sortDir} />
+           </button>
+           
+           {type === 'count' && (
+             <button 
+               onClick={() => toggleSort('value')} 
+               className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'value' ? 'text-white font-bold' : ''}`}
+             >
+               {TRANS[lang].sortValue} <SortIcon active={sortKey === 'value'} dir={sortDir} />
+             </button>
+           )}
+       </div>
+
+       <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar min-h-0">
+          {sortedItems.map((item, idx) => (
+            <div key={idx} className="group relative flex items-center justify-between text-xs font-mono hover:bg-white/5 p-2 rounded transition-colors">
+               <span className="z-10 truncate text-ru-textDim group-hover:text-white w-2/3">{item.name}</span>
+               {type === 'count' && (
+                 <>
+                  <span className="z-10 text-ru-primary font-bold">{item.value}</span>
+                  <div 
+                    className="absolute left-0 top-0 bottom-0 bg-ru-primary/10 rounded" 
+                    style={{ width: `${(item.value / maxVal) * 100}%` }} 
+                  />
+                 </>
+               )}
+            </div>
+          ))}
+       </div>
+    </div>
+  );
+};
+
+const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lang }: any) => {
+  if (!isOpen) return null;
+
+  const SYSTEM_TODAY = '2026-01-26';
+  const [viewDate, setViewDate] = useState(new Date(currentSelectedDate || SYSTEM_TODAY));
+  const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
+
+  useEffect(() => {
+    if (isOpen) {
+        setViewDate(new Date(currentSelectedDate || SYSTEM_TODAY));
+        setViewMode('month');
+    }
+  }, [isOpen, currentSelectedDate]);
+
+  const currentYear = viewDate.getFullYear();
+  const currentMonth = viewDate.getMonth(); 
+
+  const handlePrev = () => {
+    const d = new Date(viewDate);
+    if (viewMode === 'month') {
+        d.setMonth(d.getMonth() - 1);
+    } else {
+        d.setFullYear(d.getFullYear() - 1);
+    }
+    setViewDate(d);
+  };
+
+  const handleNext = () => {
+    const d = new Date(viewDate);
+    if (viewMode === 'month') {
+        d.setMonth(d.getMonth() + 1);
+    } else {
+        d.setFullYear(d.getFullYear() + 1);
+    }
+    setViewDate(d);
+  };
+
+  const jumpToToday = () => {
+      setViewDate(new Date(SYSTEM_TODAY));
+      setViewMode('month');
+      onSelectDate(SYSTEM_TODAY); 
+  };
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); 
+  
+  const calendarCells = [];
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarCells.push({ type: 'pad', id: `pad-${i}` });
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+      const monthStr = (currentMonth + 1).toString().padStart(2, '0');
+      const dayStr = i.toString().padStart(2, '0');
+      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+      
+      const hasData = !!MOCK_DATA[dateStr];
+      let heat = 0;
+      if (hasData) {
+         heat = MOCK_DATA[dateStr].projects.reduce((acc, p) => acc + p.accumulatedRuntime, 0);
+      } else {
+         const r = seededRandom(dateStr + '_comps'); 
+         if (r > 0.3) { 
+             heat = 20000 + (r * 20000); 
+         }
+      }
+      calendarCells.push({ type: 'day', day: i, dateStr, heat });
+  }
+
+  const weekDays = lang === 'ZH' 
+    ? ['日','一','二','三','四','五','六']
+    : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
+      <div className="w-[95%] max-w-[420px] bg-[#0A0A0A] border border-ru-primary/30 p-5 shadow-[0_0_50px_rgba(255,107,53,0.1)] relative overflow-hidden rounded-lg flex flex-col">
+        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(0deg,transparent_24%,rgba(255,107,53,.3)_25%,rgba(255,107,53,.3)_26%,transparent_27%,transparent_74%,rgba(255,107,53,.3)_75%,rgba(255,107,53,.3)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(255,107,53,.3)_25%,rgba(255,107,53,.3)_26%,transparent_27%,transparent_74%,rgba(255,107,53,.3)_75%,rgba(255,107,53,.3)_76%,transparent_77%,transparent)] bg-[length:30px_30px]"></div>
+        <button onClick={onClose} className="absolute top-3 right-3 text-white hover:text-ru-primary z-20 transition-colors">
+          <X size={18} />
+        </button>
+
+        <div className="flex flex-col gap-1 mb-4 relative z-10">
+            <h2 className="text-lg font-black italic font-sans text-white uppercase">{TRANS[lang].missionLog}</h2>
+            <div className="flex items-center justify-between w-full mt-2">
+                 <button onClick={handlePrev} className="p-1.5 border border-white/10 hover:border-ru-primary text-ru-textDim hover:text-white rounded transition-colors"><ChevronLeft size={16}/></button>
+                 <button 
+                    onClick={() => setViewMode(viewMode === 'month' ? 'year' : 'month')}
+                    className="font-mono text-ru-primary font-bold text-sm hover:text-white hover:underline decoration-ru-primary underline-offset-4 transition-all"
+                 >
+                    {viewMode === 'month' 
+                        ? `${TRANS[lang].months[currentMonth]} ${currentYear}`
+                        : `${currentYear}`
+                    }
+                 </button>
+                 <button onClick={handleNext} className="p-1.5 border border-white/10 hover:border-ru-primary text-ru-textDim hover:text-white rounded transition-colors"><ChevronRight size={16}/></button>
+            </div>
+        </div>
+
+        <div className="relative z-10 min-h-[280px]">
+           {viewMode === 'month' ? (
+               <div className="grid grid-cols-7 gap-1">
+                 {weekDays.map(d => (
+                   <div key={d} className="text-center text-[10px] text-ru-textMuted font-bold mb-1 select-none">{d}</div>
+                 ))}
+                 {calendarCells.map((cell: any) => {
+                     if (cell.type === 'pad') return <div key={cell.id}></div>;
+                     
+                     let bgClass = "bg-white/5";
+                     let borderClass = "border-transparent";
+                     let textClass = "text-ru-textDim";
+
+                     if (cell.heat > 0) {
+                         textClass = "text-white";
+                         if (cell.heat < 25000) { 
+                             bgClass = "bg-ru-primary/20"; 
+                         } else if (cell.heat < 60000) { 
+                             bgClass = "bg-ru-primary/60"; 
+                         } else {
+                             bgClass = "bg-ru-primary"; 
+                             textClass = "text-black";
+                         }
+                     }
+
+                     if (cell.dateStr === currentSelectedDate) {
+                         borderClass = "border-white";
+                         if(cell.heat === 0) textClass = "text-white";
+                     }
+
+                     return (
+                         <button 
+                            key={cell.dateStr}
+                            onClick={() => {
+                                if (cell.heat > 0) {
+                                    onSelectDate(cell.dateStr);
+                                    onClose();
+                                }
+                            }}
+                            disabled={cell.heat === 0}
+                            className={`
+                                aspect-square relative flex items-center justify-center rounded-sm border ${borderClass}
+                                ${bgClass}
+                                transition-all duration-200 
+                                ${cell.heat > 0 ? 'hover:scale-110 hover:z-10 cursor-pointer' : 'cursor-default opacity-50'}
+                            `}
+                         >
+                            <span className={`text-[10px] font-bold font-mono ${textClass}`}>{cell.day}</span>
+                            {cell.heat > 0 && <div className={`absolute bottom-1 right-1 w-1 h-1 rounded-full ${cell.heat > 55000 ? 'bg-black' : 'bg-white'}`}></div>}
+                         </button>
+                     )
+                 })}
+               </div>
+           ) : (
+               <div className="grid grid-cols-3 gap-2 h-full content-start">
+                   {TRANS[lang].months.map((m: string, idx: number) => {
+                       const isActive = idx === currentMonth;
+                       return (
+                           <button
+                             key={m}
+                             onClick={() => {
+                                 const d = new Date(viewDate);
+                                 d.setMonth(idx);
+                                 setViewDate(d);
+                                 setViewMode('month');
+                             }}
+                             className={`
+                                h-16 rounded border flex items-center justify-center text-sm font-bold font-mono transition-all
+                                ${isActive ? 'bg-ru-primary text-black border-ru-primary' : 'bg-white/5 border-white/10 text-ru-textDim hover:border-white/50 hover:text-white'}
+                             `}
+                           >
+                               {m}
+                           </button>
+                       )
+                   })}
+               </div>
+           )}
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-white/10 flex justify-between items-center text-[9px] text-ru-textMuted font-mono uppercase relative z-10">
+           <button 
+             onClick={jumpToToday}
+             className="flex items-center gap-1.5 hover:text-white transition-colors group"
+           >
+              <RotateCcw size={10} className="group-hover:rotate-180 transition-transform duration-500"/>
+              {TRANS[lang].jumpToday}
+           </button>
+
+           <div className="flex items-center gap-2">
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/20 rounded-full"></span> {TRANS[lang].low}</div>
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/60 rounded-full"></span> {TRANS[lang].mid}</div>
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary rounded-full"></span> {TRANS[lang].high}</div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- ANALYTICS VIEW COMPONENTS ---
+
+const MetricToggle = ({ 
+    active, 
+    onClick, 
+    onContextMenu,
+    label, 
+    value,
+    formatValue,
+    color, 
+    icon: Icon, 
+    hint 
+}: { 
+    active: boolean, 
+    onClick: () => void, 
+    onContextMenu: (e: React.MouseEvent) => void,
+    label: string, 
+    value: number,
+    formatValue?: (v: number) => string,
+    color: string, 
+    icon: any,
+    hint: string
+}) => (
+    <button 
+        onClick={onClick}
+        onContextMenu={onContextMenu}
+        className={`
+            relative flex items-center justify-center gap-2 px-2 py-3 rounded-sm border transition-all duration-300 group
+            flex-1 min-w-0
+            ${active 
+                ? `bg-[${color}]/10 border-[${color}] text-white shadow-[0_0_15px_-5px_${color}]` 
+                : 'bg-white/5 border-white/10 text-ru-textDim hover:bg-white/10 hover:border-white/20'
+            }
+        `}
+        style={{ 
+            borderColor: active ? color : undefined, 
+        }}
+        title={hint}
+    >
+        <Icon size={16} style={{ color: active ? color : undefined }} className={active ? "" : "opacity-60"} />
+        
+        <div className="flex flex-col items-start leading-none min-w-0 flex-1">
+            <span className={`font-mono font-bold text-xs sm:text-sm ${active ? 'text-white' : 'text-ru-textDim'} truncate w-full text-left`}>
+                {formatValue ? formatValue(value) : value.toLocaleString()}
+            </span>
+            <span className="text-[9px] uppercase tracking-wider opacity-60 hidden sm:block mt-0.5 truncate w-full text-left">
+                {label}
+            </span>
+        </div>
+    </button>
+);
+
+const ViewModeButton = ({ active, onClick, label, shortLabel }: { active: boolean, onClick: () => void, label: string, shortLabel: string }) => (
+    <button 
+        onClick={onClick}
+        className={`
+            flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] md:text-xs font-bold font-mono transition-all border-b-2 whitespace-nowrap
+            ${active 
+                ? 'text-ru-primary border-ru-primary bg-ru-primary/5' 
+                : 'text-ru-textMuted border-transparent hover:text-white hover:bg-white/5'
+            }
+        `}
+    >
+        <span className="sm:hidden">{shortLabel}</span>
+        <span className="hidden sm:inline">{label}</span>
+    </button>
+);
+
+const OptionSwitch = ({ active, onClick, label, icon: Icon, hideLabelOnMobile = false }: any) => (
+    <button 
+        onClick={onClick}
+        className={`
+            flex items-center gap-1.5 px-2 py-1 rounded transition-all duration-300 text-xs font-bold font-mono uppercase tracking-wider
+            ${active 
+                ? 'text-ru-primary bg-ru-primary/10 border border-ru-primary/30' 
+                : 'text-ru-textMuted hover:text-white border border-transparent hover:bg-white/5'
+            }
+        `}
+        title={hideLabelOnMobile ? label : undefined}
+    >
+        <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-ru-primary shadow-[0_0_5px_#FF6B35]' : 'bg-white/20'}`} />
+        <span className={hideLabelOnMobile ? "hidden sm:inline" : ""}>{label}</span>
+        {hideLabelOnMobile && <Icon size={14} className="sm:hidden" />}
+    </button>
+);
+
+const AnalyticsTable = ({ 
+    data, 
+    lang, 
+    formatRuntime,
+    onNavigate 
+}: { 
+    data: any[], 
+    lang: LangType, 
+    formatRuntime: (s: number) => string,
+    onNavigate: (date: string, projectName?: string) => void
+}) => {
+    
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+    const flatRows = useMemo(() => {
+        return data.flatMap(period => period.projects.map((proj: any) => ({
+            periodLabel: period.fullLabel,
+            displayX: period.displayX,
+            isoDate: period.isoDate,
+            ...proj
+        })));
+    }, [data]);
+
+    const sortedRows = useMemo(() => {
+        let items = [...flatRows];
+        if (sortConfig !== null) {
+            items.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+                if (sortConfig.key === 'periodLabel') {
+                    aValue = a.isoDate;
+                    bValue = b.isoDate;
+                }
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        return items;
+    }, [flatRows, sortConfig]);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+    const totalPages = Math.ceil(sortedRows.length / ITEMS_PER_PAGE);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [data]);
+
+    const visibleRows = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return sortedRows.slice(start, start + ITEMS_PER_PAGE);
+    }, [sortedRows, currentPage]);
+
+    const handlePageChange = (dir: -1 | 1) => {
+        setCurrentPage(p => Math.max(1, Math.min(totalPages, p + dir)));
+    };
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const SortableHeader = ({ label, sortKey, align = 'left', colorClass = 'text-ru-textMuted', width }: any) => {
+        const isActive = sortConfig?.key === sortKey;
+        return (
+            <th 
+                className={`p-3 font-bold cursor-pointer transition-colors select-none group ${colorClass}`}
+                style={{ width }}
+                onClick={() => handleSort(sortKey)}
+            >
+                <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
+                    <span className="group-hover:text-white transition-colors">{label}</span>
+                    <div className="w-3 flex justify-center text-ru-primary">
+                        {isActive ? (
+                            sortConfig?.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                        ) : (
+                            <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-30 text-white" />
+                        )}
+                    </div>
+                </div>
+            </th>
+        );
+    };
+
+    return (
+        <div className="w-full h-full flex flex-col">
+            <div className="flex-1 overflow-auto custom-scrollbar relative">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead className="sticky top-0 bg-[#050505] z-10 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]">
+                        <tr className="border-b border-white/10 text-[10px] uppercase font-mono">
+                            <SortableHeader label={lang === 'ZH' ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
+                            <SortableHeader label={lang === 'ZH' ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
+                            <SortableHeader label={TRANS[lang].compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
+                            <SortableHeader label={TRANS[lang].totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
+                            <SortableHeader label={TRANS[lang].keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
+                            <SortableHeader label={TRANS[lang].effects} sortKey="effects" align="right" colorClass="text-emerald-400/80" />
+                            <SortableHeader label={TRANS[lang].runtime} sortKey="runtime" align="right" colorClass="text-amber-400/80" />
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {visibleRows.map((row: any, idx: number) => (
+                            <tr key={`${row.periodLabel}-${row.id}-${idx}`} className="hover:bg-white/5 transition-colors group cursor-pointer select-none">
+                                <td 
+                                    className="p-3 text-xs font-bold text-ru-textDim group-hover:text-white align-top hover:underline decoration-white/30 underline-offset-4"
+                                    onDoubleClick={() => onNavigate(row.isoDate)}
+                                    title="Double click to jump to this date on Dashboard"
+                                >
+                                    {row.periodLabel}
+                                    {row.displayX && <span className="ml-2 opacity-50 text-[9px]">({row.displayX})</span>}
+                                </td>
+                                <td 
+                                    className="p-3 text-xs font-mono text-white group-hover:text-ru-primary transition-colors hover:underline decoration-ru-primary/30 underline-offset-4"
+                                    onDoubleClick={() => onNavigate(row.isoDate, row.name)}
+                                    title="Double click to filter this project on Dashboard"
+                                >
+                                    {row.name}
+                                </td>
+                                <td className="p-3 text-xs font-mono text-right text-blue-100/70">{row.compositions.toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-purple-100/70">{row.layers.toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-white font-bold">{row.keyframes.toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-emerald-100/70">{row.effects.toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-amber-100/70">{formatRuntime(row.runtime)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-auto bg-[#050505] flex-shrink-0">
+                    <button 
+                        onClick={() => handlePageChange(-1)} 
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-bold text-ru-textDim hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all uppercase tracking-wider"
+                    >
+                        <ChevronLeft size={14} />
+                        Prev
+                    </button>
+                    
+                    <span className="text-[10px] font-mono text-ru-textMuted uppercase tracking-widest">
+                        {TRANS[lang].page} <span className="text-white font-bold">{currentPage}</span> {TRANS[lang].of} {totalPages}
+                    </span>
+                    
+                    <button 
+                        onClick={() => handlePageChange(1)} 
+                        disabled={currentPage === totalPages}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-bold text-ru-textDim hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all uppercase tracking-wider"
+                    >
+                        Next
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export const AnalyticsView = ({ 
+    lang, 
+    displayMode = 'chart', 
+    setAnalyticsMode,
+    searchQuery = '',
+    onNavigate
+}: { 
+    lang: LangType, 
+    displayMode?: AnalyticsMode, 
+    setAnalyticsMode: (mode: AnalyticsMode) => void,
+    searchQuery?: string,
+    onNavigate: (date: string, projectName?: string) => void
+}) => {
+    const [cursorDate, setCursorDate] = useState<Date>(new Date('2026-01-26'));
+    const [viewMode, setViewMode] = useState<ViewMode>('week');
+    
+    const [showDaily, setShowDaily] = useState(false);
+    const [normalizeData, setNormalizeData] = useState(true);
+
+    const [visibleMetrics, setVisibleMetrics] = useState({
+        compositions: true,
+        layers: false, 
+        keyframes: true,
+        effects: false,
+        runtime: true,
+        projectCount: false
+    });
+
+    const handleNav = (dir: -1 | 1) => {
+        const newDate = new Date(cursorDate);
+        if (viewMode === 'week') {
+            newDate.setDate(newDate.getDate() + (dir * 7));
+        } else if (viewMode === 'month') {
+            newDate.setMonth(newDate.getMonth() + dir);
+        } else if (viewMode === 'quarter') {
+            newDate.setMonth(newDate.getMonth() + (dir * 3));
+        } else if (viewMode === 'year') {
+            newDate.setFullYear(newDate.getFullYear() + dir);
+        } else if (viewMode === 'all') {
+            newDate.setFullYear(newDate.getFullYear() + (dir * 5));
+        }
+        setCursorDate(newDate);
+    };
+
+    const { data: rawData, label: timeLabel } = useMemo(() => 
+        getAnalyticsData(viewMode, cursorDate, showDaily)
+    , [viewMode, cursorDate, showDaily]);
+
+
+    const filteredRawData = useMemo(() => {
+        if (!searchQuery.trim()) return rawData;
+        const lowerQ = searchQuery.toLowerCase();
+
+        return rawData.map(period => {
+            // Check if period matches directly (e.g. searching for "Jan")
+            const periodMatches = period.fullLabel.toLowerCase().includes(lowerQ) || 
+                                 (period.displayX && period.displayX.toString().toLowerCase().includes(lowerQ));
+
+            if (periodMatches) return period;
+
+            // Otherwise, filter inner projects
+            if (!period.projects) return null;
+
+            const matchingProjects = period.projects.filter((p: any) => p.name.toLowerCase().includes(lowerQ));
+            
+            if (matchingProjects.length === 0) return null;
+
+            // Re-aggregate stats for this subset
+            const newStats = matchingProjects.reduce((acc: any, p: any) => ({
+                compositions: acc.compositions + p.compositions,
+                layers: acc.layers + p.layers,
+                keyframes: acc.keyframes + p.keyframes,
+                effects: acc.effects + p.effects,
+                runtime: acc.runtime + p.runtime,
+            }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0 });
+
+            return {
+                ...period,
+                ...newStats,
+                projects: matchingProjects,
+            };
+        }).filter(Boolean);
+    }, [rawData, searchQuery]);
+
+
+    const processedData = useMemo(() => {
+        // First calculate projectCount for all raw entries
+        const withCounts = filteredRawData.map((d: any) => ({
+            ...d,
+            projectCount: d.projects ? d.projects.length : 0
+        }));
+
+        if (!normalizeData) return withCounts;
+        
+        const maxVals = {
+            compositions: Math.max(...withCounts.map((d: any) => d.compositions), 1),
+            layers: Math.max(...withCounts.map((d: any) => d.layers), 1),
+            keyframes: Math.max(...withCounts.map((d: any) => d.keyframes), 1),
+            effects: Math.max(...withCounts.map((d: any) => d.effects), 1),
+            runtime: Math.max(...withCounts.map((d: any) => d.runtime), 1),
+            projectCount: Math.max(...withCounts.map((d: any) => d.projectCount), 1),
+        };
+
+        return withCounts.map((d: any) => ({
+            ...d,
+            _raw: { ...d },
+            compositions: (d.compositions / maxVals.compositions) * 100,
+            layers: (d.layers / maxVals.layers) * 100,
+            keyframes: (d.keyframes / maxVals.keyframes) * 100,
+            effects: (d.effects / maxVals.effects) * 100,
+            runtime: (d.runtime / maxVals.runtime) * 100,
+            projectCount: (d.projectCount / maxVals.projectCount) * 100,
+        }));
+
+    }, [filteredRawData, normalizeData]);
+
+    const finalDisplayData = useMemo(() => {
+        // Filtering is now done upstream in filteredRawData to support re-aggregation for charts
+        return processedData;
+    }, [processedData]);
+
+    const totals = useMemo(() => {
+        // Use filteredRawData so totals reflect the search
+        return filteredRawData.reduce((acc: any, curr: any) => ({
+            compositions: acc.compositions + curr.compositions,
+            layers: acc.layers + curr.layers,
+            keyframes: acc.keyframes + curr.keyframes,
+            effects: acc.effects + curr.effects,
+            runtime: acc.runtime + curr.runtime,
+            projectCount: acc.projectCount + (curr.projects ? curr.projects.length : 0),
+        }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0, projectCount: 0 });
+    }, [filteredRawData]);
+
+    const aggregatedDetails = useMemo(() => {
+        const acc = {
+            keyframes: {} as Record<string, number>,
+            compositions: [] as string[],
+            layers: { video: 0, image: 0, designFile: 0, sourceFile: 0, nullSolidLayer: 0 } as Record<string, number>,
+            effectCounts: {} as Record<string, number>
+        };
+
+        finalDisplayData.forEach((period: any) => {
+             if(period.projects) {
+                 period.projects.forEach((p: any) => {
+                     if(!p.details) return;
+                     if (p.details.layers) {
+                        Object.keys(p.details.layers).forEach(k => {
+                            acc.layers[k] = (acc.layers[k] || 0) + (p.details.layers[k] as number);
+                        });
+                     }
+                     if (p.details.effectCounts) {
+                        Object.entries(p.details.effectCounts).forEach(([k, v]) => {
+                            acc.effectCounts[k] = (acc.effectCounts[k] || 0) + (v as number);
+                        });
+                     }
+                     if (p.details.keyframes) {
+                        Object.entries(p.details.keyframes).forEach(([k, v]) => {
+                            acc.keyframes[k] = (acc.keyframes[k] || 0) + (v as number);
+                        });
+                     }
+                     if (p.details.compositions) {
+                        acc.compositions.push(...p.details.compositions);
+                     }
+                 });
+             }
+        });
+        return acc;
+    }, [finalDisplayData]);
+
+
+    const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
+
+    const toggleMetric = (key: keyof typeof visibleMetrics) => {
+        setVisibleMetrics(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const soloMetric = (key: keyof typeof visibleMetrics) => {
+        const reset = {
+            compositions: false, layers: false, keyframes: false, effects: false, runtime: false, projectCount: false
+        };
+        setVisibleMetrics({ ...reset, [key]: true });
+    };
+
+    return (
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 pb-20 animate-[fadeIn_0.5s_ease-out]">
+            
+            <div className="mb-6 border-b border-white/10 pb-4 flex flex-col gap-4">
+                
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 text-ru-textMuted text-xs font-mono uppercase tracking-widest">
+                        <Activity size={14} className="text-ru-primary" />
+                        <span className="font-bold">{TRANS[lang].trendAnalysis}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <OptionSwitch 
+                            active={displayMode === 'table'} 
+                            onClick={() => setAnalyticsMode(displayMode === 'chart' ? 'table' : 'chart')} 
+                            label={TRANS[lang].viewTable} 
+                            icon={TableIcon} 
+                            hideLabelOnMobile={true}
+                        />
+
+                        <OptionSwitch 
+                            active={showDaily} 
+                            onClick={() => setShowDaily(!showDaily)} 
+                            label={TRANS[lang].dailyDetails} 
+                            icon={Calendar} 
+                            hideLabelOnMobile={true}
+                        />
+                        {displayMode === 'chart' && (
+                            <OptionSwitch 
+                                active={normalizeData} 
+                                onClick={() => setNormalizeData(!normalizeData)} 
+                                label={TRANS[lang].normalizeCurves} 
+                                icon={AlignLeft} 
+                                hideLabelOnMobile={true}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                    <div className="flex items-center gap-1 bg-ru-glass border border-ru-glassBorder p-0.5 rounded-sm w-full sm:w-auto">
+                        <button onClick={() => handleNav(-1)} className="p-2 sm:p-1.5 hover:bg-white/10 rounded text-white transition-colors flex-none"><ChevronLeft size={16} /></button>
+                        <div className="flex-1 sm:w-40 text-center font-bold font-mono text-xs sm:text-sm text-white tabular-nums truncate">
+                            {timeLabel}
+                        </div>
+                        <button onClick={() => handleNav(1)} className="p-2 sm:p-1.5 hover:bg-white/10 rounded text-white transition-colors flex-none"><ChevronRight size={16} /></button>
+                    </div>
+
+                    <div className="flex bg-ru-glass border border-ru-glassBorder rounded-sm overflow-hidden w-full sm:w-auto">
+                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={TRANS[lang].viewweek} shortLabel={lang === 'ZH' ? '周' : 'WK'} />
+                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={TRANS[lang].viewmonth} shortLabel={lang === 'ZH' ? '月' : 'MO'} />
+                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={TRANS[lang].viewquarter} shortLabel={lang === 'ZH' ? '季' : 'QT'} />
+                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={TRANS[lang].viewyear} shortLabel={lang === 'ZH' ? '年' : 'YR'} />
+                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={TRANS[lang].viewall} shortLabel={lang === 'ZH' ? '全' : 'ALL'} />
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 w-full mt-1">
+                     <MetricToggle 
+                        active={visibleMetrics.compositions} 
+                        onClick={() => toggleMetric('compositions')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('compositions'); }}
+                        label={TRANS[lang].compositions} 
+                        value={totals.compositions}
+                        color="#3b82f6" icon={LayoutGrid} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                    <MetricToggle 
+                        active={visibleMetrics.layers} 
+                        onClick={() => toggleMetric('layers')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('layers'); }}
+                        label={TRANS[lang].totalLayers} 
+                        value={totals.layers}
+                        color="#a855f7" icon={Layers} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                     <MetricToggle 
+                        active={visibleMetrics.keyframes} 
+                        onClick={() => toggleMetric('keyframes')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('keyframes'); }}
+                        label={TRANS[lang].keyframes} 
+                        value={totals.keyframes}
+                        color="#FF6B35" icon={Activity} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                     <MetricToggle 
+                        active={visibleMetrics.effects} 
+                        onClick={() => toggleMetric('effects')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('effects'); }}
+                        label={TRANS[lang].effects} 
+                        value={totals.effects}
+                        color="#10b981" icon={Hexagon} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                    <MetricToggle 
+                        active={visibleMetrics.runtime} 
+                        onClick={() => toggleMetric('runtime')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('runtime'); }}
+                        label={TRANS[lang].runtime} 
+                        value={totals.runtime}
+                        formatValue={formatRuntime}
+                        color="#f59e0b" icon={Clock} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                    <MetricToggle 
+                        active={visibleMetrics.projectCount} 
+                        onClick={() => toggleMetric('projectCount')} 
+                        onContextMenu={(e) => { e.preventDefault(); soloMetric('projectCount'); }}
+                        label={TRANS[lang].projectCount} 
+                        value={totals.projectCount}
+                        color="#22d3ee" icon={Folder} 
+                        hint={TRANS[lang].toggleSoloHint}
+                    />
+                </div>
+
+            </div>
+
+            <div className="bg-ru-glass border border-ru-glassBorder p-2 md:p-6 rounded-sm h-[250px] md:h-[500px] mb-8 relative group flex flex-col">
+                
+                {displayMode === 'chart' ? (
+                    <>
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:40px_40px] pointer-events-none"></div>
+
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={finalDisplayData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="gradKeyframes" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#FF6B35" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="gradRuntime" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                <XAxis 
+                                    dataKey="displayX" 
+                                    type="category" 
+                                    stroke="#666" 
+                                    tick={{ fill: '#666', fontSize: 10, fontFamily: 'monospace' }} 
+                                    tickMargin={12}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    scale="point"
+                                    padding={{ left: 0, right: 0 }}
+                                    interval={showDaily && (viewMode === 'year' || viewMode === 'quarter') ? 14 : 'preserveStartEnd'} 
+                                />
+                                <YAxis 
+                                    yAxisId="left" 
+                                    stroke="#666" 
+                                    tick={false}
+                                    width={0}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    domain={normalizeData ? [0, 100] : ['auto', 'auto']}
+                                />
+                                <YAxis 
+                                    yAxisId="right" 
+                                    orientation="right" 
+                                    stroke="#f59e0b" 
+                                    tick={false}
+                                    width={0}
+                                    hide={!visibleMetrics.runtime && !normalizeData} 
+                                    axisLine={false}
+                                    tickLine={false}
+                                    domain={normalizeData ? [0, 100] : ['auto', 'auto']}
+                                />
+                                
+                                <RechartsTooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(5,5,5,0.95)', borderColor: '#333', color: '#fff', borderRadius: '4px', backdropFilter: 'blur(8px)' }}
+                                    itemStyle={{ fontSize: 12, fontFamily: 'monospace', paddingTop: '2px', paddingBottom: '2px' }}
+                                    labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    labelFormatter={(label, payload) => {
+                                        if (payload && payload.length > 0) return payload[0].payload.fullLabel;
+                                        return label;
+                                    }}
+                                    formatter={(value: number, name: string, item: any) => {
+                                        const raw = normalizeData ? item.payload._raw[name] : value;
+                                        if (name === 'runtime') return [formatRuntime(raw), TRANS[lang].runtime];
+                                        const transKey = name as keyof typeof TRANS.EN;
+                                        const label = TRANS[lang][transKey] || name.toUpperCase();
+                                        return [raw.toLocaleString(), label];
+                                    }}
+                                />
+
+                                {visibleMetrics.layers && <Area yAxisId="left" type="monotone" dataKey="layers" stroke="#a855f7" fill="none" strokeWidth={2} />}
+                                {visibleMetrics.compositions && <Area yAxisId="left" type="monotone" dataKey="compositions" stroke="#3b82f6" fill="none" strokeWidth={2} />}
+                                {visibleMetrics.effects && <Area yAxisId="left" type="monotone" dataKey="effects" stroke="#10b981" fill="none" strokeWidth={2} />}
+                                {visibleMetrics.projectCount && <Area yAxisId="left" type="monotone" dataKey="projectCount" stroke="#22d3ee" fill="none" strokeWidth={2} />}
+                                
+                                {visibleMetrics.keyframes && (
+                                    <Area 
+                                        yAxisId="left" type="monotone" dataKey="keyframes" 
+                                        stroke="#FF6B35" fill="url(#gradKeyframes)" strokeWidth={3} 
+                                        activeDot={{ r: 6, strokeWidth: 0, fill: '#FF6B35' }}
+                                    />
+                                )}
+
+                                {visibleMetrics.runtime && (
+                                    <Area 
+                                        yAxisId={normalizeData ? "left" : "right"} 
+                                        type="monotone" dataKey="runtime" 
+                                        stroke="#f59e0b" fill="url(#gradRuntime)" strokeWidth={2} 
+                                        strokeDasharray={normalizeData ? "" : "5 5"} 
+                                    />
+                                )}
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </>
+                ) : (
+                    <AnalyticsTable 
+                        data={finalDisplayData} 
+                        lang={lang} 
+                        formatRuntime={formatRuntime}
+                        onNavigate={onNavigate} 
+                    />
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <DashboardPanel 
+                    title={TRANS[lang].keyframeDensity} 
+                    count={Object.values(aggregatedDetails.keyframes).reduce((a, b) => a + b, 0)} 
+                    countLabel={TRANS[lang].total}
+                    className="h-[220px]"
+                >
+                    <DataList data={aggregatedDetails.keyframes} type="count" lang={lang} />
+                </DashboardPanel>
+
+                <DashboardPanel 
+                    title={TRANS[lang].activeComps} 
+                    count={aggregatedDetails.compositions.length} 
+                    countLabel={TRANS[lang].items}
+                    className="h-[220px]"
+                >
+                    <DataList data={aggregatedDetails.compositions} type="list" lang={lang} />
+                </DashboardPanel>
+                
+                <DashboardPanel 
+                    title={TRANS[lang].layerDist} 
+                    count={Object.values(aggregatedDetails.layers).reduce((a: number,b: number)=>a+b, 0)} 
+                    countLabel={TRANS[lang].total}
+                >
+                <LayerRadar data={aggregatedDetails.layers} lang={lang} />
+                </DashboardPanel>
+
+                <DashboardPanel 
+                    title={TRANS[lang].effectFreq} 
+                    count={
+                      <div className="flex items-baseline gap-1">
+                        <NumberTicker value={totals.effects} />
+                        <span className="text-white/40 text-sm">/</span>
+                        <span className="text-white/60 text-base">{Object.keys(aggregatedDetails.effectCounts).length}</span>
+                      </div>
+                    }
+                    countLabel={TRANS[lang].uniqueEffects}
+                >
+                <EffectDonut data={aggregatedDetails.effectCounts} lang={lang} />
+                </DashboardPanel>
+            </div>
+        </div>
+    );
+};
+
+// --- MAIN APP ---
+
+const App = () => {
+  const [currentDate, setCurrentDate] = useState<string>('2026-01-26');
+  const [selectedProjectIndex, setSelectedProjectIndex] = useState<number>(0);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>('chart');
+  
+  const [lang, setLang] = useState<LangType>(() => {
+    if (typeof navigator !== 'undefined') {
+        const browserLang = navigator.language.toLowerCase();
+        if (browserLang.startsWith('en')) {
+            return 'EN';
+        }
+    }
+    return 'ZH';
+  });
+
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+
+  const handleNavigate = (date: string, projectName?: string) => {
+     setCurrentDate(date);
+     if (projectName) setSearchQuery(projectName); 
+     setCurrentView('dashboard');
+  };
+
+  const dailyData: DailyData = useMemo(() => {
+    if (MOCK_DATA[currentDate]) return MOCK_DATA[currentDate];
+    
+    // Logic updated: Always generate data for dynamic dates to match Analytics view consistency
+    // Removed the 'if (r > 0.3)' check that simulated random empty days
+    
+    const projects = [];
+    // Ensure the count generation seed matches analytics logic roughly
+    const count = Math.floor(seededRandom(currentDate + 'count') * 3) + 2; 
+    for(let i=0; i<count; i++) {
+            projects.push(generateDynamicProject(currentDate, i));
+    }
+    return { date: currentDate, projects };
+
+  }, [currentDate]);
+  
+  const filteredProjects = useMemo(() => {
+    if (!dailyData?.projects) return [];
+    if (!searchQuery.trim()) return dailyData.projects;
+    return dailyData.projects.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [dailyData, searchQuery]);
+
+  const project: ProjectData | null = filteredProjects[selectedProjectIndex] 
+    ? filteredProjects[selectedProjectIndex] 
+    : null;
+
+  useEffect(() => {
+    setSelectedProjectIndex(0);
+  }, [currentDate, searchQuery]);
+
+  return (
+    <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20">
+      
+      <CalendarModal 
+        isOpen={isCalendarOpen} 
+        onClose={() => setIsCalendarOpen(false)} 
+        onSelectDate={setCurrentDate}
+        currentSelectedDate={currentDate}
+        lang={lang}
+      />
+
+      <Header 
+        lang={lang} 
+        setLang={setLang} 
+        dateDisplay={currentDate}
+        onCalendarClick={() => setIsCalendarOpen(true)}
+        currentView={currentView}
+        onChangeView={setCurrentView}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+
+      <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
+        
+        {currentView === 'dashboard' ? (
+            filteredProjects.length > 0 && project ? (
+              <>
+                <ProjectSelector 
+                  projects={filteredProjects}
+                  selectedIndex={selectedProjectIndex}
+                  onSelect={setSelectedProjectIndex}
+                  lang={lang}
+                />
+
+                <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+                  <VitalCard label={TRANS[lang].compositions} value={project.statistics.compositions} icon={LayoutGrid} delay={0} />
+                  <VitalCard label={TRANS[lang].totalLayers} value={project.statistics.layers} icon={Layers} delay={100} />
+                  <VitalCard label={TRANS[lang].keyframes} value={project.statistics.keyframes} icon={Activity} delay={200} />
+                  <VitalCard label={TRANS[lang].effects} value={project.statistics.effects} icon={Hexagon} delay={300} />
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                  
+                  <DashboardPanel 
+                      title={TRANS[lang].keyframeDensity} 
+                      count={Object.values(project.details.keyframes).reduce((a, b) => a + b, 0)} 
+                      countLabel={TRANS[lang].total}
+                      className="h-[220px]"
+                  >
+                      <DataList data={project.details.keyframes} type="count" lang={lang} />
+                  </DashboardPanel>
+
+                  <DashboardPanel 
+                      title={TRANS[lang].activeComps} 
+                      count={project.details.compositions.length} 
+                      countLabel={TRANS[lang].items}
+                      className="h-[220px]"
+                  >
+                      <DataList data={project.details.compositions} type="list" lang={lang} />
+                  </DashboardPanel>
+                  
+                  <DashboardPanel 
+                      title={TRANS[lang].layerDist} 
+                      count={Object.values(project.details.layers).reduce((a,b)=>a+b, 0)} 
+                      countLabel={TRANS[lang].total}
+                  >
+                    <LayerRadar data={project.details.layers} lang={lang} />
+                  </DashboardPanel>
+
+                  <DashboardPanel 
+                      title={TRANS[lang].effectFreq} 
+                      count={
+                        <div className="flex items-baseline gap-1">
+                          <NumberTicker value={project.statistics.effects} />
+                          <span className="text-white/40 text-sm">/</span>
+                          <span className="text-white/60 text-base">{Object.keys(project.details.effectCounts).length}</span>
+                        </div>
+                      }
+                      countLabel={TRANS[lang].uniqueEffects}
+                  >
+                    <EffectDonut data={project.details.effectCounts} lang={lang} />
+                  </DashboardPanel>
+                </div>
+              </>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-[50vh] text-ru-textDim opacity-50">
+                   <div className="mb-4">
+                       <Activity size={48} className="text-ru-primary animate-pulse" />
+                   </div>
+                   <h2 className="text-xl font-black italic tracking-widest mb-2">{TRANS[lang].noDataTitle}</h2>
+                   <p className="font-mono text-xs">{TRANS[lang].noDataDesc}</p>
+                </div>
+            )
+        ) : currentView === 'analytics' ? (
+            <AnalyticsView 
+                lang={lang} 
+                displayMode={analyticsMode}
+                setAnalyticsMode={setAnalyticsMode}
+                searchQuery={searchQuery}
+                onNavigate={handleNavigate}
+            />
+        ) : (
+            <SettingsView lang={lang} />
+        )}
+      </main>
+    </div>
+  );
+};
+
+const root = createRoot(document.getElementById('root') as HTMLElement);
+root.render(<App />);
