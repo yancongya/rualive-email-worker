@@ -1734,16 +1734,39 @@ const App = () => {
      setCurrentView('dashboard');
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     // 清除所有缓存
     clearAllCache();
-    // 触发当前视图的数据重新加载
+    
+    // 强制重新加载数据
     if (currentView === 'dashboard') {
-      // Dashboard 会自动重新加载数据，因为 currentDate 没有变化
-      // 但我们需要强制重新渲染
-      setDailyData({ date: currentDate, projects: [] });
+      setIsLoading(true);
+      try {
+        console.log('[UserV6] Refreshing data for date:', currentDate);
+        // 禁用缓存，强制从服务器重新加载
+        const response = await getWorkLogs(currentDate, false);
+        console.log('[UserV6] Refresh API response:', response);
+        
+        if (response.success && response.data && response.data.length > 0) {
+          const workLog = response.data[0];
+          console.log('[UserV6] Refresh Work log data:', workLog);
+          const transformedData = workLogToDailyData(workLog);
+          console.log('[UserV6] Refresh Transformed data:', transformedData);
+          setDailyData(transformedData);
+        } else {
+          // No data for this date
+          console.log('[UserV6] Refresh No data found for date:', currentDate);
+          setDailyData({ date: currentDate, projects: [] });
+        }
+      } catch (err) {
+        console.error('[UserV6] Refresh Failed to load work logs:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        setDailyData({ date: currentDate, projects: [] });
+      } finally {
+        setIsLoading(false);
+      }
     }
-    // Analytics view 会自动重新加载数据，因为 cursorDate 没有变化
+    // Analytics view 需要类似的处理，这里暂时省略
   };
 
   const [dailyData, setDailyData] = useState<DailyData>({ date: currentDate, projects: [] });
