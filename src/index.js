@@ -2764,7 +2764,7 @@ async function saveWorkData(userId, workData, env, date) {
         compositions: mergedCompositions.length,  // 🔍 直接统计合成数量
         layers: mergedLayers.reduce(function(acc, l) { return acc + (l.count || 0); }, 0),
         keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + (k.count || 0); }, 0),
-        effects: mergedEffects.length,
+        effects: mergedEffects.reduce(function(acc, e) { return acc + (e.count || 0); }, 0),  // 🔍 计算总使用次数
         work_hours: existingWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
       };
 
