@@ -232,11 +232,24 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   if (effectsJson.length > 0) console.log('[DataTransform]   effectsJson[0]:', effectsJson[0]);
   console.log('[DataTransform] 📋 projectMap keys:', Array.from(projectMap.keys()));
 
+  // 🔍 URL 解码函数 - 处理项目名称的 URL 编码
+  const decodeProjectName = (name: string): string => {
+    try {
+      return decodeURIComponent(name);
+    } catch {
+      return name;
+    }
+  };
+
   // 填充合成数据
   compositionsJson.forEach((c) => {
     console.log('[DataTransform] 🔍 处理合成:', c);
-    const project = projectMap.get(c.project);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', c.project);
+    // 🔍 对项目名称进行 URL 解码
+    const decodedProjectName = decodeProjectName(c.project);
+    console.log('[DataTransform]   原始项目名:', c.project);
+    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
+    const project = projectMap.get(decodedProjectName);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.compositions.push(c.name);
       console.log('[DataTransform]   ✅ 添加合成:', c.name, '到项目:', project.name);
@@ -248,8 +261,12 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 填充图层数据（需要分类）
   layersJson.forEach((l) => {
     console.log('[DataTransform] 🔍 处理图层:', l);
-    const project = projectMap.get(l.project);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', l.project);
+    // 🔍 对项目名称进行 URL 解码
+    const decodedProjectName = decodeProjectName(l.project);
+    console.log('[DataTransform]   原始项目名:', l.project);
+    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
+    const project = projectMap.get(decodedProjectName);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       const layerType = classifyLayer(l.name);
       project.details.layers[layerType]++;
@@ -263,8 +280,12 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   let totalKeyframesFromJson = 0;
   keyframesJson.forEach((k) => {
     console.log('[DataTransform] 🔍 处理关键帧:', k);
-    const project = projectMap.get(k.project);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', k.project);
+    // 🔍 对项目名称进行 URL 解码
+    const decodedProjectName = decodeProjectName(k.project);
+    console.log('[DataTransform]   原始项目名:', k.project);
+    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
+    const project = projectMap.get(decodedProjectName);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
       project.statistics.keyframes += k.count;
@@ -281,8 +302,12 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 填充特效数据
   effectsJson.forEach((e) => {
     console.log('[DataTransform] 🔍 处理特效:', e);
-    const project = projectMap.get(e.project);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', e.project);
+    // 🔍 对项目名称进行 URL 解码
+    const decodedProjectName = decodeProjectName(e.project);
+    console.log('[DataTransform]   原始项目名:', e.project);
+    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
+    const project = projectMap.get(decodedProjectName);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
       console.log('[DataTransform]   ✅ 添加特效:', e.name, '数量:', e.count, '到项目:', project.name);
