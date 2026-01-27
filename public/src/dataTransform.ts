@@ -136,6 +136,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const defaultProjectName = `Project_${workLog.work_date}`;
     const defaultProjectId = generateId(defaultProjectName);
     
+    // 直接使用数据库中的汇总字段
     projectMap.set(defaultProjectName, {
       projectId: defaultProjectId,
       name: defaultProjectName,
@@ -169,7 +170,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     });
   }
 
-  // 初始化项目
+  // 初始化项目 - 使用数据库中的汇总字段作为默认值
   projectsJson.forEach((p) => {
     const projectId = p.id || generateId(p.name);
     // 解码 URL 编码的项目名称
@@ -178,16 +179,22 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     // 从 workHoursMap 中获取该项目的工时，如果没有则使用 0
     const projectHours = workHoursMap.get(decodedName) || 0;
     
+    // 使用项目信息中的统计数据，如果没有则使用数据库中的汇总字段按项目数平均分配
+    const projectComps = p.compositions || Math.floor((workLog.composition_count || 0) / projectsJson.length);
+    const projectLayers = p.layers || Math.floor((workLog.layer_count || 0) / projectsJson.length);
+    const projectKeyframes = p.keyframes || Math.floor((workLog.keyframe_count || 0) / projectsJson.length);
+    const projectEffects = p.effects || Math.floor((workLog.effect_count || 0) / projectsJson.length);
+    
     projectMap.set(decodedName, {
       projectId,
       name: decodedName,
       dailyRuntime: formatRuntime(projectHours),
       accumulatedRuntime: projectHours * 3600,
       statistics: {
-        compositions: 0,
-        layers: 0,
-        keyframes: 0,
-        effects: 0
+        compositions: projectComps,
+        layers: projectLayers,
+        keyframes: projectKeyframes,
+        effects: projectEffects
       },
       details: {
         compositions: [],
@@ -216,7 +223,8 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const project = projectMap.get(c.project);
     if (project) {
       project.details.compositions.push(c.name);
-      project.statistics.compositions++;
+      // 如果 JSON 数据存在，使用 JSON 数据
+      project.statistics.compositions = Math.max(project.statistics.compositions, project.details.compositions.length);
     }
   });
 
@@ -226,7 +234,8 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     if (project) {
       const layerType = classifyLayer(l.name);
       project.details.layers[layerType]++;
-      project.statistics.layers++;
+      // 如果 JSON 数据存在，使用 JSON 数据
+      project.statistics.layers = Math.max(project.statistics.layers, Object.values(project.details.layers).reduce((a, b) => a + b, 0));
     }
   });
 
@@ -244,7 +253,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const project = projectMap.get(e.project);
     if (project) {
       project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
-      project.statistics.effects++;
+      project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
     }
   });
 
