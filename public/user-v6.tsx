@@ -206,303 +206,12 @@ export const TRANS = {
   }
 };
 
-// --- CONSTANTS & GENERATORS ---
+// --- CONSTANTS & GENERATORS REMOVED ---
+// Mock data generators have been removed - now using real API data
 
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
-
-export const seededRandom = (seed: string) => {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-        const char = seed.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; 
-    }
-    const x = Math.sin(hash) * 10000;
-    return x - Math.floor(x);
-};
-
-const PROJECT_PREFIXES = ["Cyber", "Neon", "Glitch", "Void", "Quantum", "Hyper", "Mech", "Flux", "Aero", "Synapse", "Echo", "Veloc", "Omni", "Null"];
-const PROJECT_SUFFIXES = ["HUD", "UI", "Vlog", "Intro", "Promo", "System", "Dashboard", "Protocol", "Scan", "Loop", "Render", "Comp", "Asset"];
-const EFFECT_NAMES = ['Deep Glow', 'Saber', 'Glitchify', 'Optical Flares', 'Particular', 'Curves', 'Fill', 'Tint', 'Transform', 'Gaussian Blur', 'Mosaic'];
-const LAYER_NAMES = ['Shape Layer 1', 'Null 5', 'Camera Control', 'BG_texture.png', 'Logo_final.ai', 'Adjustment Layer', 'Particle Emitter'];
-const COMP_NAMES = ['Main_Render', 'Pre-comp 1', 'Intro_Seq', 'Lower_Thirds', 'Transition_A', 'Transition_B', 'Outro_Card'];
-
-const generateProjectName = (seed: string) => {
-    const r1 = seededRandom(seed + 'n1');
-    const r2 = seededRandom(seed + 'n2');
-    const p = PROJECT_PREFIXES[Math.floor(r1 * PROJECT_PREFIXES.length)];
-    const s = PROJECT_SUFFIXES[Math.floor(r2 * PROJECT_SUFFIXES.length)];
-    const v = Math.floor(r1 * 10) + 1;
-    return `${p}_${s}_v${v}.aep`;
-};
-
-// Basic generator for MOCK_DATA
-const generateProject = (id: string, name: string): ProjectData => {
-  const layerStats = {
-    video: randomInt(0, 10),
-    image: randomInt(10, 80),
-    designFile: randomInt(5, 120),
-    sourceFile: randomInt(0, 5),
-    nullSolidLayer: randomInt(2, 20),
-  };
-
-  const totalLayers = Object.values(layerStats).reduce((a, b) => a + b, 0);
-  
-  const keyframes: Record<string, number> = {};
-  for(let i=0; i<20; i++) {
-    keyframes[`${LAYER_NAMES[randomInt(0, LAYER_NAMES.length-1)]} ${i}`] = randomInt(5, 150);
-  }
-  const totalKeys = Object.values(keyframes).reduce((a,b) => a+b, 0);
-
-  const effects: Record<string, number> = {};
-  for(let i=0; i<15; i++) {
-    const eff = EFFECT_NAMES[randomInt(0, EFFECT_NAMES.length-1)];
-    effects[eff] = (effects[eff] || 0) + randomInt(1, 10);
-  }
-  const totalEffects = Object.values(effects).reduce((a,b) => a+b, 0);
-
-  const comps = Array.from({length: randomInt(5, 20)}, (_, i) => `${COMP_NAMES[randomInt(0, COMP_NAMES.length-1)]}_${i}`);
-
-  const runtimeSeconds = randomInt(7200, 43200); // Between 2h and 12h
-  const h = Math.floor(runtimeSeconds / 3600);
-  const m = Math.floor((runtimeSeconds % 3600) / 60);
-
-  return {
-    projectId: id,
-    name: name,
-    dailyRuntime: `${h}h ${m}m`,
-    accumulatedRuntime: runtimeSeconds, 
-    statistics: {
-      compositions: comps.length,
-      layers: totalLayers,
-      keyframes: totalKeys,
-      effects: totalEffects,
-    },
-    details: {
-      compositions: comps,
-      layers: layerStats,
-      keyframes: keyframes,
-      effectCounts: effects,
-    }
-  };
-};
-
-const generateDynamicProject = (dateStr: string, index: number): ProjectData => {
-    const seed = `${dateStr}_p${index}`;
-    const name = generateProjectName(seed);
-    const id = seed.split('').reduce((a,b)=>a+b.charCodeAt(0),0).toString(16);
-    return generateProject(id, name);
-}
-
-// Updated Mock Data for Jan 2026
-const MOCK_DATA: Record<string, DailyData> = {
-  '2026-01-24': { date: '2026-01-24', projects: [generateProject('55a', 'Weekend_Vlog.aep')] },
-  '2026-01-25': { date: '2026-01-25', projects: [generateProject('66b', 'Sunday_Stream_Overlay.aep')] },
-  '2026-01-26': { 
-    date: '2026-01-26', 
-    projects: [
-        generateProject('503a075b', 'Cyberpunk_HUD_Main.aep'),
-        generateProject('129b882a', 'Glitch_Intro_v2.aep')
-    ]
-  },
-};
-
-// --- ANALYTICS DATA GENERATORS (Ported) ---
-
-const generateBaseStats = (seedKey: string, multiplier: number = 1) => {
-    const r1 = seededRandom(seedKey + '_comps');
-    const r2 = seededRandom(seedKey + '_layers');
-    const r3 = seededRandom(seedKey + '_keys');
-    const r4 = seededRandom(seedKey + '_fx');
-    const r5 = seededRandom(seedKey + '_time');
-
-    return {
-        compositions: Math.floor((2 + r1 * 10) * multiplier),
-        layers: Math.floor((10 + r2 * 50) * multiplier),
-        keyframes: Math.floor((50 + r3 * 400) * multiplier),
-        effects: Math.floor((2 + r4 * 15) * multiplier),
-        runtime: Math.floor((1800 + r5 * 7200) * multiplier),
-    };
-};
-
-const generateRowData = (seedKey: string, multiplier: number) => {
-    const projectCount = Math.floor(seededRandom(seedKey + 'count') * 3) + 2; 
-    
-    const projects = [];
-    let totals = { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0 };
-
-    for(let i=0; i<projectCount; i++) {
-        const pSeed = `${seedKey}_p${i}`;
-        const pStats = generateBaseStats(pSeed, multiplier / (projectCount * 0.8)); 
-        
-        // Generate Details for charts
-        const layerStats = {
-             video: Math.floor(pStats.layers * 0.1),
-             image: Math.floor(pStats.layers * 0.25),
-             designFile: Math.floor(pStats.layers * 0.4),
-             sourceFile: Math.floor(pStats.layers * 0.05),
-             nullSolidLayer: Math.floor(pStats.layers * 0.2),
-        };
-        // Ensure total match roughly
-        layerStats.nullSolidLayer = Math.max(0, pStats.layers - (layerStats.video + layerStats.image + layerStats.designFile + layerStats.sourceFile));
-
-        const keyframes: Record<string, number> = {};
-        for(let k=0; k<8; k++) {
-             const name = LAYER_NAMES[Math.floor(seededRandom(pSeed + 'k' + k) * LAYER_NAMES.length)];
-             keyframes[name] = Math.floor(pStats.keyframes / 8); 
-        }
-
-        const effectCounts: Record<string, number> = {};
-        for(let e=0; e<6; e++) {
-             const name = EFFECT_NAMES[Math.floor(seededRandom(pSeed + 'e' + e) * EFFECT_NAMES.length)];
-             effectCounts[name] = (effectCounts[name] || 0) + Math.floor(pStats.effects / 4);
-        }
-
-        const comps = [];
-        for(let c=0; c< Math.min(pStats.compositions, 10); c++) {
-            comps.push(COMP_NAMES[Math.floor(seededRandom(pSeed + 'c' + c) * COMP_NAMES.length)] + `_${c}`);
-        }
-
-        const project = {
-            id: pSeed,
-            name: generateProjectName(pSeed),
-            ...pStats,
-            details: {
-                layers: layerStats,
-                keyframes,
-                effectCounts,
-                compositions: comps
-            }
-        };
-        projects.push(project);
-
-        totals.compositions += pStats.compositions;
-        totals.layers += pStats.layers;
-        totals.keyframes += pStats.keyframes;
-        totals.effects += pStats.effects;
-        totals.runtime += pStats.runtime;
-    }
-
-    return { ...totals, projects };
-};
+// --- ANALYTICS DATA GENERATORS (Removed - using real data) ---
 
 const formatDate = (d: Date) => d.toISOString().split('T')[0];
-
-const getAnalyticsData = (mode: ViewMode, cursorDate: Date, forceDaily: boolean) => {
-    const data = [];
-    let label = "";
-    
-    const year = cursorDate.getFullYear();
-    const month = cursorDate.getMonth();
-
-    let startDate: Date;
-    let endDate: Date;
-    
-    if (mode === 'week') {
-        const day = cursorDate.getDay();
-        const diff = cursorDate.getDate() - day + (day === 0 ? -6 : 1); 
-        startDate = new Date(cursorDate);
-        startDate.setDate(diff); // Set to Monday
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        label = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-    } 
-    else if (mode === 'month') {
-        startDate = new Date(year, month, 1);
-        endDate = new Date(year, month + 1, 0);
-        label = startDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-    } 
-    else if (mode === 'quarter') {
-        const quarterIdx = Math.floor(month / 3);
-        startDate = new Date(year, quarterIdx * 3, 1);
-        endDate = new Date(year, (quarterIdx * 3) + 3, 0);
-        label = `Q${quarterIdx + 1} ${year}`;
-    } 
-    else if (mode === 'year') {
-        startDate = new Date(year, 0, 1);
-        endDate = new Date(year, 11, 31);
-        label = `${year}`;
-    }
-    else { // 'all'
-        startDate = new Date(year - 4, 0, 1);
-        endDate = new Date(year, 11, 31);
-        label = `${year - 4} - ${year}`;
-    }
-
-    const current = new Date(startDate);
-    
-    if (forceDaily || mode === 'week') {
-        while (current <= endDate) {
-            const dateStr = formatDate(current);
-            const rowData = generateRowData(dateStr, 1);
-            
-            data.push({
-                date: dateStr,
-                isoDate: dateStr,
-                displayX: mode === 'week' ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][current.getDay()] : current.getDate(),
-                fullLabel: dateStr,
-                ...rowData
-            });
-            current.setDate(current.getDate() + 1);
-        }
-    } else {
-        if (mode === 'month') {
-            let weekIdx = 1;
-            while (current <= endDate) {
-                const weekSeed = `${year}-${current.getMonth()}-w${weekIdx}`;
-                const rowData = generateRowData(weekSeed, 4);
-                const startOfPeriod = formatDate(current);
-                
-                let weekEnd = new Date(current);
-                weekEnd.setDate(weekEnd.getDate() + 6);
-                if (weekEnd > endDate) weekEnd = endDate;
-
-                data.push({
-                    date: weekSeed,
-                    isoDate: startOfPeriod,
-                    displayX: `W${weekIdx}`,
-                    fullLabel: `${formatDate(current)} - ${formatDate(weekEnd)}`,
-                    ...rowData
-                });
-                current.setDate(current.getDate() + 7);
-                weekIdx++;
-            }
-        } else if (mode === 'year' || mode === 'quarter') {
-            while (current <= endDate) {
-                 const mSeed = `${year}-${current.getMonth()}`;
-                 const rowData = generateRowData(mSeed, 12);
-                 const startOfPeriod = formatDate(current);
-                 
-                 data.push({
-                    date: mSeed,
-                    isoDate: startOfPeriod,
-                    displayX: current.toLocaleString('default', { month: 'short' }),
-                    fullLabel: current.toLocaleString('default', { month: 'long', year: 'numeric' }),
-                    ...rowData
-                 });
-                 current.setMonth(current.getMonth() + 1);
-            }
-        } else {
-             while (current <= endDate) {
-                 const currentY = current.getFullYear();
-                 const ySeed = `${currentY}`;
-                 const rowData = generateRowData(ySeed, 100); 
-                 const startOfPeriod = `${currentY}-01-01`;
-                 
-                 data.push({
-                    date: ySeed,
-                    isoDate: startOfPeriod, 
-                    displayX: `${currentY}`,
-                    fullLabel: `${currentY}`,
-                    ...rowData
-                 });
-                 current.setFullYear(current.getFullYear() + 1);
-            }
-        }
-    }
-
-    return { data, label };
-};
 
 // --- HELPER COMPONENTS ---
 
@@ -1011,9 +720,18 @@ export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, 
 const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lang }: any) => {
   if (!isOpen) return null;
 
-  const SYSTEM_TODAY = '2026-01-26';
+  const SYSTEM_TODAY = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(new Date(currentSelectedDate || SYSTEM_TODAY));
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
+  const [monthlyData, setMonthlyData] = useState<Record<string, { heat: number; projects: number }>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load monthly data when view date changes
+  useEffect(() => {
+    if (isOpen && viewMode === 'month') {
+      loadMonthlyData();
+    }
+  }, [isOpen, viewDate, viewMode]);
 
   useEffect(() => {
     if (isOpen) {
@@ -1023,7 +741,37 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
   }, [isOpen, currentSelectedDate]);
 
   const currentYear = viewDate.getFullYear();
-  const currentMonth = viewDate.getMonth(); 
+  const currentMonth = viewDate.getMonth();
+
+  const loadMonthlyData = async () => {
+    setIsLoading(true);
+    try {
+      const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+      const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
+      
+      const response = await getWorkLogsByRange(startDate, endDate, false);
+      
+      if (response.success && response.data) {
+        const dataMap: Record<string, { heat: number; projects: number }> = {};
+        response.data.forEach((log: any) => {
+          const workHours = log.work_hours || 0;
+          const projectCount = log.project_count || 0;
+          dataMap[log.work_date] = {
+            heat: workHours * 3600, // Convert hours to seconds
+            projects: projectCount
+          };
+        });
+        setMonthlyData(dataMap);
+      } else {
+        setMonthlyData({});
+      }
+    } catch (error) {
+      console.error('Failed to load monthly data:', error);
+      setMonthlyData({});
+    } finally {
+      setIsLoading(false);
+    }
+  }; 
 
   const handlePrev = () => {
     const d = new Date(viewDate);
@@ -1063,16 +811,10 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
       const dayStr = i.toString().padStart(2, '0');
       const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
       
-      const hasData = !!MOCK_DATA[dateStr];
-      let heat = 0;
-      if (hasData) {
-         heat = MOCK_DATA[dateStr].projects.reduce((acc, p) => acc + p.accumulatedRuntime, 0);
-      } else {
-         const r = seededRandom(dateStr + '_comps'); 
-         if (r > 0.3) { 
-             heat = 20000 + (r * 20000); 
-         }
-      }
+      const dayData = monthlyData[dateStr];
+      const hasData = dayData && dayData.heat > 0;
+      const heat = hasData ? dayData.heat : 0;
+      
       calendarCells.push({ type: 'day', day: i, dateStr, heat });
   }
 
