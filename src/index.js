@@ -2677,12 +2677,23 @@ async function saveWorkData(userId, workData, env, date) {
       // 从映射中获取最终的项目列表
       const mergedProjects = Array.from(projectMap.values());
 
-      // 合并其他数据（简单追加，因为它们没有项目级别的去重）
+      // 合并其他数据（需要去重）
       // 🔍 过滤掉旧格式的合成数据（只有 count 没有 name 的数据）
       const filteredExistingCompositions = existingCompositions.filter(function(c) {
         return c && c.name && typeof c.name === 'string';
       });
-      const mergedCompositions = filteredExistingCompositions.concat(allCompositions);
+      
+      // 🔍 合并合成数据并去重（按 project 和 name）
+      const compositionMap = new Map();
+      filteredExistingCompositions.forEach(function(c) {
+        var key = c.project + '|' + c.name;
+        compositionMap.set(key, c);
+      });
+      allCompositions.forEach(function(c) {
+        var key = c.project + '|' + c.name;
+        compositionMap.set(key, c);
+      });
+      const mergedCompositions = Array.from(compositionMap.values());
       
       const mergedEffects = existingEffects.concat(allEffects);
       const mergedLayers = existingLayers.concat(allLayers);
