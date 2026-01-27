@@ -604,21 +604,25 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
     const entries = Object.entries(data);
 
-    entries.sort((a, b) => b[1] - a[1]); // 按数量降序排序
+    // 按数量降序排序
+
+    entries.sort((a, b) => b[1] - a[1]);
 
     
 
-    // 方案1：Top 8 + 其他类别
+    // 方案1改进：Top 12 + 其他类别，减少"其他"占比
 
-    const top8 = entries.slice(0, 8);
+    const TOP_COUNT = 12;
 
-    const others = entries.slice(8);
+    const topN = entries.slice(0, TOP_COUNT);
+
+    const others = entries.slice(TOP_COUNT);
 
     const otherTotal = others.reduce((sum, [_, value]) => sum + value, 0);
 
 
 
-    const result = top8.map(([name, value]) => ({ name, value }));
+    const result = topN.map(([name, value]) => ({ name, value }));
 
     
 
@@ -660,7 +664,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 
 
-  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#888888'];
+  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#FF8C42', '#FFA07A', '#FFB347', '#FFCC33', '#888888'];
 
   const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
 
@@ -712,7 +716,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
               outerRadius={90}
 
-              paddingAngle={2}
+              paddingAngle={1}
 
               dataKey="value"
 
@@ -846,7 +850,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
                 key={idx} 
 
-                className={`inline-block mr-4 text-[10px] uppercase cursor-pointer transition-all duration-200 ${hoveredName === entry.name ? 'text-white font-bold scale-110' : 'text-ru-textDim hover:text-white'}`}
+                className={`inline-block mr-3 text-[10px] uppercase cursor-pointer transition-all duration-200 ${hoveredName === entry.name ? 'text-white font-bold scale-110' : 'text-ru-textDim hover:text-white'}`}
 
                 onMouseEnter={() => setHoveredName(entry.name)}
 
@@ -889,10 +893,11 @@ export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, 
         return data.map(item => ({ name: item, value: 0 }));
     }
     const entries = Object.entries(data);
-    // 过滤掉值为 0 的项目
+    // 过滤掉值为 0 的项目，并按数量降序排序
     return entries
       .filter(([_, value]) => value > 0)
-      .map(([name, value]) => ({ name, value }));
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [data]);
 
   useEffect(() => {
