@@ -2518,13 +2518,15 @@ async function saveWorkData(userId, workData, env, date) {
               // 字符串格式：["Gaussian Blur", "Motion Blur", ...]
               allEffects.push({
                 project: project.name,
-                name: effect
+                name: effect,
+                count: 1
               });
             } else if (effect && effect.effectName) {
               // 对象格式：[{effectName: "Gaussian Blur", ...}, ...]
               allEffects.push({
                 project: project.name,
-                name: effect.effectName
+                name: effect.effectName,
+                count: 1
               });
             }
           });
@@ -2532,7 +2534,8 @@ async function saveWorkData(userId, workData, env, date) {
           // 字符串格式（兼容旧数据）
           allEffects.push({
             project: project.name,
-            name: project.details.effects
+            name: project.details.effects,
+            count: 1
           });
         }
       }

@@ -96,28 +96,12 @@ export function workLogToDailyData(workLog: WorkLog): DailyData {
  * @returns 项目数据数组
  */
 export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
-  console.log('[DataTransform] Processing work log:', workLog);
-  console.log('[DataTransform] Database summary fields:', {
-    composition_count: workLog.composition_count,
-    layer_count: workLog.layer_count,
-    keyframe_count: workLog.keyframe_count,
-    effect_count: workLog.effect_count
-  });
-  
   // 解析 JSON 数据
   const projectsJson = safeParseJSON<ProjectInfo[]>(workLog.projects_json || '[]');
   const compositionsJson = safeParseJSON<CompositionItem[]>(workLog.compositions_json || '[]');
   const layersJson = safeParseJSON<LayerItem[]>(workLog.layers_json || '[]');
   const keyframesJson = safeParseJSON<KeyframeItem[]>(workLog.keyframes_json || '[]');
   const effectsJson = safeParseJSON<EffectItem[]>(workLog.effects_json || '[]');
-
-  console.log('[DataTransform] Parsed JSON data:', {
-    projectsJson,
-    compositionsJson,
-    layersJson,
-    keyframesJson,
-    effectsJson
-  });
 
   // 按项目分组数据
   const projectMap = new Map<string, ProjectData>();
@@ -138,7 +122,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 如果没有项目数据，使用工作日期作为默认项目名称
   if (projectsJson.length === 0) {
-    console.log('[DataTransform] No projects found, creating default project');
     const defaultProjectName = `Project_${workLog.work_date}`;
     const defaultProjectId = generateId(defaultProjectName);
     
@@ -224,14 +207,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     });
   });
 
-  // 🔍 调试日志：查看 JSON 数据的第一个元素
-  console.log('[DataTransform] 📋 JSON 数据示例:');
-  if (compositionsJson.length > 0) console.log('[DataTransform]   compositionsJson[0]:', compositionsJson[0]);
-  if (layersJson.length > 0) console.log('[DataTransform]   layersJson[0]:', layersJson[0]);
-  if (keyframesJson.length > 0) console.log('[DataTransform]   keyframesJson[0]:', keyframesJson[0]);
-  if (effectsJson.length > 0) console.log('[DataTransform]   effectsJson[0]:', effectsJson[0]);
-  console.log('[DataTransform] 📋 projectMap keys:', Array.from(projectMap.keys()));
-
+  
   // 🔍 URL 解码函数 - 处理项目名称的 URL 编码
   const decodeProjectName = (name: string): string => {
     try {
@@ -243,7 +219,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 填充合成数据
   compositionsJson.forEach((c) => {
-    console.log('[DataTransform] 🔍 处理合成:', c);
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(c.project);
     console.log('[DataTransform]   原始项目名:', c.project);
@@ -252,7 +227,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.compositions.push(c.name);
-      console.log('[DataTransform]   ✅ 添加合成:', c.name, '到项目:', project.name);
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.compositions = Math.max(project.statistics.compositions, project.details.compositions.length);
     }
@@ -260,11 +234,8 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 填充图层数据（需要分类）
   layersJson.forEach((l) => {
-    console.log('[DataTransform] 🔍 处理图层:', l);
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(l.project);
-    console.log('[DataTransform]   原始项目名:', l.project);
-    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
     const project = projectMap.get(decodedProjectName);
     console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
@@ -279,13 +250,9 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 填充关键帧数据
   let totalKeyframesFromJson = 0;
   keyframesJson.forEach((k) => {
-    console.log('[DataTransform] 🔍 处理关键帧:', k);
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(k.project);
-    console.log('[DataTransform]   原始项目名:', k.project);
-    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
     const project = projectMap.get(decodedProjectName);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
       project.statistics.keyframes += k.count;
@@ -296,37 +263,25 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 如果 JSON 中的关键帧总数与数据库汇总字段不匹配，使用数据库汇总字段
   if (totalKeyframesFromJson > 0 && totalKeyframesFromJson !== (workLog.keyframe_count || 0)) {
-    console.log('[DataTransform] Keyframe count mismatch - JSON:', totalKeyframesFromJson, 'Database:', workLog.keyframe_count);
+    // Keyframe count mismatch detected
   }
 
   // 填充特效数据
   effectsJson.forEach((e) => {
-    console.log('[DataTransform] 🔍 处理特效:', e);
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(e.project);
-    console.log('[DataTransform]   原始项目名:', e.project);
-    console.log('[DataTransform]   解码后项目名:', decodedProjectName);
     const project = projectMap.get(decodedProjectName);
-    console.log('[DataTransform]   找到项目:', !!project, 'project name:', decodedProjectName);
     if (project) {
       project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
-      console.log('[DataTransform]   ✅ 添加特效:', e.name, '数量:', e.count, '到项目:', project.name);
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
     }
   });
 
   const result = Array.from(projectMap.values());
-  console.log('[DataTransform] Final project data:', result);
 
   // 🔍 检查每个项目的 details 是否为空，如果为空则使用数据库汇总字段创建默认数据
   result.forEach((project) => {
-    console.log('[DataTransform] 🔍 检查项目:', project.name);
-    console.log('[DataTransform]   details.compositions 长度:', project.details.compositions.length);
-    console.log('[DataTransform]   details.layers:', project.details.layers);
-    console.log('[DataTransform]   details.keyframes:', project.details.keyframes);
-    console.log('[DataTransform]   details.effectCounts:', project.details.effectCounts);
-
     // 如果所有 details 都是空的，说明数据填充失败
     const isDetailsEmpty =
       project.details.compositions.length === 0 &&
@@ -335,7 +290,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
       Object.keys(project.details.effectCounts).length === 0;
 
     if (isDetailsEmpty) {
-      console.log('[DataTransform]   ⚠️ details 为空，使用数据库汇总字段创建默认数据');
 
       // 创建默认的合成列表（合成数来自统计字段）
       for (let i = 1; i <= project.statistics.compositions; i++) {
@@ -359,8 +313,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
         const effectsPerComp = Math.floor(project.statistics.effects / project.statistics.compositions) || 1;
         project.details.effectCounts[`特效 ${i}`] = effectsPerComp;
       }
-
-      console.log('[DataTransform]   ✅ 已创建默认 details 数据');
     }
   });
 
