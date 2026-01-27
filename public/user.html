@@ -1,0 +1,1771 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive - User Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!--
+  RuAlive User Dashboard - 完整功能用户仪表板
+  =========================================
+  功能：
+  - 工作数据统计（工作时长、合成数量、关键帧数量、工作天数）
+  - 图表展示（使用 Chart.js，支持日/月/年视图）
+  - AE 状态监控（在线/离线状态、项目信息、合成信息）
+  - 邮件配置（启用/禁用通知、紧急联系人、工作阈值）
+  - 工作历史记录
+  - 深色模式支持
+  - 实时数据更新
+
+  认证：
+  - 使用 localStorage.getItem('rualive_token') 进行认证
+  - 使用 localStorage.getItem('rualive_user') 获取用户信息
+
+  API 端点：
+  - /api/work-logs - 获取工作日志
+  - /api/config - 获取/保存用户配置
+  - /api/send-now - 发送测试邮件
+  - /api/heartbeat - 发送心跳
+  - /api/ae-status - 获取/更新 AE 状态
+
+  注意：此文件从原始的 user_page.html 复制而来，并修复了以下问题：
+  1. Token 键名从 'token' 改为 'rualive_token' 以与主应用保持一致
+  2. 添加了完整的 CSS 变量定义以支持浅色/深色主题
+  -->
+  
+  
+<style>
+:root {
+  /* Light Theme Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-card: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --accent-primary: #667eea;
+  --accent-secondary: #764ba2;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  /* Dark Theme Colors */
+  --bg-primary: #1f2937;
+  --bg-secondary: #374151;
+  --bg-card: #111827;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: #4b5563;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Navbar Styles */
+.navbar {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2rem;
+  box-shadow: var(--shadow);
+}
+
+.navbar-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dark-mode-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.dark-mode-toggle:hover {
+  border-color: var(--accent-primary);
+}
+
+.logout-btn {
+  background: var(--error);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
+/* Main Container */
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card Styles */
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.card h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+</style>
+<style>/**
+ * User Dashboard Styles
+ */
+
+/* Status Indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+  background: var(--success);
+}
+
+.status-dot.offline {
+  background: var(--error);
+  animation: none;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Time Selector */
+.time-selector {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.range-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.date-picker {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.date-picker select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.date-picker select:hover {
+  border-color: var(--accent-primary);
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--bg-primary);
+  border-color: var(--accent-primary);
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.stat-card h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+.card-header h2 {
+  margin: 0;
+  border: none;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Form */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+}
+
+table tbody tr:hover {
+  background: var(--bg-primary);
+}
+
+/* Chart */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s;
+  z-index: 1001;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success {
+  background: var(--success);
+}
+
+.toast-error {
+  background: var(--error);
+}
+
+.toast-warning {
+  background: var(--warning);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-picker {
+    width: 100%;
+  }
+
+  .date-picker select {
+    flex: 1;
+  }
+}
+
+/* AE Status Card Styles */
+.status-loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+}
+
+.ae-status-no-record {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.ae-status-no-record .ae-status-icon {
+  font-size: 2rem;
+}
+
+.ae-status-no-record .ae-status-message {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.ae-status-hint {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.ae-status-online,
+.ae-status-offline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.ae-status-online {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ae-status-offline {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ae-status-icon {
+  font-size: 1.5rem;
+}
+
+.ae-status-message {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.ae-status-online .ae-status-message {
+  color: var(--success);
+}
+
+.ae-status-offline .ae-status-message {
+  color: var(--error);
+}
+
+.ae-status-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ae-status-detail:last-child {
+  border-bottom: none;
+}
+
+.ae-status-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ae-status-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ae-status-work-data {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.ae-status-work-data h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.work-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.work-data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.work-data-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.work-data-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}</style></head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>📧 RuAlive User Dashboard</h1>
+      <div class="user-info">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Checking...</span>
+        </div>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+        <span id="userInfo">Loading...</span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <!-- Time Selector -->
+    <div id="timeSelector"></div>
+
+    <!-- Stats Grid -->
+    <div id="statsGrid"></div>
+
+    <div class="content-grid">
+      <div class="left-column">
+        <!-- AE Status Card -->
+        <div class="card">
+          <h2>🎬 AE Status</h2>
+          <div id="aeStatusContent">
+            <div class="status-loading">Loading AE status...</div>
+          </div>
+        </div>
+
+        <!-- Email Configuration -->
+        <div class="card">
+          <h2>⚙️ Email Configuration</h2>
+
+          <div class="form-section">
+            <h3>📋 Basic Settings</h3>
+            <div class="form-group">
+              <label>Enable Email Notification</label>
+              <select id="enabled">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>👤 Emergency Contact</h3>
+            <div class="form-group">
+              <label>Emergency Contact Email</label>
+              <input type="email" id="emergencyEmail" placeholder="emergency@example.com">
+            </div>
+            <div class="form-group">
+              <label>Emergency Contact Name</label>
+              <input type="text" id="emergencyName" placeholder="Contact Name">
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>🎯 Work Thresholds</h3>
+            <div class="form-group">
+              <label>Minimum Work Hours</label>
+              <input type="number" id="minHours" value="2" min="0" max="24" step="0.5">
+            </div>
+            <div class="form-group">
+              <label>Minimum Keyframes</label>
+              <input type="number" id="minKeyframes" value="50" min="0">
+            </div>
+            <div class="form-group">
+              <label>Minimum JSON Size (KB)</label>
+              <input type="number" id="minJsonSize" value="10" min="0">
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveConfig()">💾 Save Config</button>
+            <button class="btn btn-success" onclick="sendTestEmail()">📧 Send Test Email</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-column">
+        <!-- Chart View -->
+        <div id="chartView"></div>
+
+        <!-- Logs Table -->
+        <div id="logsView"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Functions -->
+  <script>
+    window.toggleDarkMode = function() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      if (window.chartView) {
+        window.chartView.updateTheme(isDark);
+      }
+    };
+
+    window.handleLogout = function() {
+      localStorage.removeItem('rualive_token');
+      localStorage.removeItem('rualive_user');
+      window.location.href = '/login';
+    };
+  </script>
+  
+  
+  
+  
+  
+  
+  
+<script>
+// ===== utils/api.js =====
+/**
+ * API Request Utilities
+ */
+const API_BASE = window.location.origin;
+
+/**
+ * Get Auth Header
+ */
+function getAuthHeader() {
+  const token = localStorage.getItem('rualive_token');
+  return {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
+ * Generic API Request
+ */
+async function apiRequest(endpoint, options = {}) {
+  const url = API_BASE + endpoint;
+  const headers = {
+    ...getAuthHeader(),
+    ...(options.headers || {})
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get Work Logs
+ */
+async function getWorkLogs() {
+  return apiRequest('/api/work-logs');
+}
+
+/**
+ * Get User Config
+ */
+async function getUserConfig() {
+  return apiRequest('/api/config');
+}
+
+/**
+ * Save User Config
+ */
+async function saveUserConfig(config) {
+  return apiRequest('/api/config', {
+    method: 'POST',
+    body: JSON.stringify(config)
+  });
+}
+
+/**
+ * Send Test Email
+ */
+async function sendTestEmail() {
+  return apiRequest('/api/send-now', {
+    method: 'POST'
+  });
+}
+
+/**
+ * Update Online Status
+ */
+async function updateOnlineStatus() {
+  try {
+    // 发送心跳
+    await apiRequest('/api/heartbeat', {
+      method: 'POST'
+    });
+
+    // 获取 AE 在线状态
+    const response = await apiRequest('/api/ae-status', {
+      method: 'GET'
+    });
+
+    // Update online status display
+    if (window.updateOnlineStatusDisplay) {
+      const isOnline = response.success && response.isOnline === true;
+      window.updateOnlineStatusDisplay(isOnline, response);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Update online status failed:', error);
+
+    // Update to offline status
+    if (window.updateOnlineStatusDisplay) {
+      window.updateOnlineStatusDisplay(false);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Update AE Status (from AE extension)
+ */
+async function updateAEStatus(status) {
+  return apiRequest('/api/ae-status', {
+    method: 'POST',
+    body: JSON.stringify(status)
+  });
+}
+
+// ===== utils/date-utils.js =====
+/**
+ * Date Utilities
+ */
+
+/**
+ * Filter by Time Range
+ */
+function filterByTimeRange(data, range, date = null) {
+  if (!data || data.length === 0) return [];
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  return data.filter(log => {
+    if (!log.work_date) return false;
+
+    const logDate = new Date(log.work_date);
+    const logYear = logDate.getFullYear();
+    const logMonth = logDate.getMonth() + 1;
+    const logDay = logDate.getDate();
+
+    if (range === 'day') {
+      // Last 7 days
+      const diffTime = now - logDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays < 7;
+    } else if (range === 'month') {
+      // Specific month
+      const targetYear = date ? new Date(date).getFullYear() : currentYear;
+      const targetMonth = date ? new Date(date).getMonth() + 1 : currentMonth;
+      return logYear === targetYear && logMonth === targetMonth;
+    } else if (range === 'year') {
+      // Specific year
+      const targetYear = date ? parseInt(date) : currentYear;
+      return logYear === targetYear;
+    }
+
+    return false;
+  });
+}
+
+/**
+ * Calculate Summary
+ */
+function calculateSummary(data) {
+  if (!data || data.length === 0) {
+    return {
+      totalHours: 0,
+      totalComps: 0,
+      totalKeys: 0,
+      totalDays: 0
+    };
+  }
+
+  const uniqueDates = new Set();
+  let totalHours = 0;
+  let totalComps = 0;
+  let totalKeys = 0;
+
+  data.forEach(log => {
+    if (log.work_date) {
+      uniqueDates.add(log.work_date);
+      totalHours += log.work_hours || 0;
+      totalComps += log.composition_count || 0;
+      totalKeys += log.keyframe_count || 0;
+    }
+  });
+
+  return {
+    totalHours,
+    totalComps,
+    totalKeys,
+    totalDays: uniqueDates.size
+  };
+}
+
+// ===== components/time-selector.js =====
+/**
+ * Time Selector Component
+ */
+class TimeSelector {
+  constructor(containerId, onChange) {
+    this.container = document.getElementById(containerId);
+    this.onChange = onChange;
+    this.currentRange = 'day';
+    this.currentDate = null;
+    this.render();
+  }
+
+  render() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    let yearOptions = '';
+    for (let y = 2020; y <= currentYear; y++) {
+      yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+    }
+
+    let monthOptions = '';
+    for (let m = 1; m <= 12; m++) {
+      monthOptions += `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${m}月</option>`;
+    }
+
+    this.container.innerHTML = `
+      <div class="time-selector">
+        <div class="range-buttons">
+          <button class="btn ${this.currentRange === 'day' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('day')">Day</button>
+          <button class="btn ${this.currentRange === 'month' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('month')">Month</button>
+          <button class="btn ${this.currentRange === 'year' ? 'btn-primary' : ''}" onclick="window.timeSelector.setRange('year')">Year</button>
+        </div>
+        <div class="date-picker">
+          ${this.currentRange === 'day' ? '' : `
+            <select id="yearSelect" onchange="window.timeSelector.handleDateChange()">
+              ${yearOptions}
+            </select>
+          `}
+          ${this.currentRange === 'month' ? `
+            <select id="monthSelect" onchange="window.timeSelector.handleDateChange()">
+              ${monthOptions}
+            </select>
+          ` : ''}
+          ${this.renderNavButtons()}
+        </div>
+      </div>
+    `;
+  }
+
+  renderNavButtons() {
+    if (this.currentRange === 'day') return '';
+
+    const now = new Date();
+    const currentYear = this.currentDate ? new Date(this.currentDate).getFullYear() : now.getFullYear();
+    const currentMonth = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : now.getMonth() + 1;
+
+    let prevDisabled = false;
+    let nextDisabled = false;
+
+    if (this.currentRange === 'month') {
+      const firstMonth = new Date(2020, 0, 1);
+      const currentMonthDate = new Date(currentYear, currentMonth - 1, 1);
+      prevDisabled = currentMonthDate <= firstMonth;
+      nextDisabled = false;
+    } else if (this.currentRange === 'year') {
+      prevDisabled = currentYear <= 2020;
+      nextDisabled = currentYear >= now.getFullYear();
+    }
+
+    return `
+      <button class="nav-btn" onclick="window.timeSelector.navigate(-1)" ${prevDisabled ? 'disabled' : ''}>
+        ◀
+      </button>
+      <button class="nav-btn" onclick="window.timeSelector.navigate(1)" ${nextDisabled ? 'disabled' : ''}>
+        ▶
+      </button>
+    `;
+  }
+
+  setRange(range) {
+    this.currentRange = range;
+    this.currentDate = null;
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  handleDateChange() {
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+
+    if (yearSelect) {
+      const year = yearSelect.value;
+      if (monthSelect) {
+        const month = monthSelect.value;
+        this.currentDate = `${year}-${String(month).padStart(2, '0')}`;
+      } else {
+        this.currentDate = year;
+      }
+    }
+
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  navigate(direction) {
+    const now = new Date();
+    let currentYear = this.currentDate ? new Date(this.currentDate).getFullYear() : now.getFullYear();
+    let currentMonth = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : now.getMonth() + 1;
+
+    if (this.currentRange === 'month') {
+      currentMonth += direction;
+
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+
+      this.currentDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+    } else if (this.currentRange === 'year') {
+      currentYear += direction;
+      this.currentDate = `${currentYear}`;
+    }
+
+    this.render();
+    this.onChange(this.currentRange, this.currentDate);
+  }
+
+  getCurrentRange() {
+    return this.currentRange;
+  }
+
+  getCurrentDate() {
+    return this.currentDate;
+  }
+}
+
+// ===== components/stats-grid.js =====
+/**
+ * Stats Grid Component
+ */
+class StatsGrid {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3 id="stat-hours">0</h3>
+          <p>Work Hours</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-comps">0</h3>
+          <p>Compositions</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-keys">0</h3>
+          <p>Keyframes</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-days">0</h3>
+          <p>Work Days</p>
+        </div>
+      </div>
+    `;
+  }
+
+  update(summary) {
+    document.getElementById('stat-hours').textContent = summary.totalHours.toFixed(1);
+    document.getElementById('stat-comps').textContent = summary.totalComps;
+    document.getElementById('stat-keys').textContent = summary.totalKeys;
+    document.getElementById('stat-days').textContent = summary.totalDays;
+  }
+}
+
+// ===== components/chart-view.js =====
+/**
+ * Chart View Component
+ */
+class ChartView {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.chart = null;
+    this.currentRange = 'day';
+    this.currentDate = null;
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h2>📈 Work Data Trend</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="workChart"></canvas>
+        </div>
+      </div>
+    `;
+  }
+
+  update(data, range, date) {
+    this.currentRange = range;
+    this.currentDate = date;
+    this.renderChart(data);
+  }
+
+  renderChart(data) {
+    const ctx = document.getElementById('workChart');
+    if (!ctx) return;
+
+    let labels = [];
+    let workHoursData = [];
+    let compositionsData = [];
+    let keyframesData = [];
+
+    if (this.currentRange === 'day') {
+      // Last 7 days
+      const dailyData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          if (!dailyData[log.work_date]) {
+            dailyData[log.work_date] = { hours: 0, comps: 0, keys: 0 };
+          }
+          dailyData[log.work_date].hours += log.work_hours || 0;
+          dailyData[log.work_date].comps += log.composition_count || 0;
+          dailyData[log.work_date].keys += log.keyframe_count || 0;
+        }
+      });
+
+      const sortedDates = Object.keys(dailyData).sort().slice(-7);
+      labels = sortedDates.map(date => {
+        const d = new Date(date);
+        return (d.getMonth() + 1) + '/' + d.getDate();
+      });
+      workHoursData = sortedDates.map(date => dailyData[date].hours.toFixed(1));
+      compositionsData = sortedDates.map(date => dailyData[date].comps);
+      keyframesData = sortedDates.map(date => dailyData[date].keys);
+    } else if (this.currentRange === 'month') {
+      // All days in current month
+      const year = this.currentDate ? new Date(this.currentDate).getFullYear() : new Date().getFullYear();
+      const month = this.currentDate ? new Date(this.currentDate).getMonth() + 1 : new Date().getMonth() + 1;
+
+      const monthData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          const logDate = new Date(log.work_date);
+          if (logDate.getFullYear() === year && (logDate.getMonth() + 1) === month) {
+            const day = logDate.getDate();
+            if (!monthData[day]) {
+              monthData[day] = { hours: 0, comps: 0, keys: 0 };
+            }
+            monthData[day].hours += log.work_hours || 0;
+            monthData[day].comps += log.composition_count || 0;
+            monthData[day].keys += log.keyframe_count || 0;
+          }
+        }
+      });
+
+      const days = Object.keys(monthData).map(Number).sort((a, b) => a - b);
+      labels = days.map(day => day + '日');
+      workHoursData = days.map(day => monthData[day].hours.toFixed(1));
+      compositionsData = days.map(day => monthData[day].comps);
+      keyframesData = days.map(day => monthData[day].keys);
+    } else if (this.currentRange === 'year') {
+      // All months in current year
+      const year = this.currentDate ? parseInt(this.currentDate) : new Date().getFullYear();
+
+      const yearData = {};
+      data.forEach(log => {
+        if (log.work_date) {
+          const logDate = new Date(log.work_date);
+          if (logDate.getFullYear() === year) {
+            const month = logDate.getMonth() + 1;
+            if (!yearData[month]) {
+              yearData[month] = { hours: 0, comps: 0, keys: 0 };
+            }
+            yearData[month].hours += log.work_hours || 0;
+            yearData[month].comps += log.composition_count || 0;
+            yearData[month].keys += log.keyframe_count || 0;
+          }
+        }
+      });
+
+      const months = Object.keys(yearData).map(Number).sort((a, b) => a - b);
+      labels = months.map(month => month + '月');
+      workHoursData = months.map(month => yearData[month].hours.toFixed(1));
+      compositionsData = months.map(month => yearData[month].comps);
+      keyframesData = months.map(month => yearData[month].keys);
+    }
+
+    const isDark = document.body.classList.contains('dark');
+    const textColor = isDark ? '#9ca3af' : '#6b7280';
+    const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+    if (this.chart) {
+      this.chart.destroy();
+    }
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Work Hours',
+            data: workHoursData,
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#667eea',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Compositions',
+            data: compositionsData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Keyframes',
+            data: keyframesData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: textColor,
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: isDark ? '#1f2937' : '#ffffff',
+            titleColor: textColor,
+            bodyColor: textColor,
+            borderColor: gridColor,
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: gridColor,
+              display: false
+            },
+            ticks: {
+              color: textColor
+            }
+          },
+          y: {
+            grid: {
+              color: gridColor
+            },
+            ticks: {
+              color: textColor
+            },
+            beginAtZero: true
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  }
+
+  updateTheme(isDark) {
+    if (this.chart) {
+      const textColor = isDark ? '#9ca3af' : '#6b7280';
+      const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+      this.chart.options.plugins.legend.labels.color = textColor;
+      this.chart.options.scales.x.ticks.color = textColor;
+      this.chart.options.scales.y.ticks.color = textColor;
+      this.chart.options.scales.y.grid.color = gridColor;
+      this.chart.update();
+    }
+  }
+}
+
+// ===== components/logs-table.js =====
+/**
+ * Logs Table Component
+ */
+class LogsTable {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.expanded = false;
+    this.data = [];
+    this.render();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 Work History</h2>
+          <button class="btn btn-sm" onclick="window.logsTable.toggle()">
+            <span id="toggleText"></span>
+            <span id="toggleIcon"></span>
+          </button>
+        </div>
+        <div class="table-container">
+          <table id="logsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Hours</th>
+                <th>Comps</th>
+                <th>Keys</th>
+              </tr>
+            </thead>
+            <tbody id="logsBody">
+              <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    this.updateToggleButton();
+  }
+
+  update(data) {
+    this.data = data || [];
+    this.renderBody();
+  }
+
+  renderBody() {
+    const tbody = document.getElementById('logsBody');
+    if (!tbody) return;
+
+    if (!this.data || this.data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No data</td></tr>';
+      this.updateToggleButton();
+      return;
+    }
+
+    const displayData = this.expanded ? this.data : this.data.slice(0, 5);
+
+    tbody.innerHTML = displayData.map(log => `
+      <tr>
+        <td>${log.work_date || '-'}</td>
+        <td>${(log.work_hours || 0).toFixed(1)}</td>
+        <td>${log.composition_count || 0}</td>
+        <td>${log.keyframe_count || 0}</td>
+      </tr>
+    `).join('');
+
+    this.updateToggleButton();
+  }
+
+  updateToggleButton() {
+    const toggleText = document.getElementById('toggleText');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    if (!toggleText || !toggleIcon) return;
+
+    if (this.data.length > 5) {
+      toggleText.textContent = this.expanded ? 'Collapse' : 'Expand All';
+      toggleIcon.textContent = this.expanded ? '▲' : '▼';
+    } else {
+      toggleText.textContent = '';
+      toggleIcon.textContent = '';
+    }
+  }
+
+  toggle() {
+    this.expanded = !this.expanded;
+    this.renderBody();
+  }
+}
+
+// ===== user-dashboard/app.js =====
+/**
+ * User Dashboard Main Logic
+ */
+
+// Global Data
+window.appData = [];
+
+// Global Component Instances
+window.timeSelector = null;
+window.statsGrid = null;
+window.chartView = null;
+window.logsTable = null;
+
+/**
+ * Initialize App
+ */
+async function initApp() {
+  try {
+    // Initialize components
+    window.timeSelector = new TimeSelector('timeSelector', handleTimeRangeChange);
+    window.statsGrid = new StatsGrid('statsGrid');
+    window.chartView = new ChartView('chartView');
+    window.logsTable = new LogsTable('logsView');
+
+    // Load data
+    await loadData();
+
+    // Initialize theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    // Load user info
+    await loadUserInfo();
+
+    // Update online status
+    await updateOnlineStatus();
+
+    // Schedule online status updates
+    setInterval(updateOnlineStatus, 30000);
+
+  } catch (error) {
+    console.error('Initialization failed:', error);
+    showToast('Initialization failed, please refresh the page', 'error');
+  }
+}
+
+/**
+ * Load Data
+ */
+async function loadData() {
+  try {
+    const response = await getWorkLogs();
+    if (response.success) {
+      window.appData = response.data || [];
+      updateDashboard();
+    }
+  } catch (error) {
+    console.error('Failed to load data:', error);
+    showToast('Failed to load data', 'error');
+  }
+}
+
+/**
+ * Update Dashboard
+ */
+function updateDashboard() {
+  const range = window.timeSelector.getCurrentRange();
+  const date = window.timeSelector.getCurrentDate();
+
+  // Filter data by time range
+  let filteredData;
+  if (range === 'day') {
+    filteredData = filterByTimeRange(window.appData, 'day');
+  } else if (range === 'month') {
+    filteredData = filterByTimeRange(window.appData, 'month', date);
+  } else if (range === 'year') {
+    filteredData = filterByTimeRange(window.appData, 'year', date);
+  }
+
+  // Calculate summary data
+  const summary = calculateSummary(filteredData);
+
+  // Update stats grid
+  window.statsGrid.update(summary);
+
+  // Update chart
+  window.chartView.update(filteredData, range, date);
+
+  // Update logs table
+  window.logsTable.update(window.appData);
+}
+
+/**
+ * Handle Time Range Change
+ */
+function handleTimeRangeChange(range, date) {
+  updateDashboard();
+}
+
+/**
+ * Load User Info
+ */
+async function loadUserInfo() {
+  try {
+    const token = localStorage.getItem('rualive_token');
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+
+    // Parse token to get user info (simplified version)
+    const userInfo = JSON.parse(localStorage.getItem('rualive_user') || '{}');
+    document.getElementById('userInfo').textContent = userInfo.username || userInfo.email || 'User';
+  } catch (error) {
+    console.error('Failed to load user info:', error);
+  }
+}
+
+/**
+ * Update Online Status Display
+ */
+function updateOnlineStatusDisplay(isOnline, statusData = null) {
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  if (!statusDot || !statusText) return;
+
+  if (isOnline) {
+    statusDot.className = 'status-dot online';
+    let statusMessage = 'AE Online';
+
+    // 如果有项目信息，显示项目名称
+    if (statusData && statusData.projectName) {
+      statusMessage += ` - ${statusData.projectName}`;
+    }
+    // 如果有合成信息，显示合成名称
+    if (statusData && statusData.compositionName) {
+      statusMessage += ` / ${statusData.compositionName}`;
+    }
+
+    statusText.textContent = statusMessage;
+  } else {
+    statusDot.className = 'status-dot offline';
+    statusText.textContent = 'AE Offline';
+
+    // 如果有最后心跳时间，显示离线时长
+    if (statusData && statusData.lastHeartbeat) {
+      const lastHeartbeat = new Date(statusData.lastHeartbeat);
+      const now = new Date();
+      const diffMinutes = Math.floor((now - lastHeartbeat) / (1000 * 60));
+
+      if (diffMinutes < 60) {
+        statusText.textContent = `AE Offline (${diffMinutes}m ago)`;
+      } else if (diffMinutes < 1440) {
+        statusText.textContent = `AE Offline (${Math.floor(diffMinutes / 60)}h ago)`;
+      } else {
+        statusText.textContent = `AE Offline (${Math.floor(diffMinutes / 1440)}d ago)`;
+      }
+    }
+  }
+
+  // 同时更新 AE 状态卡片
+  updateAEStatusCard(isOnline, statusData);
+}
+
+/**
+ * Update AE Status Card
+ */
+function updateAEStatusCard(isOnline, statusData = null) {
+  const statusContent = document.getElementById('aeStatusContent');
+  if (!statusContent) return;
+
+  if (!statusData) {
+    statusContent.innerHTML = '<div class="status-loading">Loading AE status...</div>';
+    return;
+  }
+
+  let html = '';
+
+  // 如果没有状态记录，显示提示信息
+  if (!statusData.hasStatusRecord) {
+    html += '<div class="ae-status-no-record">';
+    html += '<div class="ae-status-icon">ℹ️</div>';
+    html += '<div class="ae-status-message">No AE status data available</div>';
+    html += '<div class="ae-status-hint">Status will be updated when AE extension is connected</div>';
+    html += '</div>';
+    statusContent.innerHTML = html;
+    return;
+  }
+
+  if (isOnline) {
+    html += '<div class="ae-status-online">';
+    html += '<div class="ae-status-icon">✅</div>';
+    html += '<div class="ae-status-message">After Effects is Online</div>';
+    html += '</div>';
+
+    if (statusData.projectName) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Project:</span>';
+      html += `<span class="ae-status-value">${statusData.projectName}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.compositionName) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Composition:</span>';
+      html += `<span class="ae-status-value">${statusData.compositionName}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.lastHeartbeat) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Last Heartbeat:</span>';
+      html += `<span class="ae-status-value">${new Date(statusData.lastHeartbeat).toLocaleString('zh-CN')}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.lastWorkData) {
+      html += '<div class="ae-status-work-data">';
+      html += '<h4>Current Work Data</h4>';
+      html += '<div class="work-data-grid">';
+      if (statusData.lastWorkData.work_hours !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Hours:</span><span class="work-data-value">${statusData.lastWorkData.work_hours}h</span></div>`;
+      }
+      if (statusData.lastWorkData.keyframe_count !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Keyframes:</span><span class="work-data-value">${statusData.lastWorkData.keyframe_count}</span></div>`;
+      }
+      if (statusData.lastWorkData.json_size !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">JSON Size:</span><span class="work-data-value">${statusData.lastWorkData.json_size}KB</span></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="ae-status-offline">';
+    html += '<div class="ae-status-icon">❌</div>';
+    html += '<div class="ae-status-message">After Effects is Offline</div>';
+    html += '</div>';
+
+    if (statusData.lastHeartbeat) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Last Online:</span>';
+      html += `<span class="ae-status-value">${new Date(statusData.lastHeartbeat).toLocaleString('zh-CN')}</span>`;
+      html += '</div>';
+    }
+
+    // 如果有历史数据，显示最后的工作数据
+    if (statusData.lastWorkData) {
+      html += '<div class="ae-status-work-data">';
+      html += '<h4>Last Work Data</h4>';
+      html += '<div class="work-data-grid">';
+      if (statusData.lastWorkData.work_hours !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Hours:</span><span class="work-data-value">${statusData.lastWorkData.work_hours}h</span></div>`;
+      }
+      if (statusData.lastWorkData.keyframe_count !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">Keyframes:</span><span class="work-data-value">${statusData.lastWorkData.keyframe_count}</span></div>`;
+      }
+      if (statusData.lastWorkData.json_size !== undefined) {
+        html += `<div class="work-data-item"><span class="work-data-label">JSON Size:</span><span class="work-data-value">${statusData.lastWorkData.json_size}KB</span></div>`;
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+  }
+
+  statusContent.innerHTML = html;
+}
+
+/**
+ * Show Toast Message
+ */
+function showToast(message, type = 'success') {
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initApp);
+</script></body>
+</html>

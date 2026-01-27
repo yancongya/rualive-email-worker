@@ -2,6 +2,17 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
+/**
+ * Vite Configuration for RuAlive Frontend
+ * 
+ * Entry Points:
+ * - index.html: Main landing page with React app
+ * - auth.html: Authentication page (login/register)
+ * - user.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
+ * 
+ * Note: user.html uses localStorage key 'rualive_token' for authentication (not 'token')
+ */
+
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
@@ -13,10 +24,13 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
-            auth: path.resolve(__dirname, 'auth.html')
+            auth: path.resolve(__dirname, 'auth.html'),
+            user: path.resolve(__dirname, 'user.html')
           },
           output: {
-            assetFileNames: 'assets/[name]-[hash][extname]'
+            assetFileNames: 'assets/[name]-[hash][extname]',
+            chunkFileNames: 'assets/[name]-[hash].js',
+            entryFileNames: 'assets/[name]-[hash].js'
           }
         },
         assetsDir: 'assets',
@@ -25,9 +39,7 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3737,
         host: '0.0.0.0',
-        historyApiFallback: {
-          index: '/index.html', // 所有路由都返回 index.html
-        },
+        historyApiFallback: true, // 简化配置，让 Vite 自动处理
         proxy: {
           '/api': {
             target: 'https://rualive-email-worker.cubetan57.workers.dev',
