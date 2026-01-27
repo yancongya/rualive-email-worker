@@ -2509,12 +2509,19 @@ async function saveWorkData(userId, workData, env, date) {
         }
       }
 
-      // 效果列表 - 扩展发送的是对象数组 [{effectName: "Gaussian Blur", ...}]
+      // 效果列表 - 扩展发送的可能是对象数组或字符串数组
       if (project.details && project.details.effects) {
         if (Array.isArray(project.details.effects)) {
-          // 对象数组格式
+          // 🔍 检查数组格式
           project.details.effects.forEach(effect => {
-            if (effect && effect.effectName) {
+            if (effect && typeof effect === 'string') {
+              // 字符串格式：["Gaussian Blur", "Motion Blur", ...]
+              allEffects.push({
+                project: project.name,
+                name: effect
+              });
+            } else if (effect && effect.effectName) {
+              // 对象格式：[{effectName: "Gaussian Blur", ...}, ...]
               allEffects.push({
                 project: project.name,
                 name: effect.effectName
@@ -2695,9 +2702,51 @@ async function saveWorkData(userId, workData, env, date) {
       });
       const mergedCompositions = Array.from(compositionMap.values());
       
-      const mergedEffects = existingEffects.concat(allEffects);
-      const mergedLayers = existingLayers.concat(allLayers);
-      const mergedKeyframes = existingKeyframes.concat(allKeyframes);
+      // 🔍 合并特效数据并去重（按 project 和 name）
+      const effectMap = new Map();
+      existingEffects.forEach(function(e) {
+        var key = e.project + '|' + e.name;
+        effectMap.set(key, e);
+      });
+      allEffects.forEach(function(e) {
+        var key = e.project + '|' + e.name;
+        effectMap.set(key, e);
+      });
+      const mergedEffects = Array.from(effectMap.values());
+      
+      // 🔍 合并图层数据并去重（按 project 和 name）
+      const layerMap = new Map();
+      existingLayers.forEach(function(l) {
+        var key = l.project + '|' + l.name;
+        layerMap.set(key, l);
+      });
+      allLayers.forEach(function(l) {
+        var key = l.project + '|' + l.name;
+        layerMap.set(key, l);
+      });
+      const mergedLayers = Array.from(layerMap.values());
+      
+      // 🔍 合并关键帧数据并去重（按 project 和 layer）
+      const keyframeMap = new Map();
+      existingKeyframes.forEach(function(k) {
+        var key = k.project + '|' + k.layer;
+        var existing = keyframeMap.get(key);
+        if (existing) {
+          existing.count += k.count;
+        } else {
+          keyframeMap.set(key, {...k});
+        }
+      });
+      allKeyframes.forEach(function(k) {
+        var key = k.project + '|' + k.layer;
+        var existing = keyframeMap.get(key);
+        if (existing) {
+          existing.count += k.count;
+        } else {
+          keyframeMap.set(key, {...k});
+        }
+      });
+      const mergedKeyframes = Array.from(keyframeMap.values());
 
       // 更新 JSON 字符串
       compositionsJson = mergedCompositions.length > 0 ? JSON.stringify(mergedCompositions) : null;
