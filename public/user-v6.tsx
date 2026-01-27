@@ -610,45 +610,17 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
     
 
-    // 方案1改进：Top 12 + 其他类别，减少"其他"占比
+    // 只显示 Top 12 高频特效，不显示"其他"类别
 
     const TOP_COUNT = 12;
 
     const topN = entries.slice(0, TOP_COUNT);
 
-    const others = entries.slice(TOP_COUNT);
-
-    const otherTotal = others.reduce((sum, [_, value]) => sum + value, 0);
 
 
+    return topN.map(([name, value]) => ({ name, value }));
 
-    const result = topN.map(([name, value]) => ({ name, value }));
-
-    
-
-    // 如果有其他特效，添加"其他"类别
-
-    if (others.length > 0) {
-
-      result.push({
-
-        name: TRANS[lang].top8 === 'TOP 8' ? 'OTHERS' : '其他',
-
-        value: otherTotal,
-
-        isOther: true,
-
-        details: others.map(([name, value]) => ({ name, value }))
-
-      });
-
-    }
-
-
-
-    return result;
-
-  }, [data, lang]);
+  }, [data]);
 
 
 
@@ -656,7 +628,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
   
 
-  // Find data for center display based on hovered name
+  // 默认显示总数，悬浮时显示当前项
 
   const activeItem = hoveredName ? chartData.find(d => d.name === hoveredName) : null;
 
@@ -664,7 +636,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 
 
-  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#FF8C42', '#FFA07A', '#FFB347', '#FFCC33', '#888888'];
+  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#FF8C42', '#FFA07A', '#FFB347', '#FFCC33'];
 
   const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
 
@@ -764,37 +736,23 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
               itemStyle={{ color: '#FF6B35' }}
 
-              formatter={(value: any, name: string, props: any) => {
+              formatter={(value: any, name: string) => {
 
-                const entry = props.payload;
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
 
-                if (entry.isOther) {
+                return [
 
-                  return [
+                  <div key="tooltip">
 
-                    <div key="tooltip">
+                    <div>{name}: {value}</div>
 
-                      <div>{entry.name}: {value}</div>
+                    <div className="text-xs text-gray-400">{percentage}%</div>
 
-                      <div className="text-xs text-gray-400 mt-1">
+                  </div>,
 
-                        {entry.details.map((d: any, i: number) => (
+                  TRANS[lang].count
 
-                          <div key={i}>{d.name}: {d.value}</div>
-
-                        ))}
-
-                      </div>
-
-                    </div>,
-
-                    TRANS[lang].count
-
-                  ];
-
-                }
-
-                return [value, TRANS[lang].count];
+                ];
 
               }}
 
