@@ -2678,7 +2678,12 @@ async function saveWorkData(userId, workData, env, date) {
       const mergedProjects = Array.from(projectMap.values());
 
       // 合并其他数据（简单追加，因为它们没有项目级别的去重）
-      const mergedCompositions = existingCompositions.concat(allCompositions);
+      // 🔍 过滤掉旧格式的合成数据（只有 count 没有 name 的数据）
+      const filteredExistingCompositions = existingCompositions.filter(function(c) {
+        return c && c.name && typeof c.name === 'string';
+      });
+      const mergedCompositions = filteredExistingCompositions.concat(allCompositions);
+      
       const mergedEffects = existingEffects.concat(allEffects);
       const mergedLayers = existingLayers.concat(allLayers);
       const mergedKeyframes = existingKeyframes.concat(allKeyframes);
