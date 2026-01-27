@@ -224,11 +224,22 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     });
   });
 
+  // 🔍 调试日志：查看 JSON 数据的第一个元素
+  console.log('[DataTransform] 📋 JSON 数据示例:');
+  if (compositionsJson.length > 0) console.log('[DataTransform]   compositionsJson[0]:', compositionsJson[0]);
+  if (layersJson.length > 0) console.log('[DataTransform]   layersJson[0]:', layersJson[0]);
+  if (keyframesJson.length > 0) console.log('[DataTransform]   keyframesJson[0]:', keyframesJson[0]);
+  if (effectsJson.length > 0) console.log('[DataTransform]   effectsJson[0]:', effectsJson[0]);
+  console.log('[DataTransform] 📋 projectMap keys:', Array.from(projectMap.keys()));
+
   // 填充合成数据
   compositionsJson.forEach((c) => {
+    console.log('[DataTransform] 🔍 处理合成:', c);
     const project = projectMap.get(c.project);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', c.project);
     if (project) {
       project.details.compositions.push(c.name);
+      console.log('[DataTransform]   ✅ 添加合成:', c.name, '到项目:', project.name);
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.compositions = Math.max(project.statistics.compositions, project.details.compositions.length);
     }
@@ -236,10 +247,13 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 填充图层数据（需要分类）
   layersJson.forEach((l) => {
+    console.log('[DataTransform] 🔍 处理图层:', l);
     const project = projectMap.get(l.project);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', l.project);
     if (project) {
       const layerType = classifyLayer(l.name);
       project.details.layers[layerType]++;
+      console.log('[DataTransform]   ✅ 添加图层:', l.name, '类型:', layerType, '到项目:', project.name);
       // 如果 JSON 数据存在，更新统计
       project.statistics.layers = Math.max(project.statistics.layers, Object.values(project.details.layers).reduce((a, b) => a + b, 0));
     }
@@ -248,11 +262,14 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 填充关键帧数据
   let totalKeyframesFromJson = 0;
   keyframesJson.forEach((k) => {
+    console.log('[DataTransform] 🔍 处理关键帧:', k);
     const project = projectMap.get(k.project);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', k.project);
     if (project) {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
       project.statistics.keyframes += k.count;
       totalKeyframesFromJson += k.count;
+      console.log('[DataTransform]   ✅ 添加关键帧:', k.layer, '数量:', k.count, '到项目:', project.name);
     }
   });
 
@@ -263,9 +280,12 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 填充特效数据
   effectsJson.forEach((e) => {
+    console.log('[DataTransform] 🔍 处理特效:', e);
     const project = projectMap.get(e.project);
+    console.log('[DataTransform]   找到项目:', !!project, 'project name:', e.project);
     if (project) {
       project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
+      console.log('[DataTransform]   ✅ 添加特效:', e.name, '数量:', e.count, '到项目:', project.name);
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
     }
