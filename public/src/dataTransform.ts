@@ -116,6 +116,20 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 按项目分组数据
   const projectMap = new Map<string, ProjectData>();
 
+  // 解析工作时长 JSON，创建项目名称到工时的映射
+  const workHoursMap = new Map<string, number>();
+  if (workLog.work_hours_json) {
+    try {
+      const workHoursJson = JSON.parse(workLog.work_hours_json);
+      workHoursJson.forEach((wh: { project: string; hours: string }) => {
+        const decodedName = decodeURIComponent(wh.project);
+        workHoursMap.set(decodedName, parseFloat(wh.hours));
+      });
+    } catch (error) {
+      console.error('[DataTransform] Failed to parse work_hours_json:', error);
+    }
+  }
+
   // 如果没有项目数据，使用工作日期作为默认项目名称
   if (projectsJson.length === 0) {
     console.log('[DataTransform] No projects found, creating default project');
@@ -161,11 +175,14 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     // 解码 URL 编码的项目名称
     const decodedName = decodeURIComponent(p.name);
     
+    // 从 workHoursMap 中获取该项目的工时，如果没有则使用 0
+    const projectHours = workHoursMap.get(decodedName) || 0;
+    
     projectMap.set(decodedName, {
       projectId,
       name: decodedName,
-      dailyRuntime: formatRuntime(workLog.work_hours),
-      accumulatedRuntime: workLog.work_hours * 3600,
+      dailyRuntime: formatRuntime(projectHours),
+      accumulatedRuntime: projectHours * 3600,
       statistics: {
         compositions: 0,
         layers: 0,

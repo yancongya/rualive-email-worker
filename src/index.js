@@ -2424,12 +2424,44 @@ async function saveWorkData(userId, workData, env, date) {
   const allWorkHours = [];
 
   if (workData.projects && workData.projects.length > 0) {
+    console.log('[saveWorkData] 收到的项目数量:', workData.projects.length);
+    console.log('[saveWorkData] 项目列表:', JSON.stringify(workData.projects.map(p => ({ name: p.name, path: p.path }))));
+    
+    // 先对项目进行去重（按项目名称）
+    const projectMap = new Map();
     workData.projects.forEach(project => {
       // 过滤空项目（没有名称的项目）
       if (!project.name || project.name.trim() === '') {
         return;
       }
 
+      console.log('[saveWorkData] 处理项目:', project.name);
+      // 直接使用项目名称进行比较（不解码）
+      const existingProject = projectMap.get(project.name);
+
+      if (existingProject) {
+        console.log('[saveWorkData] 项目已存在，更新数据:', project.name);
+        // 如果项目已存在，更新其数据
+        existingProject.statistics = project.statistics || existingProject.statistics;
+        existingProject.details = project.details || existingProject.details;
+        // 合并运行时间
+        if (project.accumulatedRuntime && project.accumulatedRuntime > 0) {
+          existingProject.accumulatedRuntime = (existingProject.accumulatedRuntime || 0) + project.accumulatedRuntime;
+        }
+      } else {
+        console.log('[saveWorkData] 新项目，添加到映射:', project.name);
+        // 添加新项目
+        projectMap.set(project.name, {
+          ...project,
+          accumulatedRuntime: project.accumulatedRuntime || 0
+        });
+      }
+    });
+
+    console.log('[saveWorkData] 去重后的项目数量:', projectMap.size);
+    
+    // 处理去重后的项目
+    projectMap.forEach(project => {
       // 项目列表
       allProjects.push({
         name: project.name,
@@ -2554,17 +2586,64 @@ async function saveWorkData(userId, workData, env, date) {
       const existingProjects = existingData.projects_json ? JSON.parse(existingData.projects_json) : [];
       const existingWorkHours = existingData.work_hours_json ? JSON.parse(existingData.work_hours_json) : [];
 
-      // 合并项目（去重）
-      const existingProjectNames = new Set(existingProjects.map(function(p) { return p.name; }));
-      const newProjects = allProjects.filter(function(p) { return !existingProjectNames.has(p.name); });
-      const mergedProjects = existingProjects.concat(newProjects);
+      // 创建项目映射，用于更新现有项目
+      const projectMap = new Map();
+      existingProjects.forEach(function(p) {
+        projectMap.set(p.name, p);
+      });
 
-      // 合并所有数据
+      // 处理新项目数据
+      allProjects.forEach(function(newProject) {
+        // 直接使用项目名称进行比较（不解码）
+        const existingProject = projectMap.get(newProject.name);
+        
+        // 从 allWorkHours 中查找新项目的工时
+        const newWorkHour = allWorkHours.find(function(w) { return w.project === newProject.name; });
+        const newHours = newWorkHour ? newWorkHour.hours : null;
+        
+        if (existingProject) {
+          // 更新现有项目
+          existingProject.compositions = newProject.compositions || existingProject.compositions;
+          existingProject.layers = newProject.layers || existingProject.layers;
+          existingProject.keyframes = newProject.keyframes || existingProject.keyframes;
+          existingProject.effects = newProject.effects || existingProject.effects;
+          // 更新或添加工作时长
+          const existingWorkHour = existingWorkHours.find(function(w) { return w.project === newProject.name; });
+          if (existingWorkHour) {
+            // 如果新项目有工时，更新现有工时
+            if (newHours !== null) {
+              existingWorkHour.hours = newHours;
+            }
+          } else {
+            // 如果新项目有工时，添加新记录
+            if (newHours !== null) {
+              existingWorkHours.push({
+                project: newProject.name,
+                hours: newHours
+              });
+            }
+          }
+        } else {
+          // 添加新项目
+          projectMap.set(newProject.name, newProject);
+          // 只有当新项目有工时时才添加记录
+          if (newHours !== null) {
+            existingWorkHours.push({
+              project: newProject.name,
+              hours: newHours
+            });
+          }
+        }
+      });
+
+      // 从映射中获取最终的项目列表
+      const mergedProjects = Array.from(projectMap.values());
+
+      // 合并其他数据（简单追加，因为它们没有项目级别的去重）
       const mergedCompositions = existingCompositions.concat(allCompositions);
       const mergedEffects = existingEffects.concat(allEffects);
       const mergedLayers = existingLayers.concat(allLayers);
       const mergedKeyframes = existingKeyframes.concat(allKeyframes);
-      const mergedWorkHours = existingWorkHours.concat(allWorkHours);
 
       // 更新 JSON 字符串
       compositionsJson = mergedCompositions.length > 0 ? JSON.stringify(mergedCompositions) : null;
@@ -2572,7 +2651,7 @@ async function saveWorkData(userId, workData, env, date) {
       layersJson = mergedLayers.length > 0 ? JSON.stringify(mergedLayers) : null;
       keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
       projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
-      workHoursJson = mergedWorkHours.length > 0 ? JSON.stringify(mergedWorkHours) : null;
+      workHoursJson = existingWorkHours.length > 0 ? JSON.stringify(existingWorkHours) : null;
 
       // 重新计算总数
       const mergedStats = {
@@ -2580,7 +2659,7 @@ async function saveWorkData(userId, workData, env, date) {
         layers: mergedLayers.reduce(function(acc, l) { return acc + l.count; }, 0),
         keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + k.count; }, 0),
         effects: mergedEffects.length,
-        work_hours: mergedWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
+        work_hours: existingWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
       };
 
       // 更新数据库
