@@ -593,108 +593,291 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
 };
 
 export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang: LangType }) => {
+
   const [hoveredName, setHoveredName] = useState<string | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
+
+
   const chartData = useMemo(() => {
+
     const entries = Object.entries(data);
-    entries.sort((a, b) => b[1] - a[1]);
+
+    entries.sort((a, b) => b[1] - a[1]); // 按数量降序排序
+
+    
+
+    // 方案1：Top 8 + 其他类别
+
     const top8 = entries.slice(0, 8);
-    return top8.map(([name, value]) => ({ name, value }));
-  }, [data]);
+
+    const others = entries.slice(8);
+
+    const otherTotal = others.reduce((sum, [_, value]) => sum + value, 0);
+
+
+
+    const result = top8.map(([name, value]) => ({ name, value }));
+
+    
+
+    // 如果有其他特效，添加"其他"类别
+
+    if (others.length > 0) {
+
+      result.push({
+
+        name: TRANS[lang].top8 === 'TOP 8' ? 'OTHERS' : '其他',
+
+        value: otherTotal,
+
+        isOther: true,
+
+        details: others.map(([name, value]) => ({ name, value }))
+
+      });
+
+    }
+
+
+
+    return result;
+
+  }, [data, lang]);
+
+
 
   const total = Object.values(data).reduce((a, b) => a + b, 0);
+
   
+
   // Find data for center display based on hovered name
+
   const activeItem = hoveredName ? chartData.find(d => d.name === hoveredName) : null;
+
   const displayData = activeItem || { name: TRANS[lang].total, value: total };
 
-  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000'];
+
+
+  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#888888'];
+
   const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
 
+
+
   useEffect(() => {
+
     const el = scrollRef.current;
+
     if (!el) return;
+
     const onWheel = (e: WheelEvent) => {
+
       if (e.deltaY === 0) return;
+
       e.preventDefault();
+
       el.scrollLeft += e.deltaY;
+
     };
+
     el.addEventListener('wheel', onWheel, { passive: false });
+
     return () => el.removeEventListener('wheel', onWheel);
+
   }, []);
 
+
+
   return (
+
     <div className="w-full h-full relative flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+
       <div className="relative w-full flex-1 min-h-0">
+
         <ResponsiveContainer width="100%" height="100%">
+
           <PieChart>
+
             <Pie
+
               data={chartData}
+
               cx="50%"
+
               cy="50%"
+
               innerRadius={60}
+
               outerRadius={90}
+
               paddingAngle={2}
+
               dataKey="value"
+
               stroke="none"
+
               onMouseEnter={(_, index) => setHoveredName(chartData[index].name)}
+
               onMouseLeave={() => setHoveredName(null)}
+
             >
+
               {chartData.map((entry, index) => (
+
                 <Cell 
+
                   key={`cell-${index}`} 
+
                   fill={COLORS[index % COLORS.length]} 
+
                   className="transition-all duration-300 outline-none"
+
                   style={{ 
+
                       opacity: hoveredName && hoveredName !== entry.name ? 0.3 : 1,
+
                       filter: hoveredName === entry.name ? 'drop-shadow(0 0 4px rgba(255,107,53,0.5))' : 'none'
+
                   }}
+
                   stroke={hoveredName === entry.name ? '#FFF' : 'none'}
+
                   strokeWidth={2}
+
                 />
+
               ))}
+
             </Pie>
+
+            <Tooltip
+
+              cursor={false}
+
+              contentStyle={{ backgroundColor: '#050505', border: '1px solid #333' }}
+
+              itemStyle={{ color: '#FF6B35' }}
+
+              formatter={(value: any, name: string, props: any) => {
+
+                const entry = props.payload;
+
+                if (entry.isOther) {
+
+                  return [
+
+                    <div key="tooltip">
+
+                      <div>{entry.name}: {value}</div>
+
+                      <div className="text-xs text-gray-400 mt-1">
+
+                        {entry.details.map((d: any, i: number) => (
+
+                          <div key={i}>{d.name}: {d.value}</div>
+
+                        ))}
+
+                      </div>
+
+                    </div>,
+
+                    TRANS[lang].count
+
+                  ];
+
+                }
+
+                return [value, TRANS[lang].count];
+
+              }}
+
+            />
+
           </PieChart>
+
         </ResponsiveContainer>
+
         
+
+
+
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+
           <span className="text-ru-textMuted text-xs uppercase tracking-wider mb-1 max-w-[80%] truncate">
+
             {displayData.name}
+
           </span>
+
           <span className="text-2xl font-mono font-black text-white">
+
             <NumberTicker value={displayData.value} />
+
           </span>
+
           <span className="text-[10px] text-ru-primary font-mono mt-1 bg-ru-primary/10 px-1 rounded">
+
              {percentage}%
+
           </span>
+
         </div>
+
       </div>
+
       
+
       <div 
+
          ref={scrollRef}
+
          className="w-full overflow-x-auto whitespace-nowrap pb-2 px-4 mt-2 h-8 scrollbar-none"
+
          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+
       >
+
           {chartData.map((entry, idx) => (
+
             <span 
+
                 key={idx} 
+
                 className={`inline-block mr-4 text-[10px] uppercase cursor-pointer transition-all duration-200 ${hoveredName === entry.name ? 'text-white font-bold scale-110' : 'text-ru-textDim hover:text-white'}`}
+
                 onMouseEnter={() => setHoveredName(entry.name)}
+
                 onMouseLeave={() => setHoveredName(null)}
+
             >
+
               <span className="inline-block w-2 h-2 mr-1 rounded-full" style={{backgroundColor: COLORS[idx]}}></span>
+
               {entry.name}
+
             </span>
+
           ))}
+
           <style>{`
+
              .scrollbar-none::-webkit-scrollbar {
+
                display: none;
+
              }
+
           `}</style>
+
       </div>
+
     </div>
+
   );
+
 };
 
 export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list' }) => {
