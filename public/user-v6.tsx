@@ -13,7 +13,7 @@ import {
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
-import { getWorkLogs, getWorkLogsByRange } from './src/api';
+import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType } from './src/api';
 import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
 import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
 
@@ -136,7 +136,10 @@ export const TRANS = {
     of: "OF",
     projectCount: "PROJECT COUNT",
     // Settings
-    settings: "SETTINGS"
+    settings: "SETTINGS",
+    refresh: "REFRESH",
+    refreshTooltip: "Refresh data from server"
+  },
   },
   ZH: {
     subtitle: "系统在线 // 监控中",
@@ -202,7 +205,11 @@ export const TRANS = {
     of: "/",
     projectCount: "项目数量",
     // Settings
-    settings: "系统设置"
+    settings: "系统设置",
+    refresh: "刷新",
+    refreshTooltip: "从服务器刷新数据"
+  }
+};
   }
 };
 
@@ -245,26 +252,27 @@ export const NumberTicker = ({ value }: { value: number }) => {
   return <>{displayValue.toLocaleString()}</>;
 };
 
-export const Header = ({ 
-    lang, 
-    setLang, 
-    dateDisplay, 
-    onCalendarClick, 
+export const Header = ({
+    lang,
+    setLang,
+    dateDisplay,
+    onCalendarClick,
     currentView,
     onChangeView,
     searchQuery,
     setSearchQuery,
-}: { 
-    lang: LangType, 
-    setLang: React.Dispatch<React.SetStateAction<LangType>>, 
-    dateDisplay?: string, 
+    onRefresh,
+}: {
+    lang: LangType,
+    setLang: React.Dispatch<React.SetStateAction<LangType>>,
+    dateDisplay?: string,
     onCalendarClick?: () => void,
     currentView: ViewType,
     onChangeView: (view: ViewType) => void,
     searchQuery: string,
     setSearchQuery: (s: string) => void,
-}) => {
-    
+    onRefresh?: () => void,
+}) => {    
     const isDashboard = currentView === 'dashboard';
     const isAnalytics = currentView === 'analytics';
     const isSettings = currentView === 'settings';
@@ -352,7 +360,18 @@ export const Header = ({
                 </div>
             </div>
 
-            <button 
+            {onRefresh && (
+                <button
+                    onClick={onRefresh}
+                    className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
+                    title={TRANS[lang].refreshTooltip}
+                >
+                    <RotateCcw size={14} />
+                    <span className="hidden md:inline">{TRANS[lang].refresh}</span>
+                </button>
+            )}
+
+            <button
                 onClick={() => setLang(l => l === 'EN' ? 'ZH' : 'EN')}
                 className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
             >
@@ -748,9 +767,9 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
     try {
       const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
       const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
-      
-      const response = await getWorkLogsByRange(startDate, endDate, false);
-      
+
+      const response = await getWorkLogsByRange(startDate, endDate, true); // Enable cache
+
       if (response.success && response.data) {
         const dataMap: Record<string, { heat: number; projects: number }> = {};
         response.data.forEach((log: any) => {
@@ -1247,7 +1266,7 @@ export const AnalyticsView = ({
             try {
                 const { startDate, endDate } = getDateRange(viewMode, cursorDate);
                 console.log('[AnalyticsView] Loading work logs:', { startDate, endDate, viewMode });
-                const response = await getWorkLogsByRange(startDate, endDate, false);
+                const response = await getWorkLogsByRange(startDate, endDate, true); // Enable cache
                 console.log('[AnalyticsView] API response:', response);
                 if (response.success && response.data) {
                     console.log('[AnalyticsView] Work logs loaded:', response.data.length, 'records');
@@ -1711,8 +1730,20 @@ const App = () => {
 
   const handleNavigate = (date: string, projectName?: string) => {
      setCurrentDate(date);
-     if (projectName) setSearchQuery(projectName); 
+     if (projectName) setSearchQuery(projectName);
      setCurrentView('dashboard');
+  };
+
+  const handleRefresh = () => {
+    // 清除所有缓存
+    clearAllCache();
+    // 触发当前视图的数据重新加载
+    if (currentView === 'dashboard') {
+      // Dashboard 会自动重新加载数据，因为 currentDate 没有变化
+      // 但我们需要强制重新渲染
+      setDailyData({ date: currentDate, projects: [] });
+    }
+    // Analytics view 会自动重新加载数据，因为 cursorDate 没有变化
   };
 
   const [dailyData, setDailyData] = useState<DailyData>({ date: currentDate, projects: [] });
@@ -1726,7 +1757,7 @@ const App = () => {
       setError(null);
       try {
         console.log('[UserV6] Loading data for date:', currentDate);
-        const response = await getWorkLogs(currentDate, false); // Disable cache for immediate data
+        const response = await getWorkLogs(currentDate, true); // Enable cache
         console.log('[UserV6] API response:', response);
         
         if (response.success && response.data && response.data.length > 0) {
@@ -1779,15 +1810,16 @@ const App = () => {
         lang={lang}
       />
 
-      <Header 
-        lang={lang} 
-        setLang={setLang} 
+      <Header
+        lang={lang}
+        setLang={setLang}
         dateDisplay={currentDate}
         onCalendarClick={() => setIsCalendarOpen(true)}
         currentView={currentView}
         onChangeView={setCurrentView}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onRefresh={handleRefresh}
       />
 
       <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
