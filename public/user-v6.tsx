@@ -462,29 +462,32 @@ interface ProjectSelectorProps {
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang }) => {
   return (
     <div className="w-full mb-6 md:mb-8">
-      <div className="flex w-full gap-1 h-16 md:h-24">
+      <div className="flex w-full gap-1 h-16 md:h-24 overflow-x-auto">
         {projects.map((proj, idx) => {
           const isActive = idx === selectedIndex;
-          
+
           return (
             <button
               key={proj.projectId}
               onClick={() => onSelect(idx)}
-              style={{ flex: `${proj.accumulatedRuntime} 1 0px` }}
+              style={{
+                flex: `${proj.accumulatedRuntime} 1 0px`,
+                minWidth: '140px' // 设置最小宽度，确保项目名、运行时间和编号都能正常显示
+              }}
               className={`
                 relative h-full flex flex-col justify-between p-2 md:p-4 text-left transition-all duration-300 group
-                border border-ru-glassBorder backdrop-blur-sm overflow-hidden min-w-0
+                border border-ru-glassBorder backdrop-blur-sm overflow-hidden
                 ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
               `}
             >
-              <div className="flex justify-between items-start w-full min-w-0">
+              <div className="flex justify-between items-start w-full">
                  <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 w-full ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
                    {proj.name}
                  </span>
                  {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 flex-shrink-0 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
               </div>
-              
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto min-w-0">
+
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
                  <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{proj.dailyRuntime}</span>
                  <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{TRANS[lang].id}: {proj.projectId}</span>
               </div>
