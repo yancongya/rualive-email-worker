@@ -10,7 +10,7 @@ import {
   Globe, ChevronRight, X, ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw,
   LineChart as LucideLineChart, BarChart3, Search, Table, TrendingUp,
   Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
-  Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap
+  Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType } from './src/api';
@@ -470,9 +470,11 @@ interface ProjectSelectorProps {
   selectedIndex: number;
   onSelect: (index: number) => void;
   lang: LangType;
+  anonymizeMode: boolean;
+  onToggleAnonymize: () => void;
 }
 
-const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang }) => {
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang, anonymizeMode, onToggleAnonymize }) => {
   return (
     <div className="w-full mb-6 md:mb-8">
       <div className="flex w-full gap-1 h-16 md:h-24 overflow-x-auto">
@@ -494,10 +496,22 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
               `}
             >
               <div className="flex justify-between items-start w-full">
-                 <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 w-full ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
+                 <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
                    {proj.name}
                  </span>
-                 {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 flex-shrink-0 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
+                 <div className="flex items-center gap-1 flex-shrink-0">
+                   {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       onToggleAnonymize();
+                     }}
+                     className={`p-1.5 rounded transition-all duration-200 ${anonymizeMode ? 'text-ru-primary bg-ru-primary/20' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+                     title={anonymizeMode ? '关闭脱敏' : '开启脱敏'}
+                   >
+                     {anonymizeMode ? <EyeOff size={16} /> : <Eye size={16} />}
+                   </button>
+                 </div>
               </div>
 
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
@@ -814,9 +828,19 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 };
 
-export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list' }) => {
+export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list', anonymizeMode?: boolean }) => {
   const [sortKey, setSortKey] = useState<'name' | 'value'>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  // 脱敏函数
+  const anonymizeName = (name: string): string => {
+    if (!anonymizeMode) return name;
+    if (name.length <= 3) {
+      return '***';
+    }
+    // 保留首尾字符，中间用星号替代
+    return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
+  };
 
   const rawItems = useMemo(() => {
     if (Array.isArray(data)) {
@@ -892,13 +916,13 @@ export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, 
        <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 custom-scrollbar min-h-0">
           {sortedItems.map((item, idx) => (
             <div key={idx} className="group relative flex items-center justify-between text-xs font-mono hover:bg-white/5 p-1.5 rounded transition-colors">
-               <span className="z-10 truncate text-ru-textDim group-hover:text-white w-2/3">{item.name}</span>
+               <span className="z-10 truncate text-ru-textDim group-hover:text-white w-2/3">{anonymizeName(item.name)}</span>
                {type === 'count' && (
                  <>
                   <span className="z-10 text-ru-primary font-bold">{item.value}</span>
-                  <div 
-                    className="absolute left-0 top-0 bottom-0 bg-ru-primary/10 rounded" 
-                    style={{ width: `${(item.value / maxVal) * 100}%` }} 
+                  <div
+                    className="absolute left-0 top-0 bottom-0 bg-ru-primary/10 rounded"
+                    style={{ width: `${(item.value / maxVal) * 100}%` }}
                   />
                  </>
                )}
@@ -1900,11 +1924,16 @@ const App = () => {
   });
 
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [anonymizeMode, setAnonymizeMode] = useState<boolean>(false);
 
   const handleNavigate = (date: string, projectName?: string) => {
      setCurrentDate(date);
      if (projectName) setSearchQuery(projectName);
      setCurrentView('dashboard');
+  };
+
+  const handleToggleAnonymize = () => {
+    setAnonymizeMode(prev => !prev);
   };
 
   const handleRefresh = async () => {
@@ -2028,6 +2057,8 @@ const App = () => {
                   selectedIndex={selectedProjectIndex}
                   onSelect={setSelectedProjectIndex}
                   lang={lang}
+                  anonymizeMode={anonymizeMode}
+                  onToggleAnonymize={handleToggleAnonymize}
                 />
 
                 <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
@@ -2039,22 +2070,22 @@ const App = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
                   
-                  <DashboardPanel 
-                      title={TRANS[lang].keyframeDensity} 
-                      count={Object.values(project.details.keyframes).reduce((a, b) => a + b, 0)} 
+                  <DashboardPanel
+                      title={TRANS[lang].keyframeDensity}
+                      count={Object.values(project.details.keyframes).reduce((a, b) => a + b, 0)}
                       countLabel={TRANS[lang].total}
                       className="h-[220px]"
                   >
-                      <DataList data={project.details.keyframes} type="count" lang={lang} />
+                      <DataList data={project.details.keyframes} type="count" lang={lang} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
 
-                  <DashboardPanel 
-                      title={TRANS[lang].activeComps} 
-                      count={project.details.compositions.length} 
+                  <DashboardPanel
+                      title={TRANS[lang].activeComps}
+                      count={project.details.compositions.length}
                       countLabel={TRANS[lang].items}
                       className="h-[220px]"
                   >
-                      <DataList data={project.details.compositions} type="list" lang={lang} />
+                      <DataList data={project.details.compositions} type="list" lang={lang} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
                   
                   <DashboardPanel 
