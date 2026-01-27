@@ -1456,18 +1456,39 @@ export const AnalyticsView = ({
         setCursorDate(newDate);
     };
 
-    // Load work logs based on date range
+    // Load all work logs once and cache to localStorage
     useEffect(() => {
-        async function loadWorkLogs() {
+        const ALL_DATA_RANGE = {
+            startDate: '2020-01-01',
+            endDate: '2030-12-31'
+        };
+
+        async function loadAllWorkLogs() {
             setIsLoading(true);
             try {
-                const { startDate, endDate } = getDateRange(viewMode, cursorDate);
-                console.log('[AnalyticsView] Loading work logs:', { startDate, endDate, viewMode });
-                const response = await getWorkLogsByRange(startDate, endDate, true); // Enable cache
+                // 检查持久化缓存
+                const cached = localStorage.getItem('analytics_all_data');
+                const cachedTime = localStorage.getItem('analytics_all_data_time');
+
+                // 缓存1天内有效
+                if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < 24 * 60 * 60 * 1000) {
+                    console.log('[AnalyticsView] Using cached data');
+                    setWorkLogs(JSON.parse(cached));
+                    setIsLoading(false);
+                    return;
+                }
+
+                // 一次性加载所有数据
+                console.log('[AnalyticsView] Loading all data from API');
+                const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
                 console.log('[AnalyticsView] API response:', response);
                 if (response.success && response.data) {
                     console.log('[AnalyticsView] Work logs loaded:', response.data.length, 'records');
                     setWorkLogs(response.data);
+                    // 缓存到 localStorage
+                    localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
+                    localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                    console.log('[AnalyticsView] Data cached to localStorage');
                 } else {
                     console.log('[AnalyticsView] No work logs found');
                     setWorkLogs([]);
@@ -1480,14 +1501,52 @@ export const AnalyticsView = ({
             }
         }
 
-        loadWorkLogs();
-    }, [viewMode, cursorDate]);
+        loadAllWorkLogs();
+    }, []);  // 空依赖，只执行一次
+
+    // 根据当前视图模式过滤数据
+    const filteredWorkLogs = useMemo(() => {
+        const { startDate, endDate } = getDateRange(viewMode, cursorDate);
+        return workLogs.filter(log => {
+            const date = log.work_date;
+            return date >= startDate && date <= endDate;
+        });
+    }, [workLogs, viewMode, cursorDate]);
 
     const { data: rawData, label: timeLabel } = useMemo(() => {
-        const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, workLogs);
+        const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, filteredWorkLogs);
         console.log('[AnalyticsView] Aggregated data:', result);
         return result;
-    }, [viewMode, cursorDate, showDaily, lang, workLogs]);
+    }, [viewMode, cursorDate, showDaily, lang, filteredWorkLogs]);
+
+    // 后台静默更新缓存
+    useEffect(() => {
+        const ALL_DATA_RANGE = {
+            startDate: '2020-01-01',
+            endDate: '2030-12-31'
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                console.log('[AnalyticsView] Page hidden, updating cache in background');
+                // 页面隐藏时，后台更新缓存
+                getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false)
+                    .then(response => {
+                        if (response.success && response.data) {
+                            localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
+                            localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                            console.log('[AnalyticsView] Cache updated in background');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[AnalyticsView] Failed to update cache:', error);
+                    });
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
 
     const filteredRawData = useMemo(() => {
         if (!searchQuery.trim()) return rawData;
@@ -1623,6 +1682,29 @@ export const AnalyticsView = ({
         setVisibleMetrics({ ...reset, [key]: true });
     };
 
+    const handleManualRefresh = async () => {
+        const ALL_DATA_RANGE = {
+            startDate: '2020-01-01',
+            endDate: '2030-12-31'
+        };
+        
+        setIsLoading(true);
+        try {
+            console.log('[AnalyticsView] Manual refresh requested');
+            const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
+            if (response.success && response.data) {
+                setWorkLogs(response.data);
+                localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
+                localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                console.log('[AnalyticsView] Data refreshed successfully');
+            }
+        } catch (error) {
+            console.error('[AnalyticsView] Failed to refresh data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 pb-20 animate-[fadeIn_0.5s_ease-out]">
             
@@ -1652,15 +1734,23 @@ export const AnalyticsView = ({
                         />
                         {displayMode === 'chart' && (
                             <OptionSwitch 
-                                active={normalizeData} 
-                                onClick={() => setNormalizeData(!normalizeData)} 
-                                label={TRANS[lang].normalizeCurves} 
-                                icon={AlignLeft} 
-                                hideLabelOnMobile={true}
-                            />
-                        )}
-                    </div>
-                </div>
+                                                        active={normalizeData} 
+                                                        onClick={() => setNormalizeData(!normalizeData)} 
+                                                        label={TRANS[lang].normalizeCurves} 
+                                                        icon={AlignLeft} 
+                                                        hideLabelOnMobile={true}
+                                                    />
+                                                    )}
+                            
+                                                    <button 
+                                                        onClick={handleManualRefresh}
+                                                        className={`flex items-center gap-2 px-3 py-2 text-xs font-bold text-ru-textMuted hover:text-white transition-colors border border-transparent hover:border-white/20 rounded ${isLoading ? 'animate-pulse' : ''}`}
+                                                        title={lang === 'ZH' ? '刷新数据' : 'Refresh Data'}
+                                                    >
+                                                        <RotateCcw size={14} className={isLoading ? 'animate-spin' : ''} />
+                                                        <span className="hidden sm:inline">{lang === 'ZH' ? '刷新' : 'Refresh'}</span>
+                                                    </button>
+                                                </div>                </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
                     <div className="flex items-center gap-1 bg-ru-glass border border-ru-glassBorder p-0.5 rounded-sm w-full sm:w-auto">
