@@ -2522,11 +2522,18 @@ async function saveWorkData(userId, workData, env, date) {
                 count: 1
               });
             } else if (effect && effect.effectName) {
-              // 对象格式：[{effectName: "Gaussian Blur", ...}, ...]
+              // 对象格式（旧）：[{effectName: "Gaussian Blur", ...}, ...]
               allEffects.push({
                 project: project.name,
                 name: effect.effectName,
                 count: 1
+              });
+            } else if (effect && effect.name && effect.count) {
+              // 对象格式（新）：[{name: "Gaussian Blur", count: 5}, ...]
+              allEffects.push({
+                project: project.name,
+                name: effect.name,
+                count: effect.count
               });
             }
           });
