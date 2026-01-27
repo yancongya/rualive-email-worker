@@ -551,10 +551,11 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
         const tierValue = smoothValue(value as number);
 
         return {
-            subject: mappedLabel,
+            subject: `${mappedLabel}：${value}`,  // 在类型后面添加数量
             A: tierValue,
             fullMark: 4,
-            rawValue: value, // 保留原始值用于 tooltip
+            rawValue: value,
+            labelName: mappedLabel,  // 保留原始标签名
         };
     });
   }, [data, lang]);
