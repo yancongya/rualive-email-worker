@@ -2709,9 +2709,9 @@ async function saveWorkData(userId, workData, env, date) {
 
       // 重新计算总数
       const mergedStats = {
-        compositions: mergedCompositions.reduce(function(acc, c) { return acc + c.count; }, 0),
-        layers: mergedLayers.reduce(function(acc, l) { return acc + l.count; }, 0),
-        keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + k.count; }, 0),
+        compositions: mergedCompositions.length,  // 🔍 直接统计合成数量
+        layers: mergedLayers.reduce(function(acc, l) { return acc + (l.count || 0); }, 0),
+        keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + (k.count || 0); }, 0),
         effects: mergedEffects.length,
         work_hours: existingWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
       };
