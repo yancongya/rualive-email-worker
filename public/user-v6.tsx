@@ -1705,6 +1705,9 @@ export const AnalyticsView = ({
             layers: { video: 0, image: 0, sequence: 0, designFile: 0, sourceFile: 0, nullSolidLayer: 0, shapeLayer: 0, textLayer: 0, adjustmentLayer: 0, lightLayer: 0, cameraLayer: 0, other: 0 } as Record<string, number>,
             effectCounts: {} as Record<string, number>
         };
+        
+        // 🔍 使用 Set 去重合成名称
+        const compositionsSet = new Set<string>();
 
         finalDisplayData.forEach((period: any) => {
              if(period.projects) {
@@ -1726,13 +1729,22 @@ export const AnalyticsView = ({
                         });
                      }
                      if (p.details.compositions) {
-                        acc.compositions.push(...p.details.compositions);
-                     }
+                    // 🔍 使用 Set 去重合成名称
+                    p.details.compositions.forEach(compName => {
+                        if (compName && compName.trim() !== '') {
+                            compositionsSet.add(compName);
+                        }
+                    });
+                 }
                  });
              }
         });
-        return acc;
-    }, [finalDisplayData]);
+        // 🔍 将 Set 转换为数组
+        return {
+            ...acc,
+            compositions: Array.from(compositionsSet).sort()  // 排序
+        };
+    }, [finalDisplayData, compositionsSet]);
 
 
     const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
