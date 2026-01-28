@@ -608,20 +608,21 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
 
 export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang: LangType }) => {
 
+
+
   const [hoveredName, setHoveredName] = useState<string | null>(null);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 🔍 调试日志
-  console.log('[EffectDonut] Input data:', data);
-  console.log('[EffectDonut] Data keys:', Object.keys(data));
-  console.log('[EffectDonut] Data values:', Object.values(data));
+
+  const scrollRef = useRef<HTMLDivElement>(null);
 
 
 
   const chartData = useMemo(() => {
 
     const entries = Object.entries(data);
+
+
 
     // 按数量降序排序
 
@@ -637,11 +638,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 
 
-    const result = topN.map(([name, value]) => ({ name, value }));
-
-    console.log('[EffectDonut] Chart data:', result);
-
-    return result;
+    return topN.map(([name, value]) => ({ name, value }));
 
   }, [data]);
 
@@ -657,7 +654,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
   }, 0);
 
-  console.log('[EffectDonut] Total:', total);
+
 
   // 默认显示总数，悬浮时显示当前项
 
@@ -669,9 +666,9 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
   const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000', '#FF8C42', '#FFA07A', '#FFB347', '#FFCC33'];
 
-  const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
 
-  console.log('[EffectDonut] Display data:', displayData, 'Percentage:', percentage);
+
+  const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
 
 
 
