@@ -2991,9 +2991,17 @@ async function sendEmail(to, subject, html, env) {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Resend API error: ${error}`);
+    const errorText = await response.text();
+    console.error('Resend API error response:', errorText);
+    try {
+      const errorJson = JSON.parse(errorText);
+      throw new Error(`Resend API error: ${JSON.stringify(errorJson)}`);
+    } catch (e) {
+      throw new Error(`Resend API error: ${errorText}`);
+    }
   }
+
+  return await response.json();
 }
 
 // ==================== 落地页面 ====================
