@@ -1504,16 +1504,47 @@ export const AnalyticsView = ({
         loadAllWorkLogs();
     }, []);  // 空依赖，只执行一次
 
+    // 调试：监听 workLogs 状态变化
+    useEffect(() => {
+        console.log('[AnalyticsView] workLogs state changed:', {
+            length: workLogs.length,
+            firstLog: workLogs[0] ? { id: workLogs[0].id, work_date: workLogs[0].work_date } : null,
+            lastLog: workLogs[workLogs.length - 1] ? { id: workLogs[workLogs.length - 1].id, work_date: workLogs[workLogs.length - 1].work_date } : null
+        });
+    }, [workLogs]);
+
     // 根据当前视图模式过滤数据
     const filteredWorkLogs = useMemo(() => {
+        console.log('[AnalyticsView] filteredWorkLogs useMemo executing...');
         const { startDate, endDate } = getDateRange(viewMode, cursorDate);
-        return workLogs.filter(log => {
-            const date = log.work_date;
-            return date >= startDate && date <= endDate;
+        console.log('[AnalyticsView] Date range:', { startDate, endDate, viewMode, cursorDate: cursorDate.toISOString() });
+        console.log('[AnalyticsView] Filtering workLogs:', {
+            total: workLogs.length,
+            dateRange: { startDate, endDate },
+            firstLogDate: workLogs[0]?.work_date,
+            lastLogDate: workLogs[workLogs.length - 1]?.work_date
         });
+
+        const filtered = workLogs.filter(log => {
+            const date = log.work_date;
+            const isInRange = date >= startDate && date <= endDate;
+            if (!isInRange && workLogs.length < 10) {
+                console.log('[AnalyticsView] Log filtered out:', { date, log });
+            }
+            return isInRange;
+        });
+
+        console.log('[AnalyticsView] Filtered result:', { count: filtered.length });
+        return filtered;
     }, [workLogs, viewMode, cursorDate]);
 
     const { data: rawData, label: timeLabel } = useMemo(() => {
+        console.log('[AnalyticsView] Calling getAnalyticsData with:', {
+            viewMode,
+            cursorDate: cursorDate.toISOString(),
+            showDaily,
+            workLogsCount: filteredWorkLogs.length
+        });
         const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, filteredWorkLogs);
         console.log('[AnalyticsView] Aggregated data:', result);
         return result;
