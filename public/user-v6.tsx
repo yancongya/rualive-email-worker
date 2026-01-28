@@ -1263,12 +1263,21 @@ const AnalyticsTable = ({
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     const flatRows = useMemo(() => {
-        return data.flatMap(period => period.projects.map((proj: any) => ({
-            periodLabel: period.fullLabel,
-            displayX: period.displayX,
-            isoDate: period.isoDate,
-            ...proj
-        })));
+        return data.flatMap(period => {
+            if (!period.projects || !Array.isArray(period.projects)) return [];
+            return period.projects.map((proj: any) => ({
+                periodLabel: period.fullLabel || '',
+                displayX: period.displayX,
+                isoDate: period.isoDate || '',
+                id: proj.projectId || '',
+                name: proj.name || '',
+                compositions: proj.statistics?.compositions || 0,
+                layers: proj.statistics?.layers || 0,
+                keyframes: proj.statistics?.keyframes || 0,
+                effects: proj.statistics?.effects || 0,
+                runtime: proj.accumulatedRuntime || 0
+            }));
+        });
     }, [data]);
 
     const sortedRows = useMemo(() => {
@@ -1278,9 +1287,15 @@ const AnalyticsTable = ({
                 let aValue = a[sortConfig.key];
                 let bValue = b[sortConfig.key];
                 if (sortConfig.key === 'periodLabel') {
-                    aValue = a.isoDate;
-                    bValue = b.isoDate;
+                    aValue = a.isoDate || '';
+                    bValue = b.isoDate || '';
                 }
+                // 处理字符串类型的排序
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    const comparison = aValue.localeCompare(bValue);
+                    return sortConfig.direction === 'asc' ? comparison : -comparison;
+                }
+                // 处理数字类型的排序
                 if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
                 return 0;
@@ -1369,11 +1384,11 @@ const AnalyticsTable = ({
                                 >
                                     {row.name}
                                 </td>
-                                <td className="p-3 text-xs font-mono text-right text-blue-100/70">{row.compositions.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-purple-100/70">{row.layers.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-white font-bold">{row.keyframes.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-emerald-100/70">{row.effects.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-amber-100/70">{formatRuntime(row.runtime)}</td>
+                                <td className="p-3 text-xs font-mono text-right text-blue-100/70">{(row.compositions || 0).toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-purple-100/70">{(row.layers || 0).toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-white font-bold">{(row.keyframes || 0).toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-emerald-100/70">{(row.effects || 0).toLocaleString()}</td>
+                                <td className="p-3 text-xs font-mono text-right text-amber-100/70">{formatRuntime(row.runtime || 0)}</td>
                             </tr>
                         ))}
                     </tbody>
