@@ -429,7 +429,7 @@ async function sendTestEmail(target: 'operator' | 'proxy') {
     const response = await fetch(`${API_BASE}/api/send-now`, {
       method: 'POST',
       headers: getAuthHeader(),
-      body: JSON.stringify({ recipient })
+      body: JSON.stringify(recipient ? { recipient } : {})
     });
 
     if (!response.ok) {

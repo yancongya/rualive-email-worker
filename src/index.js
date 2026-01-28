@@ -2111,8 +2111,14 @@ async function handleSendNow(request, env) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 获取请求体中的收件人选择
-    const body = await request.json();
+    // 获取请求体中的收件人选择（安全处理空body）
+    let body = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      // 请求没有body，使用默认值
+      body = {};
+    }
     const recipient = body.recipient || 'user';
 
     // 检查测试次数限制（每天每个用户最多3次）
