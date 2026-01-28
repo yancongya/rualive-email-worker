@@ -67,9 +67,10 @@ export function getDateRange(viewMode: ViewMode, cursorDate: Date): { startDate:
       break;
 
     case 'all':
-      // 所有数据（过去 5 年）
-      startDate.setFullYear(startDate.getFullYear() - 5);
+      // 所有数据（过去 10 年到未来 5 年，确保能覆盖所有历史数据）
+      startDate.setFullYear(startDate.getFullYear() - 10);
       startDate.setMonth(0, 1);
+      endDate.setFullYear(endDate.getFullYear() + 5);
       endDate.setMonth(11, 31);
       break;
   }

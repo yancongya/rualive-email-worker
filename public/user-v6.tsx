@@ -1450,6 +1450,7 @@ export const AnalyticsView = ({
 
     const [isLoading, setIsLoading] = useState(false);
     const [workLogs, setWorkLogs] = useState<any[]>([]);
+    const [dataWarning, setDataWarning] = useState<string | null>(null);
 
     const [visibleMetrics, setVisibleMetrics] = useState({
         compositions: true,
@@ -1557,6 +1558,20 @@ export const AnalyticsView = ({
         console.log('[AnalyticsView] Filtered result:', { count: filtered.length });
         return filtered;
     }, [workLogs, viewMode, cursorDate]);
+
+    // 数据量监控：当数据量过大时自动禁用 showDaily
+    useEffect(() => {
+        if (showDaily && filteredWorkLogs.length > 90) {
+            setShowDaily(false);
+            setDataWarning(lang === 'ZH'
+                ? `数据量较大（${filteredWorkLogs.length} 天），已自动切换到周视图以提升性能`
+                : `Large dataset (${filteredWorkLogs.length} days), switched to weekly view for better performance`
+            );
+            setTimeout(() => setDataWarning(null), 5000);
+        } else if (filteredWorkLogs.length <= 90) {
+            setDataWarning(null);
+        }
+    }, [filteredWorkLogs.length, showDaily, lang]);
 
     const { data: rawData, label: timeLabel } = useMemo(() => {
         console.log('[AnalyticsView] Calling getAnalyticsData with:', {
@@ -1776,13 +1791,18 @@ export const AnalyticsView = ({
                             hideLabelOnMobile={true}
                         />
 
-                        <OptionSwitch 
-                            active={showDaily} 
-                            onClick={() => setShowDaily(!showDaily)} 
-                            label={TRANS[lang].dailyDetails} 
-                            icon={Calendar} 
+                        <OptionSwitch
+                            active={showDaily}
+                            onClick={() => setShowDaily(!showDaily)}
+                            label={TRANS[lang].dailyDetails}
+                            icon={Calendar}
                             hideLabelOnMobile={true}
                         />
+                        {dataWarning && (
+                            <div className="bg-ru-primary/20 text-ru-primary text-xs px-3 py-2 rounded animate-in fade-in slide-in-from-top-2">
+                                ⚠️ {dataWarning}
+                            </div>
+                        )}
                         {displayMode === 'chart' && (
                             <OptionSwitch 
                                                         active={normalizeData} 
