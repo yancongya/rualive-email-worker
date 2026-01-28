@@ -97,11 +97,13 @@ export function workLogToDailyData(workLog: WorkLog): DailyData {
  */
 export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   // 解析 JSON 数据
+  console.log('[DataTransform] Raw effects_json:', workLog.effects_json);
   const projectsJson = safeParseJSON<ProjectInfo[]>(workLog.projects_json || '[]');
   const compositionsJson = safeParseJSON<CompositionItem[]>(workLog.compositions_json || '[]');
   const layersJson = safeParseJSON<LayerItem[]>(workLog.layers_json || '[]');
   const keyframesJson = safeParseJSON<KeyframeItem[]>(workLog.keyframes_json || '[]');
   const effectsJson = safeParseJSON<EffectItem[]>(workLog.effects_json || '[]');
+  console.log('[DataTransform] Parsed effectsJson length:', effectsJson.length);
 
   // 按项目分组数据
   const projectMap = new Map<string, ProjectData>();
@@ -266,14 +268,20 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
   }
 
   // 填充特效数据
-  effectsJson.forEach((e) => {
+  console.log('[DataTransform] effectsJson:', effectsJson);
+  console.log('[DataTransform] effectsJson sample:', effectsJson.slice(0, 3));
+  effectsJson.forEach((e, idx) => {
+    if (idx < 5) {
+      console.log('[DataTransform] Effect item:', e, 'count:', e.count, 'count type:', typeof e.count);
+    }
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(e.project);
     const project = projectMap.get(decodedProjectName);
     if (project) {
       // 🔍 过滤空名称
       if (e.name && e.name.trim() !== '') {
-        project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
+        const count = typeof e.count === 'number' && !isNaN(e.count) ? e.count : 0;
+        project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + count;
       }
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
