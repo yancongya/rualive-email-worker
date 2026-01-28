@@ -423,10 +423,13 @@ async function fetchCurrentUser() {
  */
 async function sendTestEmail(target: 'operator' | 'proxy') {
   try {
+    // 将 target 映射为后端期望的 recipient
+    const recipient = target === 'proxy' ? 'emergency' : 'user';
+    
     const response = await fetch(`${API_BASE}/api/send-now`, {
       method: 'POST',
       headers: getAuthHeader(),
-      body: JSON.stringify({ target })
+      body: JSON.stringify({ recipient })
     });
 
     if (!response.ok) {
