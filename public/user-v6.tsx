@@ -1707,7 +1707,11 @@ export const AnalyticsView = ({
             compositions: acc.compositions + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.compositions, 0),
             layers: acc.layers + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.layers, 0),
             keyframes: acc.keyframes + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.keyframes, 0),
-            effects: acc.effects + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.effects, 0),
+            effects: acc.effects + dailyData.projects.reduce((sum: number, p: any) => {
+                // 🔍 使用 effectCounts 的总和，而不是 statistics.effects（唯一类型数）
+                if (!p.details.effectCounts) return sum;
+                return sum + Object.values(p.details.effectCounts).reduce((total: number, count: number) => total + count, 0);
+            }, 0),
             runtime: acc.runtime + dailyData.projects.reduce((sum: number, p: any) => sum + p.accumulatedRuntime, 0),
             projectCount: acc.projectCount + dailyData.projects.length,
         }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0, projectCount: 0 });
