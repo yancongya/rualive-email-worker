@@ -229,14 +229,14 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     }
   });
 
-  // 填充图层数据（Worker 后端已经处理过分类）
+  // 填充图层数据（需要对图层进行分类）
   layersJson.forEach((l) => {
     // 🔍 对项目名称进行 URL 解码
     const decodedProjectName = decodeProjectName(l.project);
     const project = projectMap.get(decodedProjectName);
     if (project) {
-      // Worker 后端已经将图层分类，l.name 就是图层类型（video, image, etc.）
-      const layerType = l.name;
+      // 对图层名称进行分类
+      const layerType = classifyLayer(l.name);
       const count = l.count || 1;
       project.details.layers[layerType] = (project.details.layers[layerType] || 0) + count;
       // 如果 JSON 数据存在，更新统计
