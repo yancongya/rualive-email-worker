@@ -280,7 +280,8 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     if (project) {
       // 🔍 过滤空名称
       if (e.name && e.name.trim() !== '') {
-        const count = typeof e.count === 'number' && !isNaN(e.count) ? e.count : 0;
+        // 🔍 支持新旧两种格式：新格式有 count 字段，旧格式每个对象代表 1 次使用
+        const count = typeof e.count === 'number' && !isNaN(e.count) ? e.count : 1;
         project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + count;
       }
       // 如果 JSON 数据存在，更新统计（取最大值）
