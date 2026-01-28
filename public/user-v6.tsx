@@ -869,9 +869,14 @@ export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: 
       items.sort((a, b) => {
           let res = 0;
           if (sortKey === 'name') {
-              res = a.name.localeCompare(b.name, lang === 'ZH' ? 'zh' : 'en');
+              const nameA = a.name || '';
+              const nameB = b.name || '';
+              // 确保是字符串类型
+              const stringA = String(nameA);
+              const stringB = String(nameB);
+              res = stringA.localeCompare(stringB, lang === 'ZH' ? 'zh' : 'en');
           } else {
-              res = a.value - b.value;
+              res = (a.value || 0) - (b.value || 0);
           }
           return sortDir === 'asc' ? res : -res;
       });
@@ -887,7 +892,7 @@ export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: 
       }
   };
 
-  const maxVal = Math.max(...rawItems.map(i => i.value));
+  const maxVal = rawItems.length > 0 ? Math.max(...rawItems.map(i => i.value)) : 0;
   const SortIcon = ({ active, dir }: { active: boolean, dir: 'asc' | 'desc' }) => {
       if (!active) return <ArrowUpDown size={10} className="opacity-30" />;
       return dir === 'asc' ? <ArrowUp size={10} className="text-ru-primary" /> : <ArrowDown size={10} className="text-ru-primary" />;
