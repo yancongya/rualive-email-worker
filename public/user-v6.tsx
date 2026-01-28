@@ -1702,7 +1702,7 @@ export const AnalyticsView = ({
         const acc = {
             keyframes: {} as Record<string, number>,
             compositions: [] as string[],
-            layers: { video: 0, image: 0, designFile: 0, sourceFile: 0, nullSolidLayer: 0 } as Record<string, number>,
+            layers: { video: 0, image: 0, sequence: 0, designFile: 0, sourceFile: 0, nullSolidLayer: 0, shapeLayer: 0, textLayer: 0, adjustmentLayer: 0, lightLayer: 0, cameraLayer: 0, other: 0 } as Record<string, number>,
             effectCounts: {} as Record<string, number>
         };
 
@@ -1717,8 +1717,8 @@ export const AnalyticsView = ({
                      }
                      if (p.details.effectCounts) {
                         Object.entries(p.details.effectCounts).forEach(([k, v]) => {
-                            acc.effectCounts[k] = (acc.effectCounts[k] || 0) + (v as number);
-                        });
+      acc.effectCounts[k] = (acc.effectCounts[k] || 0) + (typeof v === 'number' ? v : 0);
+  });
                      }
                      if (p.details.keyframes) {
                         Object.entries(p.details.keyframes).forEach(([k, v]) => {
