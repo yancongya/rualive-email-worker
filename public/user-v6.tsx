@@ -1466,9 +1466,9 @@ export const AnalyticsView = ({
         async function loadAllWorkLogs() {
             setIsLoading(true);
             try {
-                // 检查持久化缓存
-                const cached = localStorage.getItem('analytics_all_data');
-                const cachedTime = localStorage.getItem('analytics_all_data_time');
+                // 检查持久化缓存（使用独立的缓存键，避免与Dashboard冲突）
+                const cached = localStorage.getItem('analytics_view_all_data');
+                const cachedTime = localStorage.getItem('analytics_view_all_data_time');
 
                 // 缓存1天内有效
                 if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < 24 * 60 * 60 * 1000) {
@@ -1485,9 +1485,9 @@ export const AnalyticsView = ({
                 if (response.success && response.data) {
                     console.log('[AnalyticsView] Work logs loaded:', response.data.length, 'records');
                     setWorkLogs(response.data);
-                    // 缓存到 localStorage
-                    localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
-                    localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                    // 缓存到 localStorage（使用独立的缓存键）
+                    localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
+                    localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
                     console.log('[AnalyticsView] Data cached to localStorage');
                 } else {
                     console.log('[AnalyticsView] No work logs found');
@@ -1560,12 +1560,12 @@ export const AnalyticsView = ({
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
                 console.log('[AnalyticsView] Page hidden, updating cache in background');
-                // 页面隐藏时，后台更新缓存
+                // 页面隐藏时，后台更新缓存（使用独立的缓存键）
                 getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false)
                     .then(response => {
                         if (response.success && response.data) {
-                            localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
-                            localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                            localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
+                            localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
                             console.log('[AnalyticsView] Cache updated in background');
                         }
                     })
@@ -1725,8 +1725,8 @@ export const AnalyticsView = ({
             const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
             if (response.success && response.data) {
                 setWorkLogs(response.data);
-                localStorage.setItem('analytics_all_data', JSON.stringify(response.data));
-                localStorage.setItem('analytics_all_data_time', Date.now().toString());
+                localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
+                localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
                 console.log('[AnalyticsView] Data refreshed successfully');
             }
         } catch (error) {
