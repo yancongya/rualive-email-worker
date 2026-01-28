@@ -387,7 +387,7 @@ async function saveUserConfig(config: any) {
  */
 async function fetchCurrentUser() {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/user`, {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       headers: getAuthHeader()
     });
 
