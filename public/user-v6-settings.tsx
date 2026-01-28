@@ -323,6 +323,21 @@ const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
 };
 
 /**
+ * 安全解析JSON
+ */
+function safeParseJSON(jsonString: string | null | undefined, defaultValue: any) {
+  if (!jsonString) {
+    return defaultValue;
+  }
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('Failed to parse JSON:', jsonString, error);
+    return defaultValue;
+  }
+}
+
+/**
  * API工具函数
  */
 
@@ -478,12 +493,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             user_notification_time: userConfig.user_notification_time || '22:00',
             emergency_notification_time: userConfig.emergency_notification_time || '20:00',
             enable_emergency_notification: userConfig.enable_emergency_notification ?? true,
-            notification_schedule: userConfig.notification_schedule
-              ? JSON.parse(userConfig.notification_schedule)
-              : [1, 2, 3, 4, 5],
-            notification_excluded_days: userConfig.notification_excluded_days
-              ? JSON.parse(userConfig.notification_excluded_days)
-              : []
+            notification_schedule: safeParseJSON(userConfig.notification_schedule, [1, 2, 3, 4, 5]),
+            notification_excluded_days: safeParseJSON(userConfig.notification_excluded_days, [])
           });
         }
       } catch (error) {
