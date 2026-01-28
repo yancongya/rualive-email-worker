@@ -42,7 +42,23 @@ const S_TRANS = {
     systemSubtitle: "SYSTEM_CONFIG_V6.2.0 // ROOT_ACCESS_GRANTED",
     on: "ON",
     off: "OFF",
-    weekDays: ["S", "M", "T", "W", "T", "F", "S"] // Sun, Mon, Tue...
+    weekDays: ["S", "M", "T", "W", "T", "F", "S"], // Sun, Mon, Tue...
+    timezone: "TIMEZONE",
+    userNotificationTime: "USER NOTIFICATION TIME",
+    enableEmergency: "ENABLE EMERGENCY CONTACT",
+    workThresholds: "WORK THRESHOLDS",
+    minWorkHours: "MIN WORK HOURS",
+    minKeyframes: "MIN KEYFRAMES",
+    minJsonSize: "MIN JSON SIZE (KB)",
+    userInfo: "USER INFORMATION",
+    username: "USERNAME",
+    email: "EMAIL",
+    role: "ROLE",
+    createdAt: "CREATED AT",
+    lastLogin: "LAST LOGIN",
+    loadError: "LOAD ERROR",
+    saveError: "SAVE ERROR",
+    sendError: "SEND ERROR"
   },
   ZH: {
     identityProtocol: "身份协议",
@@ -78,7 +94,23 @@ const S_TRANS = {
     systemSubtitle: "系统配置_V6.2.0 // 已获取最高权限",
     on: "开启",
     off: "关闭",
-    weekDays: ["日", "一", "二", "三", "四", "五", "六"]
+    weekDays: ["日", "一", "二", "三", "四", "五", "六"],
+    timezone: "时区",
+    userNotificationTime: "用户通知时间",
+    enableEmergency: "启用紧急联系人",
+    workThresholds: "工作阈值",
+    minWorkHours: "最小工作小时",
+    minKeyframes: "最小关键帧",
+    minJsonSize: "最小JSON大小 (KB)",
+    userInfo: "用户信息",
+    username: "用户名",
+    email: "邮箱",
+    role: "角色",
+    createdAt: "创建时间",
+    lastLogin: "最后登录",
+    loadError: "加载失败",
+    saveError: "保存失败",
+    sendError: "发送失败"
   }
 };
 
@@ -256,255 +288,551 @@ const DaySelector = ({ value, onChange, lang }: { value: number[], onChange: (v:
   );
 };
 
+// Timezone Selector Component
+const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
+  const timezones = [
+    { value: 'Asia/Shanghai', label: '北京 (UTC+8)' },
+    { value: 'Asia/Tokyo', label: '东京 (UTC+9)' },
+    { value: 'America/New_York', label: '纽约 (UTC-5)' },
+    { value: 'America/Los_Angeles', label: '洛杉矶 (UTC-8)' },
+    { value: 'Europe/London', label: '伦敦 (UTC+0)' },
+    { value: 'Europe/Paris', label: '巴黎 (UTC+1)' },
+    { value: 'Australia/Sydney', label: '悉尼 (UTC+11)' },
+    { value: 'UTC', label: 'UTC (UTC+0)' }
+  ];
+
+  return (
+    <div className="flex flex-col gap-1.5 mb-4">
+      <label className="text-[10px] text-ru-textMuted font-mono uppercase tracking-widest flex items-center gap-2">
+        {Icon && <Icon size={12} className="text-ru-primary" />}
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border text-sm rounded-sm py-2.5 px-3 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10"
+      >
+        {timezones.map(tz => (
+          <option key={tz.value} value={tz.value} className="bg-gray-800">
+            {tz.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+/**
+ * API工具函数
+ */
+
+const API_BASE = window.location.origin;
+
+/**
+ * 获取认证头
+ */
+function getAuthHeader() {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
+ * 获取用户配置
+ */
+async function fetchUserConfig() {
+  try {
+    const response = await fetch(`${API_BASE}/api/config`, {
+      headers: getAuthHeader()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Failed to fetch user config:', error);
+    throw error;
+  }
+}
+
+/**
+ * 保存用户配置
+ */
+async function saveUserConfig(config: any) {
+  try {
+    const response = await fetch(`${API_BASE}/api/config`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ config })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to save user config:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取当前用户信息
+ */
+async function fetchCurrentUser() {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/user`, {
+      headers: getAuthHeader()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.user;
+  } catch (error) {
+    console.error('Failed to fetch current user:', error);
+    throw error;
+  }
+}
+
+/**
+ * 发送测试邮件
+ */
+async function sendTestEmail(target: 'operator' | 'proxy') {
+  try {
+    const response = await fetch(`${API_BASE}/api/send-now`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ target })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to send test email:', error);
+    throw error;
+  }
+}
+
 export const SettingsView = ({ lang }: { lang: LangType }) => {
   const t = S_TRANS[lang];
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [testSending, setTestSending] = useState<'operator' | 'proxy' | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Mock State
+  // 配置状态
   const [config, setConfig] = useState({
-    operatorName: 'Pilot_01',
-    email: 'pilot@rualive.sys',
-    syncActive: true,
-    syncTime: '09:00',
-    cronDays: [1, 2, 3, 4, 5], // Default: Mon-Fri
-    proxyName: 'Cmdr_Shepard',
-    proxyEmail: 'command@alliance.nav',
-    proxyThreshold: 48,
-    proxyPingTime: '20:00'
+    enabled: true,
+    sendTime: '22:00',
+    timezone: 'Asia/Shanghai',
+    emergency_email: '',
+    emergency_name: '',
+    min_work_hours: 2,
+    min_keyframes: 50,
+    min_json_size: 10,
+    user_notification_time: '22:00',
+    emergency_notification_time: '20:00',
+    enable_emergency_notification: true,
+    notification_schedule: [1, 2, 3, 4, 5],
+    notification_excluded_days: []
   });
+
+  // 加载数据
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        // 并行加载用户信息和配置
+        const [user, userConfig] = await Promise.all([
+          fetchCurrentUser(),
+          fetchUserConfig()
+        ]);
+
+        setCurrentUser(user);
+
+        // 更新配置状态
+        if (userConfig) {
+          setConfig({
+            enabled: userConfig.enabled ?? true,
+            sendTime: userConfig.sendTime || '22:00',
+            timezone: userConfig.timezone || 'Asia/Shanghai',
+            emergency_email: userConfig.emergency_email || '',
+            emergency_name: userConfig.emergency_name || '',
+            min_work_hours: userConfig.min_work_hours || 2,
+            min_keyframes: userConfig.min_keyframes || 50,
+            min_json_size: userConfig.min_json_size || 10,
+            user_notification_time: userConfig.user_notification_time || '22:00',
+            emergency_notification_time: userConfig.emergency_notification_time || '20:00',
+            enable_emergency_notification: userConfig.enable_emergency_notification ?? true,
+            notification_schedule: userConfig.notification_schedule
+              ? JSON.parse(userConfig.notification_schedule)
+              : [1, 2, 3, 4, 5],
+            notification_excluded_days: userConfig.notification_excluded_days
+              ? JSON.parse(userConfig.notification_excluded_days)
+              : []
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        setFeedback(t.loadError);
+        setTimeout(() => setFeedback(null), 3000);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [t]);
 
   const handleChange = (key: string, val: any) => {
     setConfig(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleSave = () => {
-    setLoading(true);
-    setFeedback(t.saving);
-    setTimeout(() => {
-      setLoading(false);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setFeedback(t.saving);
+
+      // 准备要保存的配置
+      const configToSave = {
+        enabled: config.enabled,
+        sendTime: config.sendTime,
+        timezone: config.timezone,
+        emergency_email: config.emergency_email || null,
+        emergency_name: config.emergency_name || null,
+        min_work_hours: config.min_work_hours,
+        min_keyframes: config.min_keyframes,
+        min_json_size: config.min_json_size,
+        user_notification_time: config.user_notification_time,
+        emergency_notification_time: config.emergency_notification_time,
+        enable_emergency_notification: config.enable_emergency_notification,
+        notification_schedule: JSON.stringify(config.notification_schedule),
+        notification_excluded_days: JSON.stringify(config.notification_excluded_days)
+      };
+
+      // 调用API保存
+      await saveUserConfig(configToSave);
+
       setFeedback(t.configSaved);
       setTimeout(() => setFeedback(null), 3000);
-    }, 1500);
+    } catch (error) {
+      console.error('Failed to save config:', error);
+      setFeedback(t.saveError);
+      setTimeout(() => setFeedback(null), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleTestEmail = (target: 'operator' | 'proxy') => {
-    setTestSending(target);
-    setTimeout(() => {
-      setTestSending(null);
+  const handleTestEmail = async (target: 'operator' | 'proxy') => {
+    try {
+      setTestSending(target);
+      setFeedback(t.sending);
+
+      await sendTestEmail(target);
+
       setFeedback(`${t.signalSent} [${target.toUpperCase()}]`);
       setTimeout(() => setFeedback(null), 3000);
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to send test email:', error);
+      setFeedback(t.sendError);
+      setTimeout(() => setFeedback(null), 3000);
+    } finally {
+      setTestSending(null);
+    }
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-24 animate-[fadeIn_0.5s_ease-out]">
-      
+    <div className="max-w-[1200px] mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-24">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-white/10 pb-4 gap-4 md:gap-0">
         <div className="flex items-center gap-3">
-           <div className="p-2 bg-ru-primary/10 rounded border border-ru-primary/30 text-ru-primary">
-             <Activity size={20} className="animate-pulse-slow" />
-           </div>
-           <div>
-             <h2 className="text-xl font-black italic font-sans text-white uppercase tracking-tighter">
-                {t.generalSettings}
-             </h2>
-             <p className="text-[10px] font-mono text-ru-textMuted">
-                {t.systemSubtitle}
-             </p>
-           </div>
+          <div className="p-2 bg-ru-primary/10 rounded border border-ru-primary/30 text-ru-primary">
+            <Activity size={20} className="animate-pulse-slow" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black italic font-sans text-white uppercase tracking-tighter">
+              {t.generalSettings}
+            </h2>
+            <p className="text-[10px] font-mono text-ru-textMuted">
+              {t.systemSubtitle}
+            </p>
+          </div>
         </div>
-        
+
         {feedback && (
-          <div className="flex items-center gap-2 text-xs font-mono text-ru-primary animate-pulse bg-ru-primary/5 px-3 py-2 rounded border border-ru-primary/20 w-full md:w-auto justify-center">
-             <Check size={14} />
-             {feedback}
+          <div className="flex items-center gap-2 text-xs font-mono text-ru-primary animate-pulse bg-ru-primary/5 px-3 py-2 rounded border border-ru-primary/20">
+            <Check size={14} />
+            {feedback}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        
-        {/* Column 1: Identity & Notifications */}
-        <div className="space-y-4 md:space-y-6">
-           <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                 <User size={64} />
-              </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw size={40} className="animate-spin text-ru-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Column 1: User Info & General Settings */}
+          <div className="space-y-4 md:space-y-6">
+            {/* User Information Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                 <Lock size={14} className="text-ru-primary" />
-                 {t.identityProtocol}
+                <User size={14} className="text-ru-primary" />
+                {t.userInfo}
               </h3>
-              
-              <SettingInput 
-                label={t.operatorName} 
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                  <span className="text-xs text-ru-textMuted">{t.username}</span>
+                  <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                  <span className="text-xs text-ru-textMuted">{t.email}</span>
+                  <span className="text-xs font-mono text-white">{currentUser?.email || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                  <span className="text-xs text-ru-textMuted">{t.role}</span>
+                  <span className="text-xs font-bold text-ru-primary">{currentUser?.role || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-xs text-ru-textMuted">{t.lastLogin}</span>
+                  <span className="text-xs font-mono text-ru-textMuted">
+                    {currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Identity Protocol Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+                <Lock size={14} className="text-ru-primary" />
+                {t.identityProtocol}
+              </h3>
+
+              <SettingInput
+                label={t.operatorName}
                 icon={User}
-                value={config.operatorName} 
-                onChange={(v: string) => handleChange('operatorName', v)} 
+                value={currentUser?.username || ''}
+                readOnly={true}
               />
-              <SettingInput 
-                label={t.emailAddr} 
+              <SettingInput
+                label={t.emailAddr}
                 icon={Mail}
                 type="email"
-                value={config.email} 
+                value={currentUser?.email || ''}
                 readOnly={true}
-                onChange={(v: string) => handleChange('email', v)} 
               />
-           </div>
+              <TimezoneSelector
+                label={t.timezone}
+                icon={Globe}
+                value={config.timezone}
+                onChange={(v: string) => handleChange('timezone', v)}
+              />
+            </div>
+          </div>
 
-           <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-colors">
+          {/* Column 2: Notifications & Failsafe */}
+          <div className="space-y-4 md:space-y-6">
+            {/* Synchronization Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                 <Bell size={14} className="text-ru-primary" />
-                 {t.synchronization}
+                <Bell size={14} className="text-ru-primary" />
+                {t.synchronization}
               </h3>
 
-              <SettingToggle 
-                 label={t.enableSync} 
-                 checked={config.syncActive} 
-                 onChange={(v: boolean) => handleChange('syncActive', v)} 
-                 onText={t.on}
-                 offText={t.off}
+              <SettingToggle
+                label={t.enableSync}
+                checked={config.enabled}
+                onChange={(v: boolean) => handleChange('enabled', v)}
+                onText={t.on}
+                offText={t.off}
               />
-              
-              <div className={`transition-all duration-300 ${config.syncActive ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-                <DigitalTimeSelector 
-                    label={t.syncTime} 
-                    icon={Clock}
-                    value={config.syncTime} 
-                    onChange={(v: string) => handleChange('syncTime', v)} 
+
+              <div className={`transition-all duration-300 ${config.enabled ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                <DigitalTimeSelector
+                  label={t.userNotificationTime}
+                  icon={Clock}
+                  value={config.user_notification_time}
+                  onChange={(v: string) => handleChange('user_notification_time', v)}
                 />
-                
-                <DaySelector 
-                  value={config.cronDays} 
-                  onChange={(v) => handleChange('cronDays', v)}
+
+                <DaySelector
+                  value={config.notification_schedule}
+                  onChange={(v) => handleChange('notification_schedule', v)}
                   lang={lang}
                 />
               </div>
-           </div>
-        </div>
+            </div>
 
-        {/* Column 2: Failsafe */}
-        <div className="space-y-4 md:space-y-6">
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-colors h-full">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                 <ShieldAlert size={64} className="text-red-500" />
-              </div>
-              
+            {/* Failsafe Protocol Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                 <ShieldAlert size={14} className="text-red-500" />
-                 {t.failsafeProtocol}
+                <ShieldAlert size={14} className="text-red-500" />
+                {t.failsafeProtocol}
               </h3>
 
-              <div className="p-3 bg-red-500/5 border border-red-500/20 rounded mb-6 text-[10px] text-red-200/80 font-mono leading-relaxed">
-                 {t.failsafeWarning}
-              </div>
-              
-              <SettingInput 
-                label={t.proxyName} 
-                icon={User}
-                value={config.proxyName} 
-                onChange={(v: string) => handleChange('proxyName', v)} 
+              <SettingToggle
+                label={t.enableEmergency}
+                checked={config.enable_emergency_notification}
+                onChange={(v: boolean) => handleChange('enable_emergency_notification', v)}
+                onText={t.on}
+                offText={t.off}
               />
-              <SettingInput 
-                label={t.proxyEmail} 
-                icon={Mail}
-                type="email"
-                value={config.proxyEmail} 
-                onChange={(v: string) => handleChange('proxyEmail', v)} 
-              />
-              
-              <div className="grid grid-cols-1 gap-4 mt-6">
-                 <SettingInput 
-                    label={t.inactivityThreshold} 
+
+              <div className={`transition-all duration-300 ${config.enable_emergency_notification ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                <div className="p-3 bg-red-500/5 border border-red-500/20 rounded mb-6 text-[10px] text-red-200/80 font-mono leading-relaxed">
+                  {t.failsafeWarning}
+                </div>
+
+                <SettingInput
+                  label={t.proxyName}
+                  icon={User}
+                  value={config.emergency_name}
+                  onChange={(v: string) => handleChange('emergency_name', v)}
+                />
+                <SettingInput
+                  label={t.proxyEmail}
+                  icon={Mail}
+                  type="email"
+                  value={config.emergency_email}
+                  onChange={(v: string) => handleChange('emergency_email', v)}
+                />
+
+                <div className="grid grid-cols-1 gap-4 mt-6">
+                  <SettingInput
+                    label={t.inactivityThreshold}
                     icon={Power}
                     type="number"
-                    value={config.proxyThreshold} 
-                    onChange={(v: string) => handleChange('proxyThreshold', v)} 
-                />
-                <DigitalTimeSelector 
-                    label={t.proxyPingTime} 
+                    value={config.min_work_hours}
+                    onChange={(v: string) => handleChange('min_work_hours', v)}
+                  />
+                  <DigitalTimeSelector
+                    label={t.emergency_notification_time}
                     icon={Clock}
-                    value={config.proxyPingTime} 
-                    onChange={(v: string) => handleChange('proxyPingTime', v)} 
-                />
+                    value={config.emergency_notification_time}
+                    onChange={(v: string) => handleChange('emergency_notification_time', v)}
+                  />
+                </div>
               </div>
-           </div>
-        </div>
+            </div>
+          </div>
 
-        {/* Column 3: Diagnostics & Actions */}
-        <div className="space-y-4 md:space-y-6">
-           <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-colors h-full flex flex-col">
+          {/* Column 3: Work Thresholds & Actions */}
+          <div className="space-y-4 md:space-y-6">
+            {/* Work Thresholds Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                 <Zap size={14} className="text-ru-primary" />
-                 {t.systemDiagnostics}
+                <Activity size={14} className="text-ru-primary" />
+                {t.workThresholds}
+              </h3>
+
+              <SettingInput
+                label={t.minWorkHours}
+                icon={Clock}
+                type="number"
+                value={config.min_work_hours}
+                onChange={(v: string) => handleChange('min_work_hours', v)}
+              />
+              <SettingInput
+                label={t.minKeyframes}
+                icon={Activity}
+                type="number"
+                value={config.min_keyframes}
+                onChange={(v: string) => handleChange('min_keyframes', v)}
+              />
+              <SettingInput
+                label={t.minJsonSize}
+                icon={Globe}
+                type="number"
+                value={config.min_json_size}
+                onChange={(v: string) => handleChange('min_json_size', v)}
+              />
+            </div>
+
+            {/* System Diagnostics Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md flex flex-col">
+              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+                <Zap size={14} className="text-ru-primary" />
+                {t.systemDiagnostics}
               </h3>
 
               <div className="flex-1 flex flex-col gap-3">
-                 <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
-                    <span className="text-xs font-mono text-ru-textDim">{t.smtpStatus}</span>
-                    <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">{t.active}</span>
-                 </div>
-                 <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
-                    <span className="text-xs font-mono text-ru-textDim">{t.cronStatus}</span>
-                    <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">{t.active}</span>
-                 </div>
-                 <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
-                    <span className="text-xs font-mono text-ru-textDim">{t.lastSync}</span>
-                    <span className="text-[10px] font-mono text-ru-textMuted">2026-01-26 09:00:00</span>
-                 </div>
+                <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
+                  <span className="text-xs font-mono text-ru-textDim">{t.smtpStatus}</span>
+                  <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">{t.active}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
+                  <span className="text-xs font-mono text-ru-textDim">{t.cronStatus}</span>
+                  <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">{t.active}</span>
+                </div>
               </div>
 
               <div className="mt-8 space-y-3">
-                 <button 
-                    onClick={() => handleTestEmail('operator')}
-                    disabled={!!testSending}
-                    className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-xs font-bold text-white rounded transition-all group disabled:opacity-50 touch-manipulation"
-                 >
-                    <span className="flex items-center gap-2">
-                        <Mail size={14} className="text-ru-textMuted group-hover:text-white transition-colors" />
-                        {testSending === 'operator' ? t.sending : t.pingOperator}
-                    </span>
-                    <Globe size={14} className="text-ru-primary opacity-50 group-hover:opacity-100" />
-                 </button>
+                <button
+                  onClick={() => handleTestEmail('operator')}
+                  disabled={!!testSending}
+                  className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-xs font-bold text-white rounded transition-all group disabled:opacity-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <Mail size={14} className="text-ru-textMuted group-hover:text-white transition-colors" />
+                    {testSending === 'operator' ? t.sending : t.pingOperator}
+                  </span>
+                  <Globe size={14} className="text-ru-primary opacity-50 group-hover:opacity-100" />
+                </button>
 
-                 <button 
-                    onClick={() => handleTestEmail('proxy')}
-                    disabled={!!testSending}
-                    className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 text-xs font-bold text-red-100 rounded transition-all group disabled:opacity-50 touch-manipulation"
-                 >
-                    <span className="flex items-center gap-2">
-                        <ShieldAlert size={14} className="text-red-400/70 group-hover:text-red-400 transition-colors" />
-                        {testSending === 'proxy' ? t.sending : t.pingProxy}
-                    </span>
-                    <Activity size={14} className="text-red-500 opacity-50 group-hover:opacity-100" />
-                 </button>
+                <button
+                  onClick={() => handleTestEmail('proxy')}
+                  disabled={!!testSending}
+                  className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 text-xs font-bold text-red-100 rounded transition-all group disabled:opacity-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldAlert size={14} className="text-red-400/70 group-hover:text-red-400 transition-colors" />
+                    {testSending === 'proxy' ? t.sending : t.pingProxy}
+                  </span>
+                  <Activity size={14} className="text-red-500 opacity-50 group-hover:opacity-100" />
+                </button>
               </div>
 
               <div className="mt-auto pt-6 border-t border-white/10">
-                 <button 
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-ru-primary hover:bg-[#ff8559] text-black font-black italic uppercase tracking-wider rounded-sm shadow-[0_0_20px_-5px_#FF6B35] hover:shadow-[0_0_30px_-5px_#FF6B35] transition-all transform active:scale-95 disabled:opacity-70 disabled:pointer-events-none touch-manipulation"
-                 >
-                    {loading ? (
-                        <>
-                           <RefreshCw size={18} className="animate-spin" />
-                           {t.saving}
-                        </>
-                    ) : (
-                        <>
-                           <Save size={18} />
-                           {t.updateConfig}
-                        </>
-                    )}
-                 </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-ru-primary hover:bg-[#ff8559] text-black font-black italic uppercase tracking-wider rounded-sm shadow-[0_0_20px_-5px_#FF6B35] hover:shadow-[0_0_30px_-5px_#FF6B35] transition-all transform active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
+                >
+                  {saving ? (
+                    <>
+                      <RefreshCw size={18} className="animate-spin" />
+                      {t.saving}
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      {t.updateConfig}
+                    </>
+                  )}
+                </button>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 };
