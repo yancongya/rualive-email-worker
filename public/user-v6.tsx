@@ -1507,25 +1507,19 @@ export const AnalyticsView = ({
 
                 // 缓存1天内有效
                 if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < 24 * 60 * 60 * 1000) {
-                    console.log('[AnalyticsView] Using cached data');
                     setWorkLogs(JSON.parse(cached));
                     setIsLoading(false);
                     return;
                 }
 
                 // 一次性加载所有数据
-                console.log('[AnalyticsView] Loading all data from API');
                 const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
-                console.log('[AnalyticsView] API response:', response);
                 if (response.success && response.data) {
-                    console.log('[AnalyticsView] Work logs loaded:', response.data.length, 'records');
                     setWorkLogs(response.data);
                     // 缓存到 localStorage（使用独立的缓存键）
                     localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
                     localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
-                    console.log('[AnalyticsView] Data cached to localStorage');
                 } else {
-                    console.log('[AnalyticsView] No work logs found');
                     setWorkLogs([]);
                 }
             } catch (error) {
@@ -1539,39 +1533,31 @@ export const AnalyticsView = ({
         loadAllWorkLogs();
     }, []);  // 空依赖，只执行一次
 
-    // 调试：监听 workLogs 状态变化
-    useEffect(() => {
-        console.log('[AnalyticsView] workLogs state changed:', {
-            length: workLogs.length,
-            firstLog: workLogs[0] ? { id: workLogs[0].id, work_date: workLogs[0].work_date } : null,
-            lastLog: workLogs[workLogs.length - 1] ? { id: workLogs[workLogs.length - 1].id, work_date: workLogs[workLogs.length - 1].work_date } : null
-        });
-    }, [workLogs]);
-
     // 根据当前视图模式过滤数据
-    const filteredWorkLogs = useMemo(() => {
-        console.log('[AnalyticsView] filteredWorkLogs useMemo executing...');
-        const { startDate, endDate } = getDateRange(viewMode, cursorDate);
-        console.log('[AnalyticsView] Date range:', { startDate, endDate, viewMode, cursorDate: cursorDate.toISOString() });
-        console.log('[AnalyticsView] Filtering workLogs:', {
-            total: workLogs.length,
-            dateRange: { startDate, endDate },
-            firstLogDate: workLogs[0]?.work_date,
-            lastLogDate: workLogs[workLogs.length - 1]?.work_date
-        });
 
-        const filtered = workLogs.filter(log => {
-            const date = log.work_date;
-            const isInRange = date >= startDate && date <= endDate;
-            if (!isInRange && workLogs.length < 10) {
-                console.log('[AnalyticsView] Log filtered out:', { date, log });
-            }
-            return isInRange;
-        });
+        const filteredWorkLogs = useMemo(() => {
 
-        console.log('[AnalyticsView] Filtered result:', { count: filtered.length });
-        return filtered;
-    }, [workLogs, viewMode, cursorDate]);
+            const { startDate, endDate } = getDateRange(viewMode, cursorDate);
+
+    
+
+            const filtered = workLogs.filter(log => {
+
+                const date = log.work_date;
+
+    
+
+                const isInRange = date >= startDate && date <= endDate;
+
+                return isInRange;
+
+            });
+
+    
+
+            return filtered;
+
+        }, [workLogs, viewMode, cursorDate]);
 
     // 数据量监控：当数据量过大时自动禁用 showDaily
     useEffect(() => {
@@ -1588,14 +1574,7 @@ export const AnalyticsView = ({
     }, [filteredWorkLogs.length, showDaily, lang]);
 
     const { data: rawData, label: timeLabel } = useMemo(() => {
-        console.log('[AnalyticsView] Calling getAnalyticsData with:', {
-            viewMode,
-            cursorDate: cursorDate.toISOString(),
-            showDaily,
-            workLogsCount: filteredWorkLogs.length
-        });
         const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, filteredWorkLogs);
-        console.log('[AnalyticsView] Aggregated data:', result);
         return result;
     }, [viewMode, cursorDate, showDaily, lang, filteredWorkLogs]);
 
@@ -1608,14 +1587,12 @@ export const AnalyticsView = ({
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
-                console.log('[AnalyticsView] Page hidden, updating cache in background');
                 // 页面隐藏时，后台更新缓存（使用独立的缓存键）
                 getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false)
                     .then(response => {
                         if (response.success && response.data) {
                             localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
                             localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
-                            console.log('[AnalyticsView] Cache updated in background');
                         }
                     })
                     .catch(error => {
@@ -1789,13 +1766,11 @@ export const AnalyticsView = ({
         
         setIsLoading(true);
         try {
-            console.log('[AnalyticsView] Manual refresh requested');
             const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
             if (response.success && response.data) {
                 setWorkLogs(response.data);
                 localStorage.setItem('analytics_view_all_data', JSON.stringify(response.data));
                 localStorage.setItem('analytics_view_all_data_time', Date.now().toString());
-                console.log('[AnalyticsView] Data refreshed successfully');
             }
         } catch (error) {
             console.error('[AnalyticsView] Failed to refresh data:', error);
@@ -2090,7 +2065,6 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem('rualive_token');
     if (!token) {
-      console.log('[UserV6] Not authenticated, redirecting to login');
       window.location.href = '/login';
     }
   }, []);
@@ -2138,20 +2112,15 @@ const App = () => {
     if (currentView === 'dashboard') {
       setIsLoading(true);
       try {
-        console.log('[UserV6] Refreshing data for date:', currentDate);
         // 禁用缓存，强制从服务器重新加载
         const response = await getWorkLogs(currentDate, false);
-        console.log('[UserV6] Refresh API response:', response);
         
         if (response.success && response.data && response.data.length > 0) {
           const workLog = response.data[0];
-          console.log('[UserV6] Refresh Work log data:', workLog);
           const transformedData = workLogToDailyData(workLog);
-          console.log('[UserV6] Refresh Transformed data:', transformedData);
           setDailyData(transformedData);
         } else {
           // No data for this date
-          console.log('[UserV6] Refresh No data found for date:', currentDate);
           setDailyData({ date: currentDate, projects: [] });
         }
       } catch (err) {
@@ -2175,19 +2144,14 @@ const App = () => {
       setIsLoading(true);
       setError(null);
       try {
-        console.log('[UserV6] Loading data for date:', currentDate);
         const response = await getWorkLogs(currentDate, true); // Enable cache
-        console.log('[UserV6] API response:', response);
         
         if (response.success && response.data && response.data.length > 0) {
           const workLog = response.data[0];
-          console.log('[UserV6] Work log data:', workLog);
           const transformedData = workLogToDailyData(workLog);
-          console.log('[UserV6] Transformed data:', transformedData);
           setDailyData(transformedData);
         } else {
           // No data for this date
-          console.log('[UserV6] No data found for date:', currentDate);
           setDailyData({ date: currentDate, projects: [] });
         }
       } catch (err) {
