@@ -1704,16 +1704,17 @@ export const AnalyticsView = ({
     }, [processedData]);
 
     const totals = useMemo(() => {
-        // Use filteredRawData so totals reflect the search
-        return filteredRawData.reduce((acc: any, curr: any) => ({
-            compositions: acc.compositions + curr.compositions,
-            layers: acc.layers + curr.layers,
-            keyframes: acc.keyframes + curr.keyframes,
-            effects: acc.effects + curr.effects,
-            runtime: acc.runtime + curr.runtime,
-            projectCount: acc.projectCount + (curr.projects ? curr.projects.length : 0),
+        // 🔍 使用 filteredWorkLogs 直接计算，确保与 aggregatedDetails 使用相同的数据源
+        const dailyDataMap = aggregateWorkLogsByDate(filteredWorkLogs);
+        return Array.from(dailyDataMap.values()).reduce((acc: any, dailyData) => ({
+            compositions: acc.compositions + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.compositions, 0),
+            layers: acc.layers + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.layers, 0),
+            keyframes: acc.keyframes + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.keyframes, 0),
+            effects: acc.effects + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.effects, 0),
+            runtime: acc.runtime + dailyData.projects.reduce((sum: number, p: any) => sum + p.accumulatedRuntime, 0),
+            projectCount: acc.projectCount + dailyData.projects.length,
         }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0, projectCount: 0 });
-    }, [filteredRawData]);
+    }, [filteredWorkLogs]);
 
     const aggregatedDetails = useMemo(() => {
         const acc = {
