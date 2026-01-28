@@ -634,19 +634,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               <div className="border-t border-white/10 my-6"></div>
 
               {/* Settings */}
-              <SettingInput
-                label={t.operatorName}
-                icon={User}
-                value={currentUser?.username || ''}
-                readOnly={true}
-              />
-              <SettingInput
-                label={t.emailAddr}
-                icon={Mail}
-                type="email"
-                value={currentUser?.email || ''}
-                readOnly={true}
-              />
               <TimezoneSelector
                 label={t.timezone}
                 icon={Globe}
