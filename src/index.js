@@ -2137,24 +2137,39 @@ async function handleSendNow(request, env) {
     const config = await getUserConfig(userId, env);
     const workData = await getWorkData(userId, today, env);
 
+    console.log('Config:', config);
+    console.log('WorkData:', workData);
+
     if (recipient === 'emergency') {
       // 发送给紧急联系人
+      if (!config) {
+        return Response.json({
+          error: '未配置用户配置'
+        }, { status: 400 });
+      }
       if (!config.emergency_email) {
         return Response.json({
           error: '未配置紧急联系人邮箱'
         }, { status: 400 });
       }
+      console.log('Sending warning email to emergency contact');
       await sendWarningEmail(user, workData, config, env);
     } else {
       // 发送给用户
+      console.log('Sending daily summary to user');
       await sendDailySummary(user, workData, config, env);
     }
 
     // 记录测试日志
     const testEmail = recipient === 'emergency' ? config.emergency_email : user.email;
-    await DB.prepare(
-      'INSERT INTO test_email_logs (user_id, test_email, test_date) VALUES (?, ?, ?)'
-    ).bind(userId, testEmail, today).run();
+    try {
+      await DB.prepare(
+        'INSERT OR IGNORE INTO test_email_logs (user_id, test_email, test_date) VALUES (?, ?, ?)'
+      ).bind(userId, testEmail, today).run();
+    } catch (error) {
+      // 忽略重复插入错误，使用已有的记录
+      console.log('Test email log already exists:', error.message);
+    }
 
     const remainingTests = 3 - (testCount ? testCount.count + 1 : 1);
     const recipientName = recipient === 'emergency' ? '紧急联系人' : '用户';
