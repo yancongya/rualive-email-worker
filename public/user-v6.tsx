@@ -1744,7 +1744,7 @@ export const AnalyticsView = ({
             ...acc,
             compositions: Array.from(compositionsSet).sort()  // 排序
         };
-    }, [finalDisplayData, compositionsSet]);
+    }, [finalDisplayData]);
 
 
     const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
