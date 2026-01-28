@@ -332,7 +332,7 @@ const API_BASE = window.location.origin;
  * 获取认证头
  */
 function getAuthHeader() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('rualive_token');
   return {
     'Authorization': 'Bearer ' + token,
     'Content-Type': 'application/json'
