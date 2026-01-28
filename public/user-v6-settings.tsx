@@ -599,16 +599,17 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Column 1: User Info & General Settings */}
+          {/* Column 1: Identity Protocol */}
           <div className="space-y-4 md:space-y-6">
-            {/* User Information Card */}
+            {/* Identity Protocol Card */}
             <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <User size={14} className="text-ru-primary" />
-                {t.userInfo}
+                <Lock size={14} className="text-ru-primary" />
+                {t.identityProtocol}
               </h3>
 
-              <div className="space-y-3">
+              {/* User Info Display */}
+              <div className="space-y-3 mb-6">
                 <div className="flex items-center justify-between py-2 border-b border-white/5">
                   <span className="text-xs text-ru-textMuted">{t.username}</span>
                   <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
@@ -628,15 +629,11 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Identity Protocol Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <Lock size={14} className="text-ru-primary" />
-                {t.identityProtocol}
-              </h3>
+              {/* Divider */}
+              <div className="border-t border-white/10 my-6"></div>
 
+              {/* Settings */}
               <SettingInput
                 label={t.operatorName}
                 icon={User}
