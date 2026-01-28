@@ -223,7 +223,10 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const decodedProjectName = decodeProjectName(c.project);
     const project = projectMap.get(decodedProjectName);
     if (project) {
-      project.details.compositions.push(c.name);
+      // 🔍 过滤空字符串
+      if (c.name && c.name.trim() !== '') {
+        project.details.compositions.push(c.name);
+      }
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.compositions = Math.max(project.statistics.compositions, project.details.compositions.length);
     }
@@ -268,7 +271,10 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const decodedProjectName = decodeProjectName(e.project);
     const project = projectMap.get(decodedProjectName);
     if (project) {
-      project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
+      // 🔍 过滤空名称
+      if (e.name && e.name.trim() !== '') {
+        project.details.effectCounts[e.name] = (project.details.effectCounts[e.name] || 0) + e.count;
+      }
       // 如果 JSON 数据存在，更新统计（取最大值）
       project.statistics.effects = Math.max(project.statistics.effects, Object.keys(project.details.effectCounts).length);
     }
