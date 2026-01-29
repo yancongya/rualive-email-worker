@@ -304,16 +304,16 @@ const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
   const selectedTimezone = timezones.find(tz => tz.value === value);
 
   return (
-    <div className="flex flex-col gap-1.5 mb-4">
-      <label className="text-[10px] text-ru-textMuted font-mono uppercase tracking-widest flex items-center gap-2">
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-2 text-ru-textMuted">
         {Icon && <Icon size={12} className="text-ru-primary" />}
         {label}
       </label>
-      <div className="relative">
+      <div className="relative group">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full border text-sm rounded-sm py-3 px-4 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 appearance-none cursor-pointer hover:bg-white/10"
+          className="w-full border text-sm rounded-sm py-2.5 px-3 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 appearance-none cursor-pointer hover:bg-white/10 pr-10"
         >
           {timezones.map(tz => (
             <option key={tz.value} value={tz.value} className="bg-gray-800">
@@ -321,14 +321,12 @@ const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
             </option>
           ))}
         </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ru-textMuted">
-          {selectedTimezone?.icon || '🌍'}
-        </div>
-        <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none">
-          <svg className="w-4 h-4 text-ru-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ru-textMuted group-hover:text-ru-textDim transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
+        <div className="absolute bottom-0 left-0 h-[1px] bg-ru-primary w-0 group-focus-within:w-full transition-all duration-500"></div>
       </div>
     </div>
   );
@@ -658,14 +656,12 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             </div>
 
             {/* Timezone Selector */}
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <TimezoneSelector
-                label={t.timezone}
-                icon={Globe}
-                value={config.timezone}
-                onChange={(v: string) => handleChange('timezone', v)}
-              />
-            </div>
+            <TimezoneSelector
+              label={t.timezone}
+              icon={Globe}
+              value={config.timezone}
+              onChange={(v: string) => handleChange('timezone', v)}
+            />
           </div>
 
           {/* Synchronization Card */}
