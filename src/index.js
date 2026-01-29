@@ -1120,7 +1120,6 @@ async function handleCronTrigger(env) {
 
 // 处理单个用户
 async function processUser(user, env) {
-  const today = new Date().toISOString().split('T')[0];
   const userId = user.id;
 
   // 获取用户配置
@@ -1139,39 +1138,49 @@ async function processUser(user, env) {
   const currentTime = `${String(userNow.getHours()).padStart(2, '0')}:${String(userNow.getMinutes()).padStart(2, '0')}`;
   const currentDayOfWeek = userNow.getDay(); // 0-6, 0=Sunday, 1=Monday, etc.
 
+  // 使用用户时区的日期（而不是 UTC 日期）
+  const today = `${userNow.getFullYear()}-${String(userNow.getMonth() + 1).padStart(2, '0')}-${String(userNow.getDate()).padStart(2, '0')}`;
+
+  console.log(`User ${userId} - today: ${today}, currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}, timezone: ${userTimezone}`);
+
   console.log(`User ${userId} - currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}, timezone: ${userTimezone}`);
+
+  // 解析通知周期配置（前端传递的是 JSON 数组字符串，如 "[1,2,3,4,5]"）
+  let scheduleDays = [];
+  try {
+    const schedule = config.notification_schedule || '[]';
+    // 如果是 JSON 数组字符串，解析它
+    if (schedule.startsWith('[')) {
+      scheduleDays = JSON.parse(schedule);
+    } else if (schedule === 'weekdays') {
+      // 兼容旧配置格式
+      scheduleDays = [1, 2, 3, 4, 5];
+    } else if (schedule === 'all') {
+      scheduleDays = [0, 1, 2, 3, 4, 5, 6];
+    }
+  } catch (e) {
+    console.error('Failed to parse notification_schedule:', e);
+    scheduleDays = [0, 1, 2, 3, 4, 5, 6]; // 默认每天
+  }
+
+  // 检查今天是否在通知周期中
+  const shouldSendToday = scheduleDays.includes(currentDayOfWeek);
+
+  console.log(`User ${userId} - scheduleDays: [${scheduleDays.join(',')}], shouldSendToday: ${shouldSendToday}`);
 
   // 检查是否应该发送紧急联系人通知
   let shouldSendEmergency = false;
-  if (config.enable_emergency_notification && config.emergency_email) {
-    // 检查发送规则
-    const schedule = config.notification_schedule || 'all';
-    let shouldSendBySchedule = true;
-    
-    if (schedule === 'weekdays') {
-      // 仅工作日（周一至周五）
-      shouldSendBySchedule = currentDayOfWeek >= 1 && currentDayOfWeek <= 5;
-    } else if (schedule === 'custom') {
-      // 自定义规则
-      try {
-        const excludedDays = JSON.parse(config.notification_excluded_days || '[]');
-        shouldSendBySchedule = !excludedDays.includes(String(currentDayOfWeek));
-      } catch (e) {
-        console.error('Failed to parse excluded days:', e);
-        shouldSendBySchedule = true;
-      }
-    }
-    
-    shouldSendEmergency = shouldSendBySchedule;
+  if (config.enable_emergency_notification && config.emergency_email && shouldSendToday) {
+    shouldSendEmergency = true;
   }
 
   // 检查是否到了用户通知时间
   const userNotificationTime = config.user_notification_time || '22:00';
-  const isUserNotificationTime = currentTime === userNotificationTime;
+  const isUserNotificationTime = currentTime === userNotificationTime && shouldSendToday;
 
   // 检查是否到了紧急联系人通知时间
   const emergencyNotificationTime = config.emergency_notification_time || '22:00';
-  const isEmergencyNotificationTime = currentTime === emergencyNotificationTime;
+  const isEmergencyNotificationTime = currentTime === emergencyNotificationTime && shouldSendToday;
 
   console.log(`User ${userId} - userTime: ${userNotificationTime}, emergencyTime: ${emergencyNotificationTime}, shouldSendEmergency: ${shouldSendEmergency}`);
 
@@ -1185,8 +1194,8 @@ async function processUser(user, env) {
   console.log(`User ${userId} - hasWork: ${hasWork}, isSufficient: ${isSufficient}`);
 
   // 根据时间和工作状态发送邮件
-  if (isUserNotificationTime && hasWork && isSufficient) {
-    // 到了用户通知时间且工作充足，发送总结给用户
+  if (isUserNotificationTime && hasWork) {
+    // 到了用户通知时间且有工作数据，发送总结给用户（不管工作时长）
     await sendDailySummary(user, workData, config, env);
   } else if (isEmergencyNotificationTime && shouldSendEmergency && (!hasWork || !isSufficient)) {
     // 到了紧急联系人通知时间、启用了紧急联系人通知、且工作不足，发送警告给紧急联系人
@@ -2108,6 +2117,7 @@ async function handleGetAEStatus(request, env) {
       lastHeartbeat: lastHeartbeatTime,
       projectName: status?.project_name || null,
       compositionName: status?.composition_name || null,
+      projectId: status?.project_id || null,
       lastWorkData: status?.last_work_data ? JSON.parse(status.last_work_data) : null,
       hasStatusRecord: !!status
     });
@@ -2131,7 +2141,8 @@ async function handleUpdateAEStatus(request, env) {
       isOnline,
       projectName,
       compositionName,
-      workData
+      workData,
+      projectId
     } = body;
 
     const DB = env.DB || env.rualive;
@@ -2140,8 +2151,8 @@ async function handleUpdateAEStatus(request, env) {
     // 更新 AE 在线状态
     await DB.prepare(`
       INSERT OR REPLACE INTO ae_status 
-      (user_id, is_online, last_heartbeat, project_name, composition_name, last_work_data, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (user_id, is_online, last_heartbeat, project_name, composition_name, last_work_data, project_id, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       userId,
       isOnline ? 1 : 0,
@@ -2149,6 +2160,7 @@ async function handleUpdateAEStatus(request, env) {
       projectName || null,
       compositionName || null,
       workData ? JSON.stringify(workData) : null,
+      projectId || null,
       now
     ).run();
 
@@ -2510,18 +2522,24 @@ async function saveWorkData(userId, workData, env, date) {
   const allWorkHours = [];
 
   if (workData.projects && workData.projects.length > 0) {
+    console.log('[saveWorkData] ========== 开始处理项目数据 ==========');
     console.log('[saveWorkData] 收到的项目数量:', workData.projects.length);
-    console.log('[saveWorkData] 项目列表:', JSON.stringify(workData.projects.map(p => ({ name: p.name, path: p.path }))));
-    
+    console.log('[saveWorkData] 完整项目数据:', JSON.stringify(workData.projects, null, 2));
+
     // 先对项目进行去重（按项目名称）
     const projectMap = new Map();
     workData.projects.forEach(project => {
-      // 过滤空项目（没有名称的项目）
+      // 过滤空项目（没有名称或没有路径的项目）
       if (!project.name || project.name.trim() === '') {
+        console.log('[saveWorkData] 过滤空项目: name=', project.name);
+        return;
+      }
+      if (!project.path || project.path.trim() === '') {
+        console.log('[saveWorkData] 过滤无路径项目: name=', project.name, ', path=', project.path);
         return;
       }
 
-      console.log('[saveWorkData] 处理项目:', project.name);
+      console.log('[saveWorkData] 处理项目:', project.name, ', projectId=', project.projectId);
       // 直接使用项目名称进行比较（不解码）
       const existingProject = projectMap.get(project.name);
 
@@ -2530,12 +2548,13 @@ async function saveWorkData(userId, workData, env, date) {
         // 如果项目已存在，更新其数据
         existingProject.statistics = project.statistics || existingProject.statistics;
         existingProject.details = project.details || existingProject.details;
+        existingProject.projectId = project.projectId || existingProject.projectId;
         // 合并运行时间
         if (project.accumulatedRuntime && project.accumulatedRuntime > 0) {
           existingProject.accumulatedRuntime = (existingProject.accumulatedRuntime || 0) + project.accumulatedRuntime;
         }
       } else {
-        console.log('[saveWorkData] 新项目，添加到映射:', project.name);
+        console.log('[saveWorkData] 新项目，添加到映射:', project.name, ', projectId=', project.projectId);
         // 添加新项目
         projectMap.set(project.name, {
           ...project,
@@ -2549,9 +2568,16 @@ async function saveWorkData(userId, workData, env, date) {
     // 处理去重后的项目
     projectMap.forEach(project => {
       // 项目列表
+      console.log('[saveWorkData] 添加项目到列表:', {
+        name: project.name,
+        path: project.path,
+        projectId: project.projectId,
+        compositions: project.statistics ? project.statistics.compositions : 0
+      });
       allProjects.push({
         name: project.name,
         path: project.path || '',
+        projectId: project.projectId || '',
         compositions: project.statistics ? project.statistics.compositions || 0 : 0,
         layers: project.statistics ? project.statistics.layers || 0 : 0,
         keyframes: project.statistics ? project.statistics.keyframes || 0 : 0,
@@ -2748,6 +2774,10 @@ async function saveWorkData(userId, workData, env, date) {
           existingProject.layers = newProject.layers || existingProject.layers;
           existingProject.keyframes = newProject.keyframes || existingProject.keyframes;
           existingProject.effects = newProject.effects || existingProject.effects;
+          // 更新 projectId（如果新项目有 projectId）
+          if (newProject.projectId) {
+            existingProject.projectId = newProject.projectId;
+          }
           // 更新或添加工作时长
           const existingWorkHour = existingWorkHours.find(function(w) { return w.project === newProject.name; });
           if (existingWorkHour) {
@@ -2851,6 +2881,11 @@ async function saveWorkData(userId, workData, env, date) {
       keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
       projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
       workHoursJson = existingWorkHours.length > 0 ? JSON.stringify(existingWorkHours) : null;
+
+      console.log('[saveWorkData] ========== 合并后的项目数据 ==========');
+      console.log('[saveWorkData] mergedProjects:', JSON.stringify(mergedProjects, null, 2));
+      console.log('[saveWorkData] projects_json (将保存到数据库):', projectsJson);
+      console.log('[saveWorkData] ========== 准备更新数据库 ==========');
 
       // 重新计算总数
       const mergedStats = {
