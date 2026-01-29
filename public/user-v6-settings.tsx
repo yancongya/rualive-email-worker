@@ -409,6 +409,29 @@ async function sendTestEmail(target: 'operator' | 'proxy') {
   }
 }
 
+/**
+ * 更新当前用户信息
+ */
+async function updateCurrentUser(username: string) {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'PUT',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ username })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `API request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to update current user:', error);
+    throw error;
+  }
+}
+
 export const SettingsView = ({ lang }: { lang: LangType }) => {
   const t = S_TRANS[lang];
   const [loading, setLoading] = useState(true);
@@ -416,6 +439,9 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [testSending, setTestSending] = useState<'operator' | 'proxy' | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [tempUsername, setTempUsername] = useState('');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   // 配置状态
   const [config, setConfig] = useState({
@@ -521,6 +547,42 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
     }
   };
 
+  const handleUpdateUsername = async () => {
+    try {
+      // 验证用户名
+      const usernameRegex = /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/;
+      if (!usernameRegex.test(tempUsername)) {
+        setUsernameError('用户名只能包含字母、数字、下划线和中文');
+        return;
+      }
+      
+      if (tempUsername.length < 2) {
+        setUsernameError('用户名至少需要2个字符');
+        return;
+      }
+      
+      if (tempUsername.length > 20) {
+        setUsernameError('用户名不能超过20个字符');
+        return;
+      }
+      
+      setUsernameError(null);
+      
+      const result = await updateCurrentUser(tempUsername);
+      
+      if (result.success) {
+        setCurrentUser(result.user);
+        setEditingUsername(false);
+        setFeedback('用户名更新成功');
+        setTimeout(() => setFeedback(null), 3000);
+      } else {
+        setUsernameError(result.error || '更新失败');
+      }
+    } catch (error: any) {
+      setUsernameError(error.message || '更新失败');
+    }
+  };
+
   const handleTestEmail = async (target: 'operator' | 'proxy') => {
     try {
       setTestSending(target);
@@ -582,8 +644,57 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-white/5">
                 <span className="text-xs text-ru-textMuted">{t.username}</span>
-                <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
+                {editingUsername ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tempUsername}
+                      onChange={(e) => setTempUsername(e.target.value)}
+                      className="w-32 border text-xs rounded-sm py-1 px-2 font-mono bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10"
+                      placeholder="输入新用户名"
+                      maxLength={20}
+                    />
+                    <button
+                      onClick={handleUpdateUsername}
+                      className="text-xs text-ru-primary hover:text-white transition-colors"
+                      title="保存"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingUsername(false);
+                        setTempUsername(currentUser?.username || '');
+                        setUsernameError(null);
+                      }}
+                      className="text-xs text-ru-textMuted hover:text-white transition-colors"
+                      title="取消"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
+                    <button
+                      onClick={() => {
+                        setEditingUsername(true);
+                        setTempUsername(currentUser?.username || '');
+                        setUsernameError(null);
+                      }}
+                      className="text-xs text-ru-textMuted hover:text-ru-primary transition-colors"
+                      title="编辑用户名"
+                    >
+                      ✎
+                    </button>
+                  </div>
+                )}
               </div>
+              {usernameError && (
+                <div className="text-[10px] text-red-400 font-mono">
+                  {usernameError}
+                </div>
+              )}
               <div className="flex items-center justify-between py-2 border-b border-white/5">
                 <span className="text-xs text-ru-textMuted">{t.email}</span>
                 <span className="text-xs font-mono text-white">{currentUser?.email || '-'}</span>

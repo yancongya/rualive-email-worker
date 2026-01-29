@@ -993,6 +993,10 @@ export default {
       return handleGetCurrentUser(request, env);
     }
 
+    if (path === '/api/auth/me' && request.method === 'PUT') {
+      return handleUpdateCurrentUser(request, env);
+    }
+
     if (path === '/api/auth/init' && request.method === 'POST') {
       return handleInitAdmin(request, env);
     }
@@ -1449,6 +1453,67 @@ async function handleGetCurrentUser(request, env) {
           notification_excluded_days: '[]'
         }
       }
+    });
+  } catch (error) {
+    return Response.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// 更新当前用户信息
+async function handleUpdateCurrentUser(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  try {
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ success: false, error: '未授权' }, { status: 401 });
+    }
+    
+    const body = await request.json();
+    const { username } = body;
+    
+    // 验证用户名
+    if (!username) {
+      return Response.json({ success: false, error: '用户名不能为空' }, { status: 400 });
+    }
+    
+    // 用户名验证规则
+    const usernameRegex = /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/;
+    if (!usernameRegex.test(username)) {
+      return Response.json({ success: false, error: '用户名只能包含字母、数字、下划线和中文' }, { status: 400 });
+    }
+    
+    if (username.length < 2) {
+      return Response.json({ success: false, error: '用户名至少需要2个字符' }, { status: 400 });
+    }
+    
+    if (username.length > 20) {
+      return Response.json({ success: false, error: '用户名不能超过20个字符' }, { status: 400 });
+    }
+    
+    // 检查用户名是否已被其他用户使用
+    const existingUser = await DB.prepare(
+      'SELECT id FROM users WHERE username = ? AND id != ?'
+    ).bind(username, payload.userId).first();
+    
+    if (existingUser) {
+      return Response.json({ success: false, error: '该用户名已被使用' }, { status: 409 });
+    }
+    
+    // 更新用户名
+    await DB.prepare(
+      'UPDATE users SET username = ? WHERE id = ?'
+    ).bind(username, payload.userId).run();
+    
+    // 获取更新后的用户信息
+    const user = await DB.prepare(
+      'SELECT id, email, username, role, created_at, last_login FROM users WHERE id = ?'
+    ).bind(payload.userId).first();
+    
+    return Response.json({ 
+      success: true, 
+      user: user,
+      message: '用户名更新成功'
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });

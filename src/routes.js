@@ -84,6 +84,11 @@ export const API_ROUTES = {
     handler: 'handleGetCurrentUser',
     description: '获取当前用户信息'
   },
+  '/api/auth/me': {
+    method: 'PUT',
+    handler: 'handleUpdateCurrentUser',
+    description: '更新当前用户信息'
+  },
   '/api/auth/init': {
     method: 'POST',
     handler: 'handleInitAdmin',
