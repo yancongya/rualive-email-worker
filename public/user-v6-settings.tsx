@@ -601,59 +601,54 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
           <RefreshCw size={40} className="animate-spin text-ru-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Column 1: User Info & Timezone */}
-          <div className="space-y-4 md:space-y-6">
-            {/* User Information Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <User size={14} className="text-ru-primary" />
-                {t.userInfo}
-              </h3>
+        <div className="grid grid-cols-1 gap-4 md:gap-6 max-w-2xl mx-auto">
+          {/* User Information Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+            <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+              <User size={14} className="text-ru-primary" />
+              {t.userInfo}
+            </h3>
 
-              {/* User Info Display */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-white/5">
-                  <span className="text-xs text-ru-textMuted">{t.username}</span>
-                  <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-white/5">
-                  <span className="text-xs text-ru-textMuted">{t.email}</span>
-                  <span className="text-xs font-mono text-white">{currentUser?.email || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-white/5">
-                  <span className="text-xs text-ru-textMuted">{t.role}</span>
-                  <span className="text-xs font-bold text-ru-primary">{currentUser?.role || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs text-ru-textMuted">{t.lastLogin}</span>
-                  <span className="text-xs font-mono text-ru-textMuted">
-                    {currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '-'}
-                  </span>
-                </div>
+            {/* User Info Display */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-white/5">
+                <span className="text-xs text-ru-textMuted">{t.username}</span>
+                <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
               </div>
-            </div>
-
-            {/* Timezone Settings Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <Globe size={14} className="text-ru-primary" />
-                {t.timezone}
-              </h3>
-
-              <TimezoneSelector
-                label={t.timezone}
-                icon={Globe}
-                value={config.timezone}
-                onChange={(v: string) => handleChange('timezone', v)}
-              />
+              <div className="flex items-center justify-between py-2 border-b border-white/5">
+                <span className="text-xs text-ru-textMuted">{t.email}</span>
+                <span className="text-xs font-mono text-white">{currentUser?.email || '-'}</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-white/5">
+                <span className="text-xs text-ru-textMuted">{t.role}</span>
+                <span className="text-xs font-bold text-ru-primary">{currentUser?.role || '-'}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-ru-textMuted">{t.lastLogin}</span>
+                <span className="text-xs font-mono text-ru-textMuted">
+                  {currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '-'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Column 2: Notifications & Failsafe */}
-          <div className="space-y-4 md:space-y-6">
-            {/* Synchronization Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+          {/* Timezone Settings Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+            <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+              <Globe size={14} className="text-ru-primary" />
+              {t.timezone}
+            </h3>
+
+            <TimezoneSelector
+              label={t.timezone}
+              icon={Globe}
+              value={config.timezone}
+              onChange={(v: string) => handleChange('timezone', v)}
+            />
+          </div>
+
+          {/* Synchronization Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
                 <Bell size={14} className="text-ru-primary" />
                 {t.synchronization}
@@ -683,8 +678,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               </div>
             </div>
 
-            {/* Failsafe Protocol Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+          {/* Failsafe Protocol Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
                 <ShieldAlert size={14} className="text-red-500" />
                 {t.failsafeProtocol}
@@ -754,10 +749,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             </div>
           </div>
 
-          {/* Column 3: Work Thresholds & System */}
-          <div className="space-y-4 md:space-y-6">
-            {/* Work Thresholds Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+          {/* Work Thresholds Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
                 <Activity size={14} className="text-ru-primary" />
                 {t.workThresholds}
@@ -786,8 +779,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               />
             </div>
 
-            {/* System Diagnostics Card */}
-            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md flex flex-col">
+          {/* System Diagnostics Card */}
+          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md flex flex-col">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
                 <Zap size={14} className="text-ru-primary" />
                 {t.systemDiagnostics}
@@ -824,7 +817,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                 </button>
               </div>
             </div>
-          </div>
         </div>
       )}
     </div>
