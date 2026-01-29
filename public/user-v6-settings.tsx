@@ -458,7 +458,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
     timezone: 'Asia/Shanghai',
     emergency_email: '',
     emergency_name: '',
-    min_work_hours: 2,
+    min_work_hours: 8,
     min_keyframes: 50,
     min_json_size: 10,
     user_notification_time: '22:00',
@@ -623,11 +623,15 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                 <span className="text-xs text-ru-textMuted">{t.role}</span>
                 <span className="text-xs font-bold text-ru-primary">{currentUser?.role || '-'}</span>
               </div>
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-2 border-b border-white/5">
                 <span className="text-xs text-ru-textMuted">{t.lastLogin}</span>
                 <span className="text-xs font-mono text-ru-textMuted">
                   {currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '-'}
                 </span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-ru-textMuted">{t.minWorkHours}</span>
+                <span className="text-xs font-mono text-ru-primary font-bold">{config.min_work_hours}h</span>
               </div>
             </div>
           </div>
@@ -719,36 +723,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   onChange={(v: string) => handleChange('emergency_notification_time', v)}
                 />
               </div>
-            </div>
-
-          {/* Work Thresholds Card */}
-          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <Activity size={14} className="text-ru-primary" />
-                {t.workThresholds}
-              </h3>
-
-              <SettingInput
-                label={t.minWorkHours}
-                icon={Clock}
-                type="number"
-                value={config.min_work_hours}
-                onChange={(v: string) => handleChange('min_work_hours', v)}
-              />
-              <SettingInput
-                label={t.minKeyframes}
-                icon={Activity}
-                type="number"
-                value={config.min_keyframes}
-                onChange={(v: string) => handleChange('min_keyframes', v)}
-              />
-              <SettingInput
-                label={t.minJsonSize}
-                icon={Globe}
-                type="number"
-                value={config.min_json_size}
-                onChange={(v: string) => handleChange('min_json_size', v)}
-              />
             </div>
 
           {/* System Diagnostics Card */}

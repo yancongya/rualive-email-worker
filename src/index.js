@@ -1439,7 +1439,7 @@ async function handleGetCurrentUser(request, env) {
           timezone: 'Asia/Shanghai',
           emergency_email: '',
           emergency_name: '',
-          min_work_hours: 2,
+          min_work_hours: 8,
           min_keyframes: 50,
           min_json_size: 10,
           user_notification_time: '22:00',
@@ -2338,7 +2338,7 @@ async function getUserConfig(userId, env) {
       notification_schedule: result.notification_schedule || 'all',
       notification_excluded_days: result.notification_excluded_days || '[]',
       thresholds: {
-        minWorkHours: result.min_work_hours || 2,
+        minWorkHours: result.min_work_hours || 8,
         minKeyframes: result.min_keyframes || 50,
         minJsonSize: result.min_json_size || 10
       }
@@ -2387,7 +2387,7 @@ async function saveUserConfig(userId, config, env) {
       config.timezone || 'Asia/Shanghai',
       config.emergency_email || null,
       config.emergency_name || null,
-      config.min_work_hours || 2,
+      config.min_work_hours || 8,
       config.min_keyframes || 50,
       config.min_json_size || 10,
       config.user_notification_time || '22:00',
@@ -4168,7 +4168,7 @@ function generateUserDashboard() {
           document.getElementById('enabled').value = config.enabled ? 'true' : 'false';
           document.getElementById('emergencyEmail').value = config.emergency_email || '';
           document.getElementById('emergencyName').value = config.emergency_name || '';
-          document.getElementById('minHours').value = config.min_work_hours || 2;
+          document.getElementById('minHours').value = config.min_work_hours || 8;
           document.getElementById('minKeyframes').value = config.min_keyframes || 50;
           document.getElementById('minJsonSize').value = config.min_json_size || 10;
         }
