@@ -656,35 +656,16 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Time Settings Card */}
-          <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
-            <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-              <Clock size={14} className="text-ru-primary" />
-              {t.timezone}
-            </h3>
-
-            <TimezoneSelector
-              label={t.timezone}
-              icon={Globe}
-              value={config.timezone}
-              onChange={(v: string) => handleChange('timezone', v)}
-            />
-
-            <DigitalTimeSelector
-              label={t.userNotificationTime}
-              icon={Bell}
-              value={config.user_notification_time}
-              onChange={(v: string) => handleChange('user_notification_time', v)}
-            />
-
-            <DigitalTimeSelector
-              label={t.emergency_notification_time}
-              icon={ShieldAlert}
-              value={config.emergency_notification_time}
-              onChange={(v: string) => handleChange('emergency_notification_time', v)}
-            />
+            {/* Timezone Selector */}
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <TimezoneSelector
+                label={t.timezone}
+                icon={Globe}
+                value={config.timezone}
+                onChange={(v: string) => handleChange('timezone', v)}
+              />
+            </div>
           </div>
 
           {/* Synchronization Card */}
@@ -703,6 +684,13 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               />
 
               <div className={`transition-all duration-300 ${config.enabled ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+                <DigitalTimeSelector
+                  label={t.userNotificationTime}
+                  icon={Clock}
+                  value={config.user_notification_time}
+                  onChange={(v: string) => handleChange('user_notification_time', v)}
+                />
+
                 <DaySelector
                   value={config.notification_schedule}
                   onChange={(v) => handleChange('notification_schedule', v)}
@@ -743,6 +731,13 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   type="email"
                   value={config.emergency_email}
                   onChange={(v: string) => handleChange('emergency_email', v)}
+                />
+
+                <DigitalTimeSelector
+                  label={t.emergency_notification_time}
+                  icon={Clock}
+                  value={config.emergency_notification_time}
+                  onChange={(v: string) => handleChange('emergency_notification_time', v)}
                 />
               </div>
             </div>
