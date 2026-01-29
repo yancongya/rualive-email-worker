@@ -713,26 +713,44 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   onChange={(v: string) => handleChange('emergency_email', v)}
                 />
 
-                <div className="grid grid-cols-1 gap-4 mt-6">
-                  <SettingInput
-                    label={t.inactivityThreshold}
-                    icon={Power}
-                    type="number"
-                    value={config.min_work_hours}
-                    onChange={(v: string) => handleChange('min_work_hours', v)}
-                  />
-                  <DigitalTimeSelector
-                    label={t.emergency_notification_time}
-                    icon={Clock}
-                    value={config.emergency_notification_time}
-                    onChange={(v: string) => handleChange('emergency_notification_time', v)}
-                  />
+                <DigitalTimeSelector
+                  label={t.emergency_notification_time}
+                  icon={Clock}
+                  value={config.emergency_notification_time}
+                  onChange={(v: string) => handleChange('emergency_notification_time', v)}
+                />
+
+                {/* Test Email Buttons */}
+                <div className="mt-6 space-y-3">
+                  <button
+                    onClick={() => handleTestEmail('operator')}
+                    disabled={!!testSending}
+                    className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-xs font-bold text-white rounded transition-all group disabled:opacity-50"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Mail size={14} className="text-ru-textMuted group-hover:text-white transition-colors" />
+                      {testSending === 'operator' ? t.sending : t.pingOperator}
+                    </span>
+                    <Globe size={14} className="text-ru-primary opacity-50 group-hover:opacity-100" />
+                  </button>
+
+                  <button
+                    onClick={() => handleTestEmail('proxy')}
+                    disabled={!!testSending}
+                    className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 text-xs font-bold text-red-100 rounded transition-all group disabled:opacity-50"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShieldAlert size={14} className="text-red-400/70 group-hover:text-red-400 transition-colors" />
+                      {testSending === 'proxy' ? t.sending : t.pingProxy}
+                    </span>
+                    <Activity size={14} className="text-red-500 opacity-50 group-hover:opacity-100" />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Column 3: Work Thresholds & Actions */}
+          {/* Column 3: Work Thresholds & System */}
           <div className="space-y-4 md:space-y-6">
             {/* Work Thresholds Card */}
             <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
@@ -780,32 +798,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   <span className="text-xs font-mono text-ru-textDim">{t.cronStatus}</span>
                   <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">{t.active}</span>
                 </div>
-              </div>
-
-              <div className="mt-8 space-y-3">
-                <button
-                  onClick={() => handleTestEmail('operator')}
-                  disabled={!!testSending}
-                  className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-xs font-bold text-white rounded transition-all group disabled:opacity-50"
-                >
-                  <span className="flex items-center gap-2">
-                    <Mail size={14} className="text-ru-textMuted group-hover:text-white transition-colors" />
-                    {testSending === 'operator' ? t.sending : t.pingOperator}
-                  </span>
-                  <Globe size={14} className="text-ru-primary opacity-50 group-hover:opacity-100" />
-                </button>
-
-                <button
-                  onClick={() => handleTestEmail('proxy')}
-                  disabled={!!testSending}
-                  className="w-full flex items-center justify-between px-4 py-4 md:py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 text-xs font-bold text-red-100 rounded transition-all group disabled:opacity-50"
-                >
-                  <span className="flex items-center gap-2">
-                    <ShieldAlert size={14} className="text-red-400/70 group-hover:text-red-400 transition-colors" />
-                    {testSending === 'proxy' ? t.sending : t.pingProxy}
-                  </span>
-                  <Activity size={14} className="text-red-500 opacity-50 group-hover:opacity-100" />
-                </button>
               </div>
 
               <div className="mt-auto pt-6 border-t border-white/10">
