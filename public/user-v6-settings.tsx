@@ -288,95 +288,6 @@ const DaySelector = ({ value, onChange, lang }: { value: number[], onChange: (v:
   );
 };
 
-// Timezone Selector Component
-const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const timezones = [
-    { value: 'Asia/Shanghai', label: '北京 (UTC+8)', icon: '🇨🇳', code: 'CN' },
-    { value: 'Asia/Tokyo', label: '东京 (UTC+9)', icon: '🇯🇵', code: 'JP' },
-    { value: 'America/New_York', label: '纽约 (UTC-5)', icon: '🇺🇸', code: 'US' },
-    { value: 'America/Los_Angeles', label: '洛杉矶 (UTC-8)', icon: '🇺🇸', code: 'US' },
-    { value: 'Europe/London', label: '伦敦 (UTC+0)', icon: '🇬🇧', code: 'GB' },
-    { value: 'Europe/Paris', label: '巴黎 (UTC+1)', icon: '🇫🇷', code: 'FR' },
-    { value: 'Australia/Sydney', label: '悉尼 (UTC+11)', icon: '🇦🇺', code: 'AU' },
-    { value: 'UTC', label: 'UTC (UTC+0)', icon: '🌍', code: '' }
-  ];
-
-  const selectedTimezone = timezones.find(tz => tz.value === value);
-
-  // 点击外部关闭下拉
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (tzValue: string) => {
-    onChange(tzValue);
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-2 text-ru-textMuted">
-        {Icon && <Icon size={12} className="text-ru-primary" />}
-        {label}
-      </label>
-      <div className="relative" ref={dropdownRef}>
-        {/* 选择器按钮 */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full border text-sm rounded-sm py-2.5 px-3 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 hover:bg-white/10 pr-10 flex items-center justify-between group"
-        >
-          <span className="flex items-center gap-2">
-            {selectedTimezone?.icon}
-            <span>{selectedTimezone?.code && selectedTimezone.code !== '' ? `${selectedTimezone.code} ` : ''}{selectedTimezone?.label}</span>
-          </span>
-          <svg 
-            className={`w-4 h-4 text-ru-textMuted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        
-        {/* 下划线动画 */}
-        <div className={`absolute bottom-0 left-0 h-[1px] bg-ru-primary transition-all duration-500 ${isOpen ? 'w-full' : 'w-0'}`}></div>
-
-        {/* 下拉列表 */}
-        {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1E293B] border border-white/10 rounded-sm shadow-lg z-50 overflow-hidden">
-            {timezones.map((tz) => (
-              <button
-                key={tz.value}
-                type="button"
-                onClick={() => handleSelect(tz.value)}
-                className={`w-full text-left px-3 py-2.5 font-mono text-sm transition-colors flex items-center gap-2 ${
-                  tz.value === value 
-                    ? 'bg-ru-primary/20 text-ru-primary' 
-                    : 'text-white hover:bg-white/10'
-                }`}
-              >
-                <span className="text-base">{tz.icon}</span>
-                <span>{tz.code && tz.code !== '' ? `${tz.code} ` : ''}{tz.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 /**
  * 安全解析JSON
  */
@@ -529,6 +440,9 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
       try {
         setLoading(true);
 
+        // 自动检测用户时区
+        const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
         // 并行加载用户信息和配置
         const [user, userConfig] = await Promise.all([
           fetchCurrentUser(),
@@ -542,7 +456,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
           setConfig({
             enabled: userConfig.enabled ?? true,
             sendTime: userConfig.sendTime || '22:00',
-            timezone: userConfig.timezone || 'Asia/Shanghai',
+            timezone: detectedTimezone, // 使用自动检测的时区
             emergency_email: userConfig.emergency_email || '',
             emergency_name: userConfig.emergency_name || '',
             min_work_hours: userConfig.min_work_hours === 2 ? 8 : (userConfig.min_work_hours || 8),
@@ -684,7 +598,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   {currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '-'}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-2 border-b border-white/5">
                 <span className="text-xs text-ru-textMuted">{t.minWorkHours}</span>
                 <div className="flex items-center gap-2">
                   <input
@@ -698,15 +612,14 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   <span className="text-xs font-mono text-ru-textMuted">h</span>
                 </div>
               </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-ru-textMuted">{t.timezone}</span>
+                <span className="text-xs font-mono text-white flex items-center gap-1">
+                  <Globe size={12} className="text-ru-primary" />
+                  {config.timezone}
+                </span>
+              </div>
             </div>
-
-            {/* Timezone Selector */}
-            <TimezoneSelector
-              label={t.timezone}
-              icon={Globe}
-              value={config.timezone}
-              onChange={(v: string) => handleChange('timezone', v)}
-            />
           </div>
 
           {/* Synchronization Card */}
