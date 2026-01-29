@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive 邮件模板预览</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0f172a;
+      padding: 20px;
+    }
+    .preview-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    .preview-item {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #334155;
+    }
+    .preview-title {
+      color: #e2e8f0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .preview-type {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .preview-content {
+      background: #f9fafb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .preview-content iframe {
+      width: 100%;
+      height: 900px;
+      border: none;
+    }
+    .toggle-btn {
+      background: #334155;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .toggle-btn:hover {
+      background: #475569;
+      transform: translateY(-1px);
+    }
+    .instructions {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .instructions h3 {
+      color: #e2e8f0;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    .instructions ul {
+      margin-left: 24px;
+    }
+    .instructions li {
+      margin-bottom: 8px;
+    }
+    .instructions code {
+      background: #334155;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      color: #667eea;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="header">
+      <h1>📧 RuAlive 邮件模板预览</h1>
+      <p>基于成就系统和数据可视化的全新设计</p>
+    </div>
+
+    <div class="instructions">
+      <h3>📋 使用说明</h3>
+      <ul>
+        <li><strong>工作总结邮件</strong>：采用成就系统设计，展示工作进度和获得的徽章</li>
+        <li><strong>工作警告邮件</strong>：采用数据对比设计，清晰展示差距和行动建议</li>
+        <li>点击"刷新预览"按钮可以重新加载模板</li>
+        <li>修改 <code>src/templates/daily-summary-email.js</code> 或 <code>src/templates/warning-email.js</code> 后刷新即可看到效果</li>
+        <li>部署到 Worker 后，实际发送的邮件会使用这些模板</li>
+      </ul>
+    </div>
+
+    <div class="preview-grid">
+      <div class="preview-item">
+        <div class="preview-header">
+          <span class="preview-title">工作总结邮件</span>
+          <button class="toggle-btn" onclick="refreshSummary()">刷新预览</button>
+        </div>
+        <div class="preview-content">
+          <iframe id="summary-preview" title="工作总结预览"></iframe>
+        </div>
+      </div>
+
+      <div class="preview-item">
+        <div class="preview-header">
+          <span class="preview-title">工作警告邮件</span>
+          <button class="toggle-btn" onclick="refreshWarning()">刷新预览</button>
+        </div>
+        <div class="preview-content">
+          <iframe id="warning-preview" title="工作警告预览"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟用户数据
+    const mockUser = {
+      username: '烟囱鸭',
+      email: '2655283737@qq.com'
+    };
+
+    // 模拟工作数据
+    const mockWorkData = {
+      work_hours: 0.59,
+      project_count: 1,
+      composition_count: 25,
+      keyframe_count: 568,
+      layer_count: 229,
+      effect_count: 120
+    };
+
+    // 模拟配置
+    const mockConfig = {
+      thresholds: {
+        minWorkHours: 8,
+        minKeyframes: 50,
+        minJsonSize: 10
+      },
+      emergency_name: '烟囱鸭',
+      emergency_email: '2655283737@qq.com'
+    };
+
+    // 工作总结邮件模板（全新设计）
+    function generateDailySummaryEmail(user, workData, config) {
+      const date = new Date().toLocaleDateString('zh-CN');
+      const hours = workData?.work_hours || 0;
+      const hoursText = `${Math.floor(hours)}小时${Math.round((hours % 1) * 60)}分钟`;
+      
+      // 计算工作进度（假设8小时为100%）
+      const progress = Math.min((hours / 8) * 100, 100);
+      const progressColor = progress >= 100 ? '#10b981' : progress >= 75 ? '#3b82f6' : progress >= 50 ? '#f59e0b' : '#ef4444';
+
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日成就 - RuAlive</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    
+    .top-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      padding: 40px 32px 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .top-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .banner-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .banner-title {
+      font-size: 36px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      letter-spacing: -1px;
+    }
+    
+    .banner-subtitle {
+      font-size: 16px;
+      opacity: 0.95;
+      margin: 0;
+      font-weight: 500;
+    }
+    
+    .date-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 16px;
+    }
+    
+    .content {
+      padding: 32px;
+    }
+    
+    .greeting {
+      background: #f9fafb;
+      border-left: 4px solid #667eea;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      border-radius: 8px;
+    }
+    
+    .greeting-text {
+      font-size: 16px;
+      color: #4b5563;
+      margin: 0;
+    }
+    
+    .greeting-text strong {
+      color: #667eea;
+      font-weight: 700;
+    }
+    
+    .progress-section {
+      margin-bottom: 40px;
+    }
+    
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .progress-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .progress-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    .progress-bar-container {
+      height: 12px;
+      background: #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border-radius: 6px;
+      transition: width 0.8s ease-out;
+      position: relative;
+    }
+    
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .data-card {
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+      transition: all 0.3s ease;
+    }
+    
+    .data-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+      border-color: #667eea;
+    }
+    
+    .data-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .data-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+    
+    .data-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .achievements {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .achievements-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .achievement-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .achievement {
+      background: #ffffff;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .achievement-icon {
+      font-size: 16px;
+    }
+    
+    .footer {
+      background: #f9fafb;
+      padding: 24px 32px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .footer p {
+      margin: 4px 0;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    @media only screen and (max-width: 600px) {
+      .data-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .banner-title {
+        font-size: 28px;
+      }
+      
+      .content {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-banner">
+      <div class="banner-content">
+        <h1 class="banner-title">今日成就 🏆</h1>
+        <p class="banner-subtitle">${user.username} 的工作报告</p>
+        <div class="date-badge">${date}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="greeting">
+        <p class="greeting-text">你好，<strong>${user.username}</strong>！这是你今天的工作成果。</p>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label">
+          <span class="progress-title">📊 工作进度</span>
+          <span class="progress-value">${hoursText}</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: ${progress}%"></div>
+        </div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card">
+          <div class="data-icon">📁</div>
+          <div class="data-value">${workData?.project_count || 0}</div>
+          <div class="data-label">项目</div>
+        </div>
+        <div class="data-card">
+          <div class="data-icon">🎬</div>
+          <div class="data-value">${workData?.composition_count || 0}</div>
+          <div class="data-label">合成</div>
+        </div>
+        <div class="data-card">
+          <div class="data-icon">🎞️</div>
+          <div class="data-value">${workData?.keyframe_count || 0}</div>
+          <div class="data-label">关键帧</div>
+        </div>
+        <div class="data-card">
+          <div class="data-icon">📑</div>
+          <div class="data-value">${workData?.layer_count || 0}</div>
+          <div class="data-label">图层</div>
+        </div>
+        <div class="data-card">
+          <div class="data-icon">✨</div>
+          <div class="data-value">${workData?.effect_count || 0}</div>
+          <div class="data-label">特效</div>
+        </div>
+        <div class="data-card">
+          <div class="data-icon">⚡</div>
+          <div class="data-value">${workData?.effect_count ? Math.round(workData.effect_count / workData.composition_count) : 0}</div>
+          <div class="data-label">平均/合成</div>
+        </div>
+      </div>
+      <div class="achievements">
+        <div class="achievements-title">🏅 今日成就</div>
+        <div class="achievement-grid">
+          ${hours >= 8 ? '<div class="achievement"><span class="achievement-icon">💪</span> 工作达人</div>' : ''}
+          ${workData?.keyframe_count >= 500 ? '<div class="achievement"><span class="achievement-icon">🎯</span> 关键帧大师</div>' : ''}
+          ${workData?.composition_count >= 20 ? '<div class="achievement"><span class="achievement-icon">🎨</span> 合成专家</div>' : ''}
+          ${workData?.effect_count >= 100 ? '<div class="achievement"><span class="achievement-icon">✨</span> 特效魔术师</div>' : ''}
+          <div class="achievement"><span class="achievement-icon">🌟</span> 持续进步</div>
+        </div>
+      </div>
+      <div class="footer">
+        <p>📧 此邮件由 RuAlive 自动生成</p>
+        <p>© ${new Date().getFullYear()} RuAlive. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    // 工作警告邮件模板（全新设计）
+    function generateWarningEmail(user, workData, config) {
+      const date = new Date().toLocaleDateString('zh-CN');
+      const hasWork = workData !== null;
+      const thresholds = config.thresholds || {};
+      
+      // 计算差距
+      const hours = workData?.work_hours || 0;
+      const minHours = thresholds.minWorkHours || 8;
+      const shortfall = Math.max(0, minHours - hours);
+      const completionRate = hasWork ? Math.round((hours / minHours) * 100) : 0;
+
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工作提醒 - RuAlive</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+    
+    .emergency-banner {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #ffffff;
+      padding: 40px 32px 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .emergency-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 15s linear infinite;
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .banner-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .alert-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    .banner-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      letter-spacing: -1px;
+    }
+    
+    .banner-subtitle {
+      font-size: 16px;
+      opacity: 0.95;
+      margin: 0;
+      font-weight: 500;
+    }
+    
+    .date-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 16px;
+    }
+    
+    .content {
+      padding: 32px;
+    }
+    
+    .user-card {
+      background: #fef2f2;
+      border: 2px solid #fecaca;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .user-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .user-icon {
+      width: 48px;
+      height: 48px;
+      background: #dc2626;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    
+    .user-info h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #dc2626;
+    }
+    
+    .user-info p {
+      margin: 4px 0 0 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    
+    .user-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .user-stat {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #fecaca;
+    }
+    
+    .user-stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    
+    .user-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    .progress-comparison {
+      margin-bottom: 32px;
+    }
+    
+    .comparison-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 16px;
+    }
+    
+    .comparison-bar-container {
+      margin-bottom: 16px;
+    }
+    
+    .comparison-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    
+    .comparison-bar {
+      height: 24px;
+      background: #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .comparison-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      transition: width 0.5s ease;
+    }
+    
+    .comparison-fill.current {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .comparison-fill.target {
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+    
+    .gap-indicator {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    
+    .gap-indicator p {
+      margin: 0;
+      font-size: 14px;
+      color: #92400e;
+    }
+    
+    .gap-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #dc2626;
+    }
+    
+    .action-steps {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .action-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #059669;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: #10b981;
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    
+    .step-content p {
+      margin: 0;
+      font-size: 14px;
+      color: #4b5563;
+    }
+    
+    .step-content strong {
+      color: #059669;
+    }
+    
+    .footer {
+      background: #fef2f2;
+      padding: 24px 32px;
+      text-align: center;
+      border-top: 1px solid #fecaca;
+    }
+    
+    .footer p {
+      margin: 4px 0;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    
+    @media only screen and (max-width: 600px) {
+      .user-stats {
+        grid-template-columns: 1fr;
+      }
+      
+      .banner-title {
+        font-size: 24px;
+      }
+      
+      .content {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emergency-banner">
+      <div class="banner-content">
+        <div class="alert-icon">🚨</div>
+        <h1 class="banner-title">工作提醒</h1>
+        <p class="banner-subtitle">${user.username} 的每日报告</p>
+        <div class="date-badge">${date}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="user-card">
+        <div class="user-card-header">
+          <div class="user-icon">👤</div>
+          <div class="user-info">
+            <h3>${user.username}</h3>
+            <p>${hasWork ? '⚠️ 工作量不足' : '❌ 今日未工作'}</p>
+          </div>
+        </div>
+        ${hasWork ? `
+        <div class="user-stats">
+          <div class="user-stat">
+            <div class="user-stat-label">工作时长</div>
+            <div class="user-stat-value">${Math.floor(hours)}h${Math.round((hours % 1) * 60)}m</div>
+          </div>
+          <div class="user-stat">
+            <div class="user-stat-label">合成数量</div>
+            <div class="user-stat-value">${workData?.composition_count || 0}</div>
+          </div>
+          <div class="user-stat">
+            <div class="user-stat-label">关键帧数</div>
+            <div class="user-stat-value">${workData?.keyframe_count || 0}</div>
+          </div>
+        </div>
+        ` : `
+        <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #fecaca; margin-top: 12px;">
+          <p style="margin: 0; color: #dc2626; font-weight: 600; font-size: 14px;">❌ 今天未打开 After Effects</p>
+          <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 13px;">最后工作日：${workData?.last_work_date || '未知'}</p>
+        </div>
+        `}
+      </div>
+      ${hasWork ? `
+      <div class="progress-comparison">
+        <div class="comparison-title">📊 工作进度对比</div>
+        <div class="comparison-bar-container">
+          <div class="comparison-label">
+            <span>实际完成</span>
+            <span>${Math.floor(hours)}h${Math.round((hours % 1) * 60)}m (${completionRate}%)</span>
+          </div>
+          <div class="comparison-bar">
+            <div class="comparison-fill current" style="width: ${completionRate}%">${completionRate}%</div>
+          </div>
+        </div>
+        <div class="comparison-bar-container">
+          <div class="comparison-label">
+            <span>目标要求</span>
+            <span>${minHours}h (100%)</span>
+          </div>
+          <div class="comparison-bar">
+            <div class="comparison-fill target" style="width: 100%">${minHours}h</div>
+          </div>
+        </div>
+        <div class="gap-indicator">
+          <p>距离目标还差</p>
+          <div class="gap-value">${Math.floor(shortfall)}h${Math.round((shortfall % 1) * 60)}m</div>
+        </div>
+      </div>
+      ` : `
+      <div class="gap-indicator" style="margin-bottom: 32px;">
+        <p>今日工作状态</p>
+        <div class="gap-value">0% 完成</div>
+        <p style="margin-top: 8px;">距离目标：${minHours}h</p>
+      </div>
+      `}
+      <div class="action-steps">
+        <div class="action-title">
+          <span>💡</span>
+          <span>建议行动</span>
+        </div>
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <p><strong>联系用户</strong> - 了解工作进度和遇到的困难</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <p><strong>提供支持</strong> - 协助解决技术问题或资源需求</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <p><strong>跟进进度</strong> - 确认后续工作计划和时间安排</p>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <p>📧 此邮件由 RuAlive 自动生成</p>
+        <p>紧急联系人监督系统</p>
+        <p>© ${new Date().getFullYear()} RuAlive. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    // 刷新预览
+    function refreshSummary() {
+      const iframe = document.getElementById('summary-preview');
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(generateDailySummaryEmail(mockUser, mockWorkData, mockConfig));
+      doc.close();
+    }
+
+    function refreshWarning() {
+      const iframe = document.getElementById('warning-preview');
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(generateWarningEmail(mockUser, mockWorkData, mockConfig));
+      doc.close();
+    }
+
+    // 页面加载时初始化预览
+    window.onload = function() {
+      refreshSummary();
+      refreshWarning();
+    };
+  </script>
+</body>
+</html>
