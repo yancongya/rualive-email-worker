@@ -291,15 +291,17 @@ const DaySelector = ({ value, onChange, lang }: { value: number[], onChange: (v:
 // Timezone Selector Component
 const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
   const timezones = [
-    { value: 'Asia/Shanghai', label: '北京 (UTC+8)' },
-    { value: 'Asia/Tokyo', label: '东京 (UTC+9)' },
-    { value: 'America/New_York', label: '纽约 (UTC-5)' },
-    { value: 'America/Los_Angeles', label: '洛杉矶 (UTC-8)' },
-    { value: 'Europe/London', label: '伦敦 (UTC+0)' },
-    { value: 'Europe/Paris', label: '巴黎 (UTC+1)' },
-    { value: 'Australia/Sydney', label: '悉尼 (UTC+11)' },
-    { value: 'UTC', label: 'UTC (UTC+0)' }
+    { value: 'Asia/Shanghai', label: '北京 (UTC+8)', icon: '🇨🇳' },
+    { value: 'Asia/Tokyo', label: '东京 (UTC+9)', icon: '🇯🇵' },
+    { value: 'America/New_York', label: '纽约 (UTC-5)', icon: '🇺🇸' },
+    { value: 'America/Los_Angeles', label: '洛杉矶 (UTC-8)', icon: '🇺🇸' },
+    { value: 'Europe/London', label: '伦敦 (UTC+0)', icon: '🇬🇧' },
+    { value: 'Europe/Paris', label: '巴黎 (UTC+1)', icon: '🇫🇷' },
+    { value: 'Australia/Sydney', label: '悉尼 (UTC+11)', icon: '🇦🇺' },
+    { value: 'UTC', label: 'UTC (UTC+0)', icon: '🌍' }
   ];
+
+  const selectedTimezone = timezones.find(tz => tz.value === value);
 
   return (
     <div className="flex flex-col gap-1.5 mb-4">
@@ -307,17 +309,27 @@ const TimezoneSelector = ({ label, value, onChange, icon: Icon }: any) => {
         {Icon && <Icon size={12} className="text-ru-primary" />}
         {label}
       </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border text-sm rounded-sm py-2.5 px-3 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10"
-      >
-        {timezones.map(tz => (
-          <option key={tz.value} value={tz.value} className="bg-gray-800">
-            {tz.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border text-sm rounded-sm py-3 px-4 font-mono transition-all bg-white/5 border-white/10 text-white focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 appearance-none cursor-pointer hover:bg-white/10"
+        >
+          {timezones.map(tz => (
+            <option key={tz.value} value={tz.value} className="bg-gray-800">
+              {tz.icon} {tz.label}
+            </option>
+          ))}
+        </select>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ru-textMuted">
+          {selectedTimezone?.icon || '🌍'}
+        </div>
+        <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none">
+          <svg className="w-4 h-4 text-ru-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 };
@@ -490,7 +502,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             timezone: userConfig.timezone || 'Asia/Shanghai',
             emergency_email: userConfig.emergency_email || '',
             emergency_name: userConfig.emergency_name || '',
-            min_work_hours: userConfig.min_work_hours || 2,
+            min_work_hours: userConfig.min_work_hours === 2 ? 8 : (userConfig.min_work_hours || 8),
             min_keyframes: userConfig.min_keyframes || 50,
             min_json_size: userConfig.min_json_size || 10,
             user_notification_time: userConfig.user_notification_time || '22:00',
@@ -631,15 +643,25 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-xs text-ru-textMuted">{t.minWorkHours}</span>
-                <span className="text-xs font-mono text-ru-primary font-bold">{config.min_work_hours}h</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={config.min_work_hours}
+                    onChange={(e) => handleChange('min_work_hours', e.target.value)}
+                    className="w-16 border text-xs rounded-sm py-1 px-2 font-mono text-right bg-white/5 border-white/10 text-ru-primary focus:outline-none focus:border-ru-primary/50 focus:bg-white/10"
+                    min="1"
+                    max="24"
+                  />
+                  <span className="text-xs font-mono text-ru-textMuted">h</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Timezone Settings Card */}
+          {/* Time Settings Card */}
           <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
             <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-              <Globe size={14} className="text-ru-primary" />
+              <Clock size={14} className="text-ru-primary" />
               {t.timezone}
             </h3>
 
@@ -648,6 +670,20 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               icon={Globe}
               value={config.timezone}
               onChange={(v: string) => handleChange('timezone', v)}
+            />
+
+            <DigitalTimeSelector
+              label={t.userNotificationTime}
+              icon={Bell}
+              value={config.user_notification_time}
+              onChange={(v: string) => handleChange('user_notification_time', v)}
+            />
+
+            <DigitalTimeSelector
+              label={t.emergency_notification_time}
+              icon={ShieldAlert}
+              value={config.emergency_notification_time}
+              onChange={(v: string) => handleChange('emergency_notification_time', v)}
             />
           </div>
 
@@ -667,13 +703,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               />
 
               <div className={`transition-all duration-300 ${config.enabled ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-                <DigitalTimeSelector
-                  label={t.userNotificationTime}
-                  icon={Clock}
-                  value={config.user_notification_time}
-                  onChange={(v: string) => handleChange('user_notification_time', v)}
-                />
-
                 <DaySelector
                   value={config.notification_schedule}
                   onChange={(v) => handleChange('notification_schedule', v)}
@@ -714,13 +743,6 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   type="email"
                   value={config.emergency_email}
                   onChange={(v: string) => handleChange('emergency_email', v)}
-                />
-
-                <DigitalTimeSelector
-                  label={t.emergency_notification_time}
-                  icon={Clock}
-                  value={config.emergency_notification_time}
-                  onChange={(v: string) => handleChange('emergency_notification_time', v)}
                 />
               </div>
             </div>
