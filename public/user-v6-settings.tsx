@@ -602,17 +602,17 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Column 1: Identity Protocol */}
+          {/* Column 1: User Info & Timezone */}
           <div className="space-y-4 md:space-y-6">
-            {/* Identity Protocol Card */}
+            {/* User Information Card */}
             <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
               <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
-                <Lock size={14} className="text-ru-primary" />
-                {t.identityProtocol}
+                <User size={14} className="text-ru-primary" />
+                {t.userInfo}
               </h3>
 
               {/* User Info Display */}
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b border-white/5">
                   <span className="text-xs text-ru-textMuted">{t.username}</span>
                   <span className="text-xs font-mono text-white">{currentUser?.username || '-'}</span>
@@ -632,11 +632,15 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   </span>
                 </div>
               </div>
+            </div>
 
-              {/* Divider */}
-              <div className="border-t border-white/10 my-6"></div>
+            {/* Timezone Settings Card */}
+            <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
+              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+                <Globe size={14} className="text-ru-primary" />
+                {t.timezone}
+              </h3>
 
-              {/* Settings */}
               <TimezoneSelector
                 label={t.timezone}
                 icon={Globe}
