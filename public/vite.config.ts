@@ -8,9 +8,10 @@ import react from '@vitejs/plugin-react';
  * Entry Points:
  * - index.html: Main landing page with React app
  * - auth.html: Authentication page (login/register)
- * - user.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
+ * - user-v6.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
  * 
- * Note: user.html uses localStorage key 'rualive_token' for authentication (not 'token')
+ * Note: Uses localStorage key 'rualive_token' for authentication (not 'token')
+ * Updated: Removed user.html, /user route now points to user-v6.html
  */
 
 export default defineConfig(({ mode }) => {
@@ -25,7 +26,6 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             auth: path.resolve(__dirname, 'auth.html'),
-            user: path.resolve(__dirname, 'user.html'),
             userV6: path.resolve(__dirname, 'user-v6.html')
           },
           output: {

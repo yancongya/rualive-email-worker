@@ -1,6 +1,7 @@
 /**
  * RuAlive Email Notification Worker
  * MVP版本 - 每日工作总结和紧急联系人监督
+ * Updated: Removed user.html, /user route now returns user-v6.html (2026-01-30)
  */
 
 // 导入认证模块（注意：在Cloudflare Workers中需要使用动态导入）
