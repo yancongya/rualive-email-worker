@@ -1175,11 +1175,13 @@ async function processUser(user, env) {
   }
 
   // 检查是否到了用户通知时间
-  const userNotificationTime = config.user_notification_time || '22:00';
+  const userNotificationHour = config.user_notification_hour !== undefined ? config.user_notification_hour : 22;
+  const userNotificationTime = `${String(userNotificationHour).padStart(2, '0')}:00`;
   const isUserNotificationTime = currentTime === userNotificationTime && shouldSendToday;
 
   // 检查是否到了紧急联系人通知时间
-  const emergencyNotificationTime = config.emergency_notification_time || '22:00';
+  const emergencyNotificationHour = config.emergency_notification_hour !== undefined ? config.emergency_notification_hour : 22;
+  const emergencyNotificationTime = `${String(emergencyNotificationHour).padStart(2, '0')}:00`;
   const isEmergencyNotificationTime = currentTime === emergencyNotificationTime && shouldSendToday;
 
   console.log(`User ${userId} - userTime: ${userNotificationTime}, emergencyTime: ${emergencyNotificationTime}, shouldSendEmergency: ${shouldSendEmergency}`);
@@ -2411,6 +2413,8 @@ async function getUserConfig(userId, env) {
       min_json_size: result.min_json_size,
       user_notification_time: result.user_notification_time,
       emergency_notification_time: result.emergency_notification_time,
+      user_notification_hour: result.user_notification_hour !== undefined ? result.user_notification_hour : 22,
+      emergency_notification_hour: result.emergency_notification_hour !== undefined ? result.emergency_notification_hour : 22,
       enable_emergency_notification: result.enable_emergency_notification === 1,
       notification_schedule: result.notification_schedule || 'all',
       notification_excluded_days: result.notification_excluded_days || '[]',
@@ -2440,8 +2444,9 @@ async function saveUserConfig(userId, config, env) {
         user_id, enabled, send_time, timezone, emergency_email,
         emergency_name, min_work_hours, min_keyframes, min_json_size,
         user_notification_time, emergency_notification_time,
+        user_notification_hour, emergency_notification_hour,
         enable_emergency_notification, notification_schedule, notification_excluded_days
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         enabled = excluded.enabled,
         send_time = excluded.send_time,
@@ -2453,6 +2458,8 @@ async function saveUserConfig(userId, config, env) {
         min_json_size = excluded.min_json_size,
         user_notification_time = excluded.user_notification_time,
         emergency_notification_time = excluded.emergency_notification_time,
+        user_notification_hour = excluded.user_notification_hour,
+        emergency_notification_hour = excluded.emergency_notification_hour,
         enable_emergency_notification = excluded.enable_emergency_notification,
         notification_schedule = excluded.notification_schedule,
         notification_excluded_days = excluded.notification_excluded_days,
@@ -2469,6 +2476,8 @@ async function saveUserConfig(userId, config, env) {
       config.min_json_size || 10,
       config.user_notification_time || '22:00',
       config.emergency_notification_time || '22:00',
+      config.user_notification_hour !== undefined ? config.user_notification_hour : 22,
+      config.emergency_notification_hour !== undefined ? config.emergency_notification_hour : 22,
       config.enable_emergency_notification ? 1 : 0,
       config.notification_schedule || 'all',
       config.notification_excluded_days || '[]'
