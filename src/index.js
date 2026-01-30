@@ -5245,13 +5245,13 @@ function generateAdminPage() {
 // ==================== 邮件模板 ====================
 
 async function generateDailySummaryEmail(user, workData, config) {
-  // 动态导入邮件模板
-  const { generateDailySummaryEmail: generateTemplate } = await import('./templates/daily-summary-email.js');
+  // 动态导入邮件模板（使用幽默版）
+  const { generateDailySummaryHumorEmail: generateTemplate } = await import('./templates/daily-summary-humor.js');
   return generateTemplate(user, workData, config);
 }
 
 async function generateWarningEmail(user, workData, config) {
-  // 动态导入邮件模板
-  const { generateWarningEmail: generateTemplate } = await import('./templates/warning-email.js');
+  // 动态导入邮件模板（使用幽默版）
+  const { generateWarningHumorEmail: generateTemplate } = await import('./templates/warning-humor.js');
   return generateTemplate(user, workData, config);
 }
