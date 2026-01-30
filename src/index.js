@@ -154,28 +154,11 @@ export default {
     }
 
     if (path === '/user') {
-      // 返回独立的 user.html 文件
+      // 返回新的用户页面（原 user-v6.html）
       if (ASSETS) {
         try {
-          const userUrl = new URL('/user.html', request.url);
+          const userUrl = new URL('/user-v6.html', request.url);
           const assetResponse = await ASSETS.fetch(new Request(userUrl, { method: 'GET' }));
-          if (assetResponse && assetResponse.status !== 404) {
-            return assetResponse;
-          }
-        } catch (error) {
-          console.error('Failed to fetch user.html from Assets:', error);
-        }
-      }
-      // 如果 Assets 失败，返回 404
-      return new Response('Not Found', { status: 404 });
-    }
-
-    if (path === '/user-v6') {
-      // 返回新的 user-v6.html 文件（AI Studio 生成的用户页）
-      if (ASSETS) {
-        try {
-          const userV6Url = new URL('/user-v6.html', request.url);
-          const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
             return assetResponse;
           }

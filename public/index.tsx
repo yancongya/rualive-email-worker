@@ -511,8 +511,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection, onAuthSuccess }: {
           console.log('[Auth] Redirecting to /admin');
           window.location.href = '/admin';
         } else {
-          console.log('[Auth] Redirecting to /user-v6');
-          window.location.href = '/user-v6';
+          console.log('[Auth] Redirecting to /user');
+          window.location.href = '/user';
         }
         return; // 防止继续执行
       } else {
