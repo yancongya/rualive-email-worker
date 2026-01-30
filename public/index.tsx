@@ -242,25 +242,8 @@ const flattenObject = (obj: any, prefix = '') => {
  */
 const useTranslation = (lang: 'zh' | 'en') => {
   // 使用内嵌的 TRANSLATIONS 作为初始值，避免加载时显示空内容
-  const [translations, setTranslations] = useState<any>(flattenObject(TRANSLATIONS[lang]));
-
-  useEffect(() => {
-    const loadTranslations = async () => {
-      try {
-        const response = await fetch(`/local/${lang}.json`);
-        if (!response.ok) {
-          // 静默处理 404 错误，使用内嵌的 TRANSLATIONS
-          return;
-        }
-        const data = await response.json();
-        setTranslations(data);
-      } catch (error) {
-        // 静默处理错误，继续使用内嵌的 TRANSLATIONS
-      }
-    };
-
-    loadTranslations();
-  }, [lang]);
+  // 直接使用内嵌的 TRANSLATIONS，不加载外部文件
+  const translations = flattenObject(TRANSLATIONS[lang]);
 
   /**
    * 翻译函数
