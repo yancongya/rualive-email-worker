@@ -210,6 +210,23 @@ export default {
       });
     }
 
+    if (path === '/admin-v2' || path === '/admin-v2.html') {
+      // 新增 /admin-v2 路由
+      if (ASSETS) {
+        const adminV2Url = new URL('/admin-v2.html', request.url);
+        const assetResponse = await ASSETS.fetch(new Request(adminV2Url, { method: 'GET' }));
+        if (assetResponse && assetResponse.status !== 404) {
+          const newHeaders = new Headers(assetResponse.headers);
+          newHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+          return new Response(assetResponse.body, {
+            status: assetResponse.status,
+            headers: newHeaders
+          });
+        }
+      }
+      return new Response('管理后台V2页面未找到', { status: 404 });
+    }
+
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
       // 从public/admin.html文件读取管理仪表板HTML
       if (ASSETS) {
