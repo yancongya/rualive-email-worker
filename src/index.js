@@ -2495,20 +2495,25 @@ async function getWorkData(userId, date, env) {
     console.error('Database not available in getWorkData');
     return null;
   }
-  
+
   try {
     const result = await DB.prepare(
       'SELECT * FROM work_logs WHERE user_id = ? AND work_date = ?'
     )
       .bind(userId, date)
       .first();
+    
+    // 如果有数据，添加 last_work_date 字段（使用 work_date）
+    if (result && result.work_date) {
+      result.last_work_date = result.work_date;
+    }
+    
     return result;
   } catch (error) {
     console.error('Error in getWorkData:', error);
     return null;
   }
 }
-
 async function saveWorkData(userId, workData, env, date) {
   const DB = env.DB || env.rualive;
   // 如果没有传入日期，使用当天日期
