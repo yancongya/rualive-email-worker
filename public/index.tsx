@@ -248,11 +248,14 @@ const useTranslation = (lang: 'zh' | 'en') => {
     const loadTranslations = async () => {
       try {
         const response = await fetch(`/local/${lang}.json`);
+        if (!response.ok) {
+          // 静默处理 404 错误，使用内嵌的 TRANSLATIONS
+          return;
+        }
         const data = await response.json();
         setTranslations(data);
       } catch (error) {
-        console.error('Failed to load translations:', error);
-        // 如果加载失败，继续使用内嵌的 TRANSLATIONS
+        // 静默处理错误，继续使用内嵌的 TRANSLATIONS
       }
     };
 
