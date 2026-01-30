@@ -242,17 +242,23 @@ const flattenObject = (obj: any, prefix = '') => {
  */
 const useTranslation = (lang: 'zh' | 'en') => {
   // 使用内嵌的 TRANSLATIONS 作为初始值，避免加载时显示空内容
+  // 使用内嵌的 TRANSLATIONS 作为初始值，避免加载时显示空内容
   const [translations, setTranslations] = useState<any>(flattenObject(TRANSLATIONS[lang]));
 
   useEffect(() => {
     const loadTranslations = async () => {
       try {
         const response = await fetch(`/local/${lang}.json`);
+        if (!response.ok) {
+          // 文件不存在，使用内嵌的 TRANSLATIONS
+          return;
+        }
         const data = await response.json();
-        setTranslations(data);
+        if (data && Object.keys(data).length > 0) {
+          setTranslations(data);
+        }
       } catch (error) {
-        console.error('Failed to load translations:', error);
-        // 如果加载失败，继续使用内嵌的 TRANSLATIONS
+        // 静默处理错误，继续使用内嵌的 TRANSLATIONS
       }
     };
 
@@ -511,8 +517,8 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection, onAuthSuccess }: {
           console.log('[Auth] Redirecting to /admin');
           window.location.href = '/admin';
         } else {
-          console.log('[Auth] Redirecting to /user-v6');
-          window.location.href = '/user-v6';
+          console.log('[Auth] Redirecting to /user');
+          window.location.href = '/user';
         }
         return; // 防止继续执行
       } else {

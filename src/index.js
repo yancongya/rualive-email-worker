@@ -1,6 +1,26 @@
 /**
  * RuAlive Email Notification Worker
  * MVP版本 - 每日工作总结和紧急联系人监督
+ * Last Deploy: 2026-01-30 15:00 - Disabled /user-v6 route
+ *
+ * ==================== 重要路由配置说明 ====================
+ *
+ * 用户路由变更 (2026-01-30):
+ * - /user 路由现在返回 user-v6.html（新用户界面）
+ * - /user-v6 路由已删除，不再可用
+ * - 旧 user.html 文件已删除，不再构建
+ *
+ * 修改路由后的部署步骤（必须按顺序执行）:
+ * 1. 修改 public/vite.config.ts - 更新构建入口点
+ * 2. cd public && npm run build - React构建前端
+ * 3. cd .. && npx wrangler deploy - Worker部署到Cloudflare
+ * 4. 验证 /user 路由显示新界面
+ *
+ * ⚠️ 注意事项：
+ * - 修改路由配置后必须重新构建前端
+ * - 构建完成后必须部署 Worker 才能生效
+ * - 不要直接修改 dist 目录，必须通过构建生成
+ * =========================================================
  */
 
 // 导入认证模块（注意：在Cloudflare Workers中需要使用动态导入）
@@ -89,12 +109,14 @@ export default {
 
     // 处理静态文件（从 Assets 绑定）
     // 只对非 API 路径使用 Assets，避免消耗 request body
-    // 排除 /login、/user 和 /admin/login 路由，这些路由需要返回 index.html
+    // 排除 /login、/user、/user-v6 和 /admin/login 路由，这些路由需要特殊处理
     // 注意：/admin 路由不排除，因为它需要返回后端生成的管理员仪表板 HTML
-    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/admin/login') {
+    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/user-v6' && path !== '/admin/login') {
       try {
+        console.log('[Assets] Fetching static file for path:', path);
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
+          console.log('[Assets] Static file found, returning response');
           return assetResponse;
         }
       } catch (error) {
@@ -154,30 +176,19 @@ export default {
     }
 
     if (path === '/user') {
-      // 返回独立的 user.html 文件
+      // 返回新的用户页面（原 user-v6.html）
       if (ASSETS) {
         try {
-          const userUrl = new URL('/user.html', request.url);
+          const userUrl = new URL('/user-v6.html', request.url);
           const assetResponse = await ASSETS.fetch(new Request(userUrl, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
-            return assetResponse;
-          }
-        } catch (error) {
-          console.error('Failed to fetch user.html from Assets:', error);
-        }
-      }
-      // 如果 Assets 失败，返回 404
-      return new Response('Not Found', { status: 404 });
-    }
-
-    if (path === '/user-v6') {
-      // 返回新的 user-v6.html 文件（AI Studio 生成的用户页）
-      if (ASSETS) {
-        try {
-          const userV6Url = new URL('/user-v6.html', request.url);
-          const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
-          if (assetResponse && assetResponse.status !== 404) {
-            return assetResponse;
+            // 添加缓存控制头部，确保 Cloudflare 不缓存动态页面
+            const newHeaders = new Headers(assetResponse.headers);
+            newHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            return new Response(assetResponse.body, {
+              status: assetResponse.status,
+              headers: newHeaders
+            });
           }
         } catch (error) {
           console.error('Failed to fetch user-v6.html from Assets:', error);
@@ -187,789 +198,33 @@ export default {
       return new Response('Not Found', { status: 404 });
     }
 
-    if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
-      // 直接返回管理仪表板HTML，让前端自己处理验证
-      const adminHtml = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RuAlive 管理后台</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f3f4f6;
-      min-height: 100vh;
-    }
-    .navbar {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .navbar-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .navbar h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .logout-btn {
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      font-size: 0.875rem;
-      transition: background 0.3s;
-    }
-    .logout-btn:hover {
-      background: rgba(255,255,255,0.3);
-    }
-    .main-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .stat-card h3 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #f5576c;
-      margin-bottom: 0.5rem;
-    }
-    .stat-card p {
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1.5rem;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 1.5rem;
-    }
-    .card h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #111827;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid #f5576c;
-    }
-    .table-container {
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-    th, td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-      color: #374151;
-    }
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-    .badge-admin {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-    .badge-user {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    .badge-active {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    .badge-inactive {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: #f5576c;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #e04659;
-    }
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-    }
-    .btn-danger:hover {
-      background: #dc2626;
-    }
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #374151;
-      font-weight: 500;
-      font-size: 0.875rem;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.875rem;
-    }
-    .alert {
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      display: none;
-    }
-    .alert.show {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal.show {
-      display: flex;
-    }
-    .modal-content {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      width: 90%;
-      max-width: 500px;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6b7280;
-    }
-    .sensitive-info {
-      font-family: 'Courier New', monospace;
-      background: #f3f4f6;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar">
-    <div class="navbar-content">
-      <h1>🔐 RuAlive 管理后台</h1>
-      <div class="user-info">
-        <span id="userInfo">加载中...</span>
-        <button class="logout-btn" onclick="handleLogout()">退出登录</button>
-      </div>
-    </div>
-  </nav>
-
-  <div class="main-container">
-    <div id="alert" class="alert"></div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3 id="stat-users">0</h3>
-        <p>用户总数</p>
-      </div>
-      <div class="stat-card">
-        <h3 id="stat-invites">0</h3>
-        <p>邀请码总数</p>
-      </div>
-      <div class="stat-card">
-        <h3 id="stat-emails">0</h3>
-        <p>已发送邮件</p>
-      </div>
-      <div class="stat-card">
-        <h3 id="stat-today">0</h3>
-        <p>今日发送</p>
-      </div>
-    </div>
-
-    <div class="content-grid">
-      <div>
-        <div class="card">
-          <h2>🎫 邀请码管理</h2>
-          <div class="form-group">
-            <label>最大使用次数</label>
-            <input type="number" id="maxUses" value="1" min="1">
-          </div>
-          <div class="form-group">
-            <label>有效期（天）</label>
-            <input type="number" id="expiresInDays" value="30" min="1">
-          </div>
-          <button class="btn btn-primary" onclick="createInviteCode()">创建邀请码</button>
-        </div>
-
-        <div class="card">
-          <h2>📋 邀请码列表</h2>
-          <div class="table-container">
-            <table id="inviteCodesTable">
-              <thead>
-                <tr>
-                  <th>邀请码</th>
-                  <th>状态</th>
-                  <th>使用情况</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="4" style="text-align: center; color: #6b7280;">加载中...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🔑 API密钥管理</h2>
-          <div id="apiKeyStatus">
-            <p style="color: #6b7280; margin-bottom: 1rem;">加载中...</p>
-          </div>
-          <div class="form-group">
-            <label>新的API密钥</label>
-            <div style="position: relative;">
-              <input type="password" id="newApiKey" placeholder="re_xxxxxxxxxxxxxx" style="padding-right: 50px;">
-              <button type="button" onclick="toggleApiKeyVisibility()" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 5px;">
-                <span id="toggleIcon">👁️</span>
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>测试邮件接收邮箱（可选，留空则发送到管理员邮箱）</label>
-            <input type="email" id="testEmail" placeholder="test@example.com">
-          </div>
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="setApiKey()">更新密钥</button>
-            <button class="btn btn-secondary" onclick="testApiKey()">测试密钥</button>
-            <button class="btn btn-danger" onclick="deleteApiKey()">删除密钥</button>
-          </div>
-          <p style="font-size: 0.75rem; color: #6b7280; margin-top: 1rem;">
-            <strong>提示：</strong>密钥更新后立即生效，无需重新部署。测试密钥时如未输入新密钥，将使用已保存的密钥进行测试。
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <div class="card">
-          <h2>👥 用户管理</h2>
-          <div class="table-container">
-            <table id="usersTable">
-              <thead>
-                <tr>
-                  <th>用户名</th>
-                  <th>邮箱</th>
-                  <th>角色</th>
-                  <th>注册时间</th>
-                  <th>最后登录</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="6" style="text-align: center; color: #6b7280;">加载中...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>📧 邮件发送日志</h2>
-          <div class="table-container">
-            <table id="logsTable">
-              <thead>
-                <tr>
-                  <th>时间</th>
-                  <th>收件人类型</th>
-                  <th>收件人邮箱</th>
-                  <th>邮件类型</th>
-                  <th>状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="5" style="text-align: center; color: #6b7280;">加载中...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="passwordModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🔐 密码验证</h3>
-        <button class="modal-close" onclick="closePasswordModal()">&times;</button>
-      </div>
-      <div class="form-group">
-        <label>请输入管理员密码</label>
-        <input type="password" id="adminPassword" placeholder="请输入密码">
-      </div>
-      <button class="btn btn-primary" onclick="verifyPassword()">验证</button>
-      <button class="btn" onclick="closePasswordModal()">取消</button>
-    </div>
-  </div>
-
-  <script>
-    const API_BASE = window.location.origin;
-    let pendingAction = null;
-
-    function showAlert(message, type = 'success') {
-      const alert = document.getElementById('alert');
-      const icon = type === 'success' ? '✅' : '❌';
-      alert.className = 'alert alert-' + type + ' show';
-      alert.innerHTML = '<span>' + icon + '</span><span>' + message + '</span>';
-      setTimeout(() => alert.classList.remove('show'), 4000);
-    }
-
-    function getAuthHeader() {
-      const token = localStorage.getItem('token');
-      return { 'Authorization': 'Bearer ' + token };
-    }
-
-    function maskEmail(email) {
-      if (!email) return '-';
-      const [name, domain] = email.split('@');
-      if (name.length <= 2) return name[0] + '***@' + domain;
-      return name.substring(0, 2) + '***@' + domain;
-    }
-
-    async function loadUserInfo() {
-      try {
-        const response = await fetch(API_BASE + '/api/auth/me', {
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        if (data.success && data.user && data.user.role === 'admin') {
-          document.getElementById('userInfo').textContent = data.user.username;
-          loadStats();
-          loadUsers();
-          loadInviteCodes();
-          loadLogs();
-          loadApiKey();
-        } else {
-          window.location.href = '/login';
+    if (path === '/user-v6') {
+      // /user-v6 路由已废弃，重定向到 /user
+      console.log('[Route] /user-v6 accessed, redirecting to /user');
+      return new Response(null, {
+        status: 308, // Permanent Redirect
+        headers: {
+          'Location': '/user',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
         }
-      } catch (error) {
-        window.location.href = '/login';
-      }
-    }
-
-    async function loadStats() {
-      try {
-        const usersResponse = await fetch(API_BASE + '/api/admin/users', {
-          headers: getAuthHeader()
-        });
-        const usersData = await usersResponse.json();
-
-        const invitesResponse = await fetch(API_BASE + '/api/admin/invite-codes', {
-          headers: getAuthHeader()
-        });
-        const invitesData = await invitesResponse.json();
-
-        if (usersData.success) document.getElementById('stat-users').textContent = usersData.users.length;
-        if (invitesData.success) document.getElementById('stat-invites').textContent = invitesData.codes.length;
-      } catch (error) {
-        console.error('加载统计失败:', error);
-      }
-    }
-
-    async function loadUsers() {
-      try {
-        const response = await fetch(API_BASE + '/api/admin/users', {
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          const tbody = document.querySelector('#usersTable tbody');
-          tbody.innerHTML = data.users.map(user => \`
-            <tr>
-              <td>\${user.username}</td>
-              <td><span class="sensitive-info">\${maskEmail(user.email)}</span></td>
-              <td><span class="badge badge-\${user.role}">\${user.role === 'admin' ? '管理员' : '用户'}</span></td>
-              <td>\${new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
-              <td>\${user.last_login ? new Date(user.last_login).toLocaleDateString('zh-CN') : '从未登录'}</td>
-              <td><button class="btn btn-sm" onclick="showUserDetail('\${user.id}')">查看详情</button></td>
-            </tr>
-          \`).join('');
-        }
-      } catch (error) {
-        console.error('加载用户失败:', error);
-      }
-    }
-
-    async function loadInviteCodes() {
-      try {
-        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          const tbody = document.querySelector('#inviteCodesTable tbody');
-          tbody.innerHTML = data.codes.map(code => \`
-            <tr>
-              <td><span class="sensitive-info">\${code.code}</span></td>
-              <td><span class="badge badge-\${code.is_active ? 'active' : 'inactive'}">\${code.is_active ? '有效' : '已失效'}</span></td>
-              <td>\${code.used_count}/\${code.max_uses}</td>
-              <td>\${code.is_active ? \`<button class="btn btn-sm btn-danger" onclick="deleteInviteCode('\${code.id}')">删除</button>\` : '-'}</td>
-            </tr>
-          \`).join('');
-        }
-      } catch (error) {
-        console.error('加载邀请码失败:', error);
-      }
-    }
-
-    async function loadApiKey() {
-      try {
-        const response = await fetch(API_BASE + '/api/admin/api-key', {
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        const statusDiv = document.getElementById('apiKeyStatus');
-        const inputField = document.getElementById('newApiKey');
-
-        if (data.success) {
-          if (data.isSet) {
-            // 将已保存的密钥填充到输入框
-            inputField.value = data.apiKey;
-            statusDiv.innerHTML = \`
-              <p style="color: #10b981; margin-bottom: 1rem;">✅ API密钥已设置</p>
-              <p style="font-size: 0.875rem; color: #6b7280;">当前密钥: <span class="sensitive-info">\${data.apiKey}</span></p>
-            \`;
-          } else {
-            inputField.value = '';
-            statusDiv.innerHTML = \`
-              <p style="color: #ef4444; margin-bottom: 1rem;">⚠️ API密钥未设置</p>
-              <p style="font-size: 0.875rem; color: #6b7280;">请设置Resend API密钥以启用邮件发送功能</p>
-            \`;
-          }
-        } else {
-          statusDiv.innerHTML = \`<p style="color: #ef4444; margin-bottom: 1rem;">加载失败: \${data.error}</p>\`;
-        }
-      } catch (error) {
-        document.getElementById('apiKeyStatus').innerHTML = \`<p style="color: #ef4444; margin-bottom: 1rem;">加载失败: \${error.message}</p>\`;
-      }
-    }
-
-    function toggleApiKeyVisibility() {
-      const input = document.getElementById('newApiKey');
-      const icon = document.getElementById('toggleIcon');
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.textContent = '🙈';
-      } else {
-        input.type = 'password';
-        icon.textContent = '👁️';
-      }
-    }
-
-    async function setApiKey() {
-      const apiKey = document.getElementById('newApiKey').value.trim();
-      if (!apiKey) {
-        showAlert('请输入API密钥', 'error');
-        return;
-      }
-
-      try {
-        const response = await fetch(API_BASE + '/api/admin/api-key', {
-          method: 'POST',
-          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          showAlert('API密钥验证成功！请按照以下命令更新：');
-          alert(\`请复制以下命令并在Worker目录中运行：\n\n\${data.message}\n\n然后运行: wrangler deploy\`);
-          document.getElementById('newApiKey').value = '';
-        } else {
-          showAlert('设置失败: ' + data.error, 'error');
-        }
-      } catch (error) {
-        showAlert('设置失败: ' + error.message, 'error');
-      }
-    }
-
-    async function testApiKey() {
-      let apiKey = document.getElementById('newApiKey').value.trim();
-      const testEmail = document.getElementById('testEmail').value.trim();
-
-      // 如果未输入新密钥，使用已保存的密钥
-      if (!apiKey) {
-        try {
-          const response = await fetch(API_BASE + '/api/admin/api-key', {
-            headers: getAuthHeader()
-          });
-          const data = await response.json();
-          if (data.success && data.apiKey) {
-            apiKey = data.apiKey;
-          } else {
-            showAlert('未找到已保存的API密钥，请输入新密钥进行测试', 'error');
-            return;
-          }
-        } catch (error) {
-          showAlert('获取已保存的密钥失败: ' + error.message, 'error');
-          return;
-        }
-      }
-
-      try {
-        const response = await fetch(API_BASE + '/api/admin/api-key/test', {
-          method: 'POST',
-          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey, testEmail })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          const recipient = testEmail || '管理员邮箱';
-          showAlert(data.message);
-        } else {
-          showAlert('测试失败: ' + data.error, 'error');
-        }
-      } catch (error) {
-        showAlert('测试失败: ' + error.message, 'error');
-      }
-    }
-
-    async function deleteApiKey() {
-      if (!confirm('确定要删除API密钥吗？删除后将无法发送邮件。')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(API_BASE + '/api/admin/api-key', {
-          method: 'DELETE',
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          showAlert('请按照以下命令删除API密钥：');
-          alert(\`请复制以下命令并在Worker目录中运行：\n\n\${data.message}\n\n然后运行: wrangler deploy\`);
-          loadApiKey();
-        } else {
-          showAlert('删除失败: ' + data.error, 'error');
-        }
-      } catch (error) {
-        showAlert('删除失败: ' + error.message, 'error');
-      }
-    }
-
-    async function loadLogs() {
-      try {
-        const response = await fetch(API_BASE + '/api/logs?limit=20', {
-          headers: getAuthHeader()
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          const tbody = document.querySelector('#logsTable tbody');
-          tbody.innerHTML = data.data.map(log => \`
-            <tr>
-              <td>\${new Date(log.sent_at).toLocaleString('zh-CN')}</td>
-              <td>\${log.recipient_type === 'user' ? '用户' : '紧急联系人'}</td>
-              <td><span class="sensitive-info">\${maskEmail(log.recipient_email)}</span></td>
-              <td>\${log.email_type === 'summary' ? '总结' : '警告'}</td>
-              <td><span class="badge badge-\${log.status === 'success' ? 'active' : 'inactive'}">\${log.status === 'success' ? '成功' : '失败'}</span></td>
-            </tr>
-          \`).join('');
-        }
-      } catch (error) {
-        console.error('加载日志失败:', error);
-      }
-    }
-
-    async function createInviteCode() {
-      const maxUses = parseInt(document.getElementById('maxUses').value);
-      const expiresInDays = parseInt(document.getElementById('expiresInDays').value);
-
-      try {
-        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
-          method: 'POST',
-          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ maxUses, expiresInDays })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          showAlert('邀请码创建成功: ' + data.code);
-          loadInviteCodes();
-          loadStats();
-        } else {
-          showAlert('创建失败: ' + data.error, 'error');
-        }
-      } catch (error) {
-        showAlert('创建失败: ' + error.message, 'error');
-      }
-    }
-
-    function deleteInviteCode(codeId) {
-      pendingAction = async () => {
-        try {
-          const response = await fetch(API_BASE + '/api/admin/invite-codes?id=' + codeId, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-          });
-          const data = await response.json();
-
-          if (data.success) {
-            showAlert('邀请码已删除');
-            loadInviteCodes();
-            loadStats();
-          } else {
-            showAlert('删除失败: ' + data.error, 'error');
-          }
-        } catch (error) {
-          showAlert('删除失败: ' + error.message, 'error');
-        }
-      };
-      document.getElementById('passwordModal').classList.add('show');
-    }
-
-    function showUserDetail(userId) {
-      pendingAction = async () => {
-        try {
-          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
-            headers: getAuthHeader()
-          });
-          const usersData = await usersResponse.json();
-
-          if (usersData.success) {
-            const user = usersData.users.find(u => u.id === userId);
-            if (user) {
-              alert('用户详情:\\n\\n用户名: ' + user.username + '\\n邮箱: ' + user.email + '\\n角色: ' + user.role + '\\n注册时间: ' + new Date(user.created_at).toLocaleString('zh-CN') + '\\n最后登录: ' + (user.last_login ? new Date(user.last_login).toLocaleString('zh-CN') : '从未登录'));
-            }
-          }
-        } catch (error) {
-          showAlert('获取用户详情失败: ' + error.message, 'error');
-        }
-      };
-      document.getElementById('passwordModal').classList.add('show');
-    }
-
-    function verifyPassword() {
-      if (pendingAction) {
-        pendingAction();
-        pendingAction = null;
-      }
-      closePasswordModal();
-    }
-
-    function closePasswordModal() {
-      document.getElementById('passwordModal').classList.remove('show');
-      document.getElementById('adminPassword').value = '';
-      pendingAction = null;
-    }
-
-    async function handleLogout() {
-      try {
-        await fetch(API_BASE + '/api/auth/logout', {
-          method: 'POST',
-          headers: getAuthHeader()
-        });
-      } catch (error) {
-        console.error('登出失败:', error);
-      } finally {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
-      }
-    }
-
-    window.onload = loadUserInfo;
-  </script>
-</body>
-</html>`;
-      return new Response(adminHtml, {
-        headers: { 'Content-Type': 'text/html;charset=UTF-8' }
       });
+    }
+
+    if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
+      // 从public/admin.html文件读取管理仪表板HTML
+      if (ASSETS) {
+        const adminUrl = new URL('/admin.html', request.url);
+        const assetResponse = await ASSETS.fetch(new Request(adminUrl, { method: 'GET' }));
+        if (assetResponse && assetResponse.status !== 404) {
+          const newHeaders = new Headers(assetResponse.headers);
+          newHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+          return new Response(assetResponse.body, {
+            status: assetResponse.status,
+            headers: newHeaders
+          });
+        }
+      }
+      return new Response('管理后台页面未找到', { status: 404 });
     }
 
     if (path === '/health') {
@@ -997,6 +252,10 @@ export default {
       return handleUpdateCurrentUser(request, env);
     }
 
+    if (path === '/api/auth/change-password' && request.method === 'POST') {
+      return handleChangePassword(request, env);
+    }
+
     if (path === '/api/auth/init' && request.method === 'POST') {
       return handleInitAdmin(request, env);
     }
@@ -1016,6 +275,31 @@ export default {
 
     if (path === '/api/admin/users' && request.method === 'GET') {
       return handleGetUsers(request, env);
+    }
+
+    // 用户管理路由（仅管理员）
+    if (path.match(/^\/api\/admin\/users\/[^\/]+$/) && request.method === 'DELETE') {
+      return handleDeleteUser(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/reset-password$/) && request.method === 'POST') {
+      return handleResetPassword(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-stats$/) && request.method === 'GET') {
+      return handleGetUserEmailStats(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-limit$/) && request.method === 'POST') {
+      return handleSetEmailLimit(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-limit-status$/) && request.method === 'GET') {
+      return handleGetEmailLimitStatus(request, env);
+    }
+
+    if (path === '/api/admin/email-stats' && request.method === 'GET') {
+      return handleGetEmailStats(request, env);
     }
 
     // API密钥管理（仅管理员）
@@ -1120,7 +404,6 @@ async function handleCronTrigger(env) {
 
 // 处理单个用户
 async function processUser(user, env) {
-  const today = new Date().toISOString().split('T')[0];
   const userId = user.id;
 
   // 获取用户配置
@@ -1139,39 +422,51 @@ async function processUser(user, env) {
   const currentTime = `${String(userNow.getHours()).padStart(2, '0')}:${String(userNow.getMinutes()).padStart(2, '0')}`;
   const currentDayOfWeek = userNow.getDay(); // 0-6, 0=Sunday, 1=Monday, etc.
 
+  // 使用用户时区的日期（而不是 UTC 日期）
+  const today = `${userNow.getFullYear()}-${String(userNow.getMonth() + 1).padStart(2, '0')}-${String(userNow.getDate()).padStart(2, '0')}`;
+
+  console.log(`User ${userId} - today: ${today}, currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}, timezone: ${userTimezone}`);
+
   console.log(`User ${userId} - currentTime: ${currentTime}, currentDay: ${currentDayOfWeek}, timezone: ${userTimezone}`);
+
+  // 解析通知周期配置（前端传递的是 JSON 数组字符串，如 "[1,2,3,4,5]"）
+  let scheduleDays = [];
+  try {
+    const schedule = config.notification_schedule || '[]';
+    // 如果是 JSON 数组字符串，解析它
+    if (schedule.startsWith('[')) {
+      scheduleDays = JSON.parse(schedule);
+    } else if (schedule === 'weekdays') {
+      // 兼容旧配置格式
+      scheduleDays = [1, 2, 3, 4, 5];
+    } else if (schedule === 'all') {
+      scheduleDays = [0, 1, 2, 3, 4, 5, 6];
+    }
+  } catch (e) {
+    console.error('Failed to parse notification_schedule:', e);
+    scheduleDays = [0, 1, 2, 3, 4, 5, 6]; // 默认每天
+  }
+
+  // 检查今天是否在通知周期中
+  const shouldSendToday = scheduleDays.includes(currentDayOfWeek);
+
+  console.log(`User ${userId} - scheduleDays: [${scheduleDays.join(',')}], shouldSendToday: ${shouldSendToday}`);
 
   // 检查是否应该发送紧急联系人通知
   let shouldSendEmergency = false;
-  if (config.enable_emergency_notification && config.emergency_email) {
-    // 检查发送规则
-    const schedule = config.notification_schedule || 'all';
-    let shouldSendBySchedule = true;
-    
-    if (schedule === 'weekdays') {
-      // 仅工作日（周一至周五）
-      shouldSendBySchedule = currentDayOfWeek >= 1 && currentDayOfWeek <= 5;
-    } else if (schedule === 'custom') {
-      // 自定义规则
-      try {
-        const excludedDays = JSON.parse(config.notification_excluded_days || '[]');
-        shouldSendBySchedule = !excludedDays.includes(String(currentDayOfWeek));
-      } catch (e) {
-        console.error('Failed to parse excluded days:', e);
-        shouldSendBySchedule = true;
-      }
-    }
-    
-    shouldSendEmergency = shouldSendBySchedule;
+  if (config.enable_emergency_notification && config.emergency_email && shouldSendToday) {
+    shouldSendEmergency = true;
   }
 
   // 检查是否到了用户通知时间
-  const userNotificationTime = config.user_notification_time || '22:00';
-  const isUserNotificationTime = currentTime === userNotificationTime;
+  const userNotificationHour = config.user_notification_hour !== undefined ? config.user_notification_hour : 22;
+  const userNotificationTime = `${String(userNotificationHour).padStart(2, '0')}:00`;
+  const isUserNotificationTime = currentTime === userNotificationTime && shouldSendToday;
 
   // 检查是否到了紧急联系人通知时间
-  const emergencyNotificationTime = config.emergency_notification_time || '22:00';
-  const isEmergencyNotificationTime = currentTime === emergencyNotificationTime;
+  const emergencyNotificationHour = config.emergency_notification_hour !== undefined ? config.emergency_notification_hour : 22;
+  const emergencyNotificationTime = `${String(emergencyNotificationHour).padStart(2, '0')}:00`;
+  const isEmergencyNotificationTime = currentTime === emergencyNotificationTime && shouldSendToday;
 
   console.log(`User ${userId} - userTime: ${userNotificationTime}, emergencyTime: ${emergencyNotificationTime}, shouldSendEmergency: ${shouldSendEmergency}`);
 
@@ -1185,8 +480,8 @@ async function processUser(user, env) {
   console.log(`User ${userId} - hasWork: ${hasWork}, isSufficient: ${isSufficient}`);
 
   // 根据时间和工作状态发送邮件
-  if (isUserNotificationTime && hasWork && isSufficient) {
-    // 到了用户通知时间且工作充足，发送总结给用户
+  if (isUserNotificationTime && hasWork) {
+    // 到了用户通知时间且有工作数据，发送总结给用户（不管工作时长）
     await sendDailySummary(user, workData, config, env);
   } else if (isEmergencyNotificationTime && shouldSendEmergency && (!hasWork || !isSufficient)) {
     // 到了紧急联系人通知时间、启用了紧急联系人通知、且工作不足，发送警告给紧急联系人
@@ -1238,7 +533,8 @@ async function handleInitAdmin(request, env) {
     }
     
     const adminId = 'admin_' + Date.now();
-    const passwordHash = await authModule.hashPassword('admin123');
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash('admin123', 10);
     
     await DB.prepare(
       'INSERT INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)'
@@ -1298,7 +594,8 @@ async function handleRegister(request, env) {
     
     // 创建用户
     const userId = authModule.generateUserId();
-    const passwordHash = await authModule.hashPassword(password);
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
     
     await DB.prepare(
       'INSERT INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)'
@@ -1328,7 +625,10 @@ async function handleLogin(request, env) {
     const body = await request.json();
     const { email, password } = body;
     
+    console.log('[Login] Attempt:', { email, hasPassword: !!password });
+    
     if (!email || !password) {
+      console.log('[Login] Missing parameters');
       return Response.json({ success: false, error: '缺少必要参数' }, { status: 400 });
     }
     
@@ -1336,12 +636,19 @@ async function handleLogin(request, env) {
       'SELECT id, email, username, password_hash, role FROM users WHERE email = ?'
     ).bind(email).first();
     
+    console.log('[Login] User found:', !!user, user ? user.email : 'none');
+    
     if (!user) {
+      console.log('[Login] User not found');
       return Response.json({ success: false, error: '邮箱或密码错误' }, { status: 401 });
     }
     
-    const isValid = await authModule.verifyPassword(password, user.password_hash);
+    const bcrypt = require('bcryptjs');
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    console.log('[Login] Password valid:', isValid);
+    
     if (!isValid) {
+      console.log('[Login] Invalid password');
       return Response.json({ success: false, error: '邮箱或密码错误' }, { status: 401 });
     }
     
@@ -1402,20 +709,32 @@ async function handleGetCurrentUser(request, env) {
   const DB = env.DB || env.rualive;
   
   try {
+    console.log('[GetCurrentUser] Starting...');
     const payload = await verifyAuth(request, env);
+    console.log('[GetCurrentUser] Payload:', payload ? { userId: payload.userId, role: payload.role } : 'null');
+    
     if (!payload) {
+      console.log('[GetCurrentUser] No payload, returning 401');
       return Response.json({ success: false, error: '未授权' }, { status: 401 });
     }
     
     const authHeader = request.headers.get('Authorization');
+    console.log('[GetCurrentUser] Auth header exists:', !!authHeader);
     const token = authHeader.substring(7);
+    console.log('[GetCurrentUser] Token (first 20 chars):', token.substring(0, 20));
     
     // 检查会话是否存在
     const session = await DB.prepare(
       'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime("now")'
     ).bind(token).first();
     
+    console.log('[GetCurrentUser] Session found:', !!session);
+    if (session) {
+      console.log('[GetCurrentUser] Session user_id:', session.user_id);
+    }
+    
     if (!session) {
+      console.log('[GetCurrentUser] No valid session, returning 401');
       return Response.json({ success: false, error: '会话已过期' }, { status: 401 });
     }
     
@@ -1520,6 +839,63 @@ async function handleUpdateCurrentUser(request, env) {
   }
 }
 
+// 修改密码
+async function handleChangePassword(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  try {
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ success: false, error: '未授权' }, { status: 401 });
+    }
+    
+    const body = await request.json();
+    const { currentPassword, newPassword } = body;
+    
+    // 验证输入
+    if (!currentPassword || !newPassword) {
+      return Response.json({ success: false, error: '请填写所有字段' }, { status: 400 });
+    }
+    
+    if (newPassword.length < 6) {
+      return Response.json({ success: false, error: '新密码长度至少需要6个字符' }, { status: 400 });
+    }
+    
+    // 获取当前用户信息
+    const user = await DB.prepare(
+      'SELECT id, email, username, password_hash FROM users WHERE id = ?'
+    ).bind(payload.userId).first();
+    
+    if (!user) {
+      return Response.json({ success: false, error: '用户不存在' }, { status: 404 });
+    }
+    
+    // 验证当前密码
+    const bcrypt = require('bcryptjs');
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    
+    if (!isCurrentPasswordValid) {
+      return Response.json({ success: false, error: '当前密码不正确' }, { status: 401 });
+    }
+    
+    // 生成新密码哈希
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    // 更新密码
+    await DB.prepare(
+      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(newPasswordHash, payload.userId).run();
+    
+    return Response.json({ 
+      success: true, 
+      message: '密码修改成功'
+    });
+  } catch (error) {
+    console.error('[ChangePassword] Error:', error);
+    return Response.json({ success: false, error: '密码修改失败' }, { status: 500 });
+  }
+}
+
 // 创建邀请码（仅管理员）
 async function handleCreateInviteCode(request, env) {
   const DB = env.DB || env.rualive;
@@ -1602,17 +978,21 @@ async function handleDeleteInviteCode(request, env) {
 // 获取用户列表（仅管理员）
 async function handleGetUsers(request, env) {
   const DB = env.DB || env.rualive;
-  
+
   try {
     const payload = await verifyAuth(request, env);
     if (!payload || payload.role !== 'admin') {
       return Response.json({ success: false, error: '权限不足' }, { status: 403 });
     }
-    
+
     const users = await DB.prepare(
-      'SELECT id, email, username, role, created_at, last_login FROM users ORDER BY created_at DESC'
+      `SELECT u.id, u.email, u.username, u.role, u.created_at, u.last_login,
+              uc.daily_email_limit, uc.daily_email_count, uc.last_email_date
+       FROM users u
+       LEFT JOIN user_configs uc ON u.id = uc.user_id
+       ORDER BY u.created_at DESC`
     ).all();
-    
+
     return Response.json({
       success: true,
       users: users.results
@@ -1938,7 +1318,7 @@ async function handleTestApiKey(request, env) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: env.FROM_EMAIL,
+          from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
           to: [recipientEmail],
           subject: testSubject,
           html: testHtml
@@ -1973,6 +1353,581 @@ async function handleTestApiKey(request, env) {
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
+}
+
+// ==================== 用户管理功能 - 管理员专用 ====================
+
+// 删除用户
+async function handleDeleteUser(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可删除用户'
+      }, { status: 403 });
+    }
+
+    // 2. 获取要删除的用户ID
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userIdToDelete = pathParts[pathParts.length - 1];
+
+    // 3. 防止删除自己
+    if (userIdToDelete === payload.userId) {
+      return Response.json({
+        success: false,
+        error: '无法删除自己的账户'
+      }, { status: 400 });
+    }
+
+    // 4. 检查用户是否存在
+    const userToDelete = await DB.prepare(
+      'SELECT id, username, role FROM users WHERE id = ?'
+    ).bind(userIdToDelete).first();
+
+    if (!userToDelete) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 5. 检查是否是最后一个管理员
+    if (userToDelete.role === 'admin') {
+      const adminCount = await DB.prepare(
+        'SELECT COUNT(*) as count FROM users WHERE role = ?'
+      ).bind('admin').first();
+
+      if (adminCount.count <= 1) {
+        return Response.json({
+          success: false,
+          error: '无法删除最后一个管理员账户'
+        }, { status: 400 });
+      }
+    }
+
+    // 6. 执行删除（级联删除会自动处理关联表）
+    await DB.prepare('DELETE FROM users WHERE id = ?').bind(userIdToDelete).run();
+
+    // 7. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} deleted user ${userIdToDelete} (${userToDelete.username})`);
+
+    // 8. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '用户已成功删除',
+      deletedUserId: userIdToDelete,
+      deletedUsername: userToDelete.username
+    });
+
+  } catch (error) {
+    console.error('[DeleteUser] Error:', error);
+    return Response.json({
+      success: false,
+      error: '删除用户失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 重置密码
+async function handleResetPassword(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可重置密码'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和请求数据
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const body = await request.json();
+
+    // 自动判断模式：如果提供了newPassword则使用'set'模式，否则使用'generate'模式
+    const method = body.method || (body.newPassword ? 'set' : 'generate');
+
+    // 3. 检查用户是否存在
+    const user = await DB.prepare(
+      'SELECT id, username, email FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 4. 生成或设置密码
+    let newPassword;
+    if (method === 'generate') {
+      // 生成12位随机密码
+      newPassword = generateSecurePassword(12);
+    } else if (method === 'set') {
+      // 验证密码长度（管理员重置密码只需至少6位）
+      if (!body.newPassword || body.newPassword.length < 6) {
+        return Response.json({
+          success: false,
+          error: '密码长度至少需要6个字符'
+        }, { status: 400 });
+      }
+      newPassword = body.newPassword;
+    }
+
+    // 5. 生成密码哈希（使用bcrypt，与验证保持一致）
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // 6. 更新用户密码和强制修改标记
+    await DB.prepare(`
+      UPDATE users
+      SET password_hash = ?,
+          force_password_reset = 1,
+          password_reset_token = ?,
+          password_reset_expires_at = ?
+      WHERE id = ?
+    `).bind(
+      passwordHash,
+      null,
+      null,
+      userId
+    ).run();
+
+    // 7. 发送邮件通知
+    const emailSubject = 'RuAlive 密码重置通知';
+    const emailBody = `
+      <h2>密码已重置</h2>
+      <p>您好，${user.username}：</p>
+      <p>您的密码已被管理员重置。</p>
+      <p>临时密码：<strong>${newPassword}</strong></p>
+      <p>请使用此密码登录，登录后请立即修改密码。</p>
+      <p>临时密码有效期：24小时</p>
+      <p>如果这不是您本人的操作，请立即联系管理员。</p>
+    `;
+
+    // 获取API密钥
+    const KV = env.KV;
+    let actualApiKey = '';
+    if (KV) {
+      actualApiKey = await KV.get('RESEND_API_KEY') || '';
+    }
+    if (!actualApiKey) {
+      actualApiKey = env.RESEND_API_KEY || '';
+    }
+
+    let emailSent = false;
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + actualApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
+          to: [user.email],
+          subject: emailSubject,
+          html: emailBody
+        })
+      });
+      emailSent = response.ok;
+    } catch (error) {
+      console.error('[ResetPassword] Email send failed:', error);
+    }
+
+    // 8. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} reset password for user ${userId} (${user.username})`);
+
+    // 9. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '密码已重置',
+      userId,
+      username: user.username,
+      method,
+      emailSent
+    });
+
+  } catch (error) {
+    console.error('[ResetPassword] Error:', error);
+    return Response.json({
+      success: false,
+      error: '重置密码失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取用户邮件统计
+async function handleGetUserEmailStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看统计'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和查询参数
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const startDate = url.searchParams.get('startDate') || '1970-01-01';
+    const endDate = url.searchParams.get('endDate') || new Date().toISOString().split('T')[0];
+    const status = url.searchParams.get('status') || 'all';
+
+    // 3. 获取用户信息
+    const user = await DB.prepare(
+      'SELECT id, username, email FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 4. 构建查询条件
+    let query = 'SELECT * FROM email_logs WHERE user_id = ? AND sent_at >= ? AND sent_at <= ?';
+    const params = [userId, startDate + ' 00:00:00', endDate + ' 23:59:59'];
+
+    if (status !== 'all') {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    // 5. 获取统计信息
+    const logs = await DB.prepare(query).bind(...params).all();
+
+    const totalSent = logs.results.filter(l => l.status === 'sent').length;
+    const totalFailed = logs.results.filter(l => l.status === 'failed').length;
+    const totalPending = logs.results.filter(l => l.status === 'pending').length;
+    const lastSentAt = logs.results.filter(l => l.status === 'sent').sort((a, b) =>
+      new Date(b.sent_at) - new Date(a.sent_at)
+    )[0]?.sent_at;
+
+    // 6. 按日期分组统计
+    const dailyStats = {};
+    logs.results.forEach(log => {
+      const date = log.sent_at ? log.sent_at.split(' ')[0] : log.created_at.split(' ')[0];
+      if (!dailyStats[date]) {
+        dailyStats[date] = { sent: 0, failed: 0, pending: 0 };
+      }
+      dailyStats[date][log.status]++;
+    });
+
+    const dailyStatsArray = Object.entries(dailyStats).map(([date, stats]) => ({
+      date,
+      ...stats
+    }));
+
+    // 7. 获取最近的10条日志
+    const recentLogs = logs.results
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10)
+      .map(log => ({
+        id: log.id,
+        subject: log.subject,
+        status: log.status,
+        sentAt: log.sent_at,
+        errorMessage: log.error_message
+      }));
+
+    // 8. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        totalSent,
+        totalFailed,
+        totalPending,
+        lastSentAt,
+        dailyStats: dailyStatsArray,
+        recentLogs
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetUserEmailStats] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取统计失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取全局邮件统计
+async function handleGetEmailStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看统计'
+      }, { status: 403 });
+    }
+
+    // 2. 获取全局统计
+    const totalUsers = await DB.prepare('SELECT COUNT(*) as count FROM users').first();
+    const totalSent = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('sent').first();
+    const totalFailed = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('failed').first();
+    const totalPending = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('pending').first();
+
+    // 3. 获取发送最多的用户
+    const topUsers = await DB.prepare(`
+      SELECT u.id, u.username, COUNT(e.id) as totalSent
+      FROM users u
+      LEFT JOIN email_logs e ON u.id = e.user_id AND e.status = 'sent'
+      GROUP BY u.id
+      ORDER BY totalSent DESC
+      LIMIT 10
+    `).all();
+
+    // 4. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        totalUsers: totalUsers.count,
+        totalSent: totalSent.count,
+        totalFailed: totalFailed.count,
+        totalPending: totalPending.count,
+        topUsers: topUsers.results
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetEmailStats] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取统计失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 设置邮件限制
+async function handleSetEmailLimit(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可设置限制'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和请求数据
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const body = await request.json();
+    const dailyEmailLimit = body.dailyEmailLimit;
+
+    // 3. 验证限制值
+    if (dailyEmailLimit < 0 || dailyEmailLimit > 100) {
+      return Response.json({
+        success: false,
+        error: '邮件限制必须在 0-100 之间'
+      }, { status: 400 });
+    }
+
+    // 4. 检查用户是否存在
+    const user = await DB.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 5. 更新邮件限制
+    await DB.prepare(`
+      INSERT INTO user_configs (user_id, daily_email_limit)
+      VALUES (?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET daily_email_limit = excluded.daily_email_limit
+    `).bind(userId, dailyEmailLimit).run();
+
+    // 6. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} set email limit to ${dailyEmailLimit} for user ${userId}`);
+
+    // 7. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '邮件限制已设置',
+      userId,
+      dailyEmailLimit
+    });
+
+  } catch (error) {
+    console.error('[SetEmailLimit] Error:', error);
+    return Response.json({
+      success: false,
+      error: '设置限制失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取邮件限制状态
+async function handleGetEmailLimitStatus(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看状态'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+
+    // 3. 获取配置
+    const config = await DB.prepare(
+      'SELECT daily_email_limit, daily_email_count, last_email_date FROM user_configs WHERE user_id = ?'
+    ).bind(userId).first();
+
+    // 4. 如果配置不存在，返回默认值
+    if (!config) {
+      return Response.json({
+        success: true,
+        data: {
+          userId,
+          dailyEmailLimit: 10,
+          dailyEmailCount: 0,
+          remaining: 10,
+          lastEmailDate: null
+        }
+      });
+    }
+
+    // 5. 检查是否是新的一天
+    const today = new Date().toISOString().split('T')[0];
+    let dailyEmailCount = config.daily_email_count;
+    if (config.last_email_date !== today) {
+      dailyEmailCount = 0;
+    }
+
+    // 6. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        userId,
+        dailyEmailLimit: config.daily_email_limit,
+        dailyEmailCount,
+        remaining: config.daily_email_limit - dailyEmailCount,
+        lastEmailDate: config.last_email_date
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetEmailLimitStatus] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取状态失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 检查邮件限制
+async function checkEmailLimit(userId, env) {
+  const DB = env.DB || env.rualive;
+  const today = new Date().toISOString().split('T')[0];
+
+  // 获取用户配置
+  const config = await DB.prepare(
+    'SELECT daily_email_limit, daily_email_count, last_email_date FROM user_configs WHERE user_id = ?'
+  ).bind(userId).first();
+
+  // 如果配置不存在，创建默认配置
+  if (!config) {
+    await DB.prepare(`
+      INSERT INTO user_configs (user_id, daily_email_limit, daily_email_count, last_email_date)
+      VALUES (?, 10, 0, ?)
+    `).bind(userId, today).run();
+    return { allowed: true, remaining: 10 };
+  }
+
+  // 如果是新的一天，重置计数器
+  if (config.last_email_date !== today) {
+    await DB.prepare(`
+      UPDATE user_configs
+      SET daily_email_count = 0, last_email_date = ?
+      WHERE user_id = ?
+    `).bind(today, userId).run();
+    config.daily_email_count = 0;
+  }
+
+  // 检查是否超限
+  if (config.daily_email_count >= config.daily_email_limit) {
+    return {
+      allowed: false,
+      reason: 'daily_limit_exceeded',
+      limit: config.daily_email_limit,
+      current: config.daily_email_count,
+      message: `每日发送次数已达上限 (${config.daily_email_limit})`
+    };
+  }
+
+  return {
+    allowed: true,
+    remaining: config.daily_email_limit - config.daily_email_count
+  };
+}
+
+// 增加发送计数
+async function incrementEmailCount(userId, env) {
+  const DB = env.DB || env.rualive;
+  await DB.prepare(`
+    UPDATE user_configs
+    SET daily_email_count = daily_email_count + 1
+    WHERE user_id = ?
+  `).bind(userId).run();
+}
+
+// 生成安全密码
+function generateSecurePassword(length = 12) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+// 验证密码强度
+function isPasswordStrong(password) {
+  // 至少8位，包含大小写字母、数字和特殊字符
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return strongPasswordRegex.test(password);
 }
 
 // ==================== API处理函数 ====================
@@ -2108,6 +2063,7 @@ async function handleGetAEStatus(request, env) {
       lastHeartbeat: lastHeartbeatTime,
       projectName: status?.project_name || null,
       compositionName: status?.composition_name || null,
+      projectId: status?.project_id || null,
       lastWorkData: status?.last_work_data ? JSON.parse(status.last_work_data) : null,
       hasStatusRecord: !!status
     });
@@ -2131,7 +2087,8 @@ async function handleUpdateAEStatus(request, env) {
       isOnline,
       projectName,
       compositionName,
-      workData
+      workData,
+      projectId
     } = body;
 
     const DB = env.DB || env.rualive;
@@ -2140,8 +2097,8 @@ async function handleUpdateAEStatus(request, env) {
     // 更新 AE 在线状态
     await DB.prepare(`
       INSERT OR REPLACE INTO ae_status 
-      (user_id, is_online, last_heartbeat, project_name, composition_name, last_work_data, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (user_id, is_online, last_heartbeat, project_name, composition_name, last_work_data, project_id, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       userId,
       isOnline ? 1 : 0,
@@ -2149,6 +2106,7 @@ async function handleUpdateAEStatus(request, env) {
       projectName || null,
       compositionName || null,
       workData ? JSON.stringify(workData) : null,
+      projectId || null,
       now
     ).run();
 
@@ -2174,6 +2132,16 @@ async function handleSendNow(request, env) {
     const user = await getUser(userId, env);
     if (!user) {
       return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // 检查邮件发送限制
+    const limitCheck = await checkEmailLimit(userId, env);
+    if (!limitCheck.allowed) {
+      return Response.json({
+        error: limitCheck.message,
+        limit: limitCheck.limit,
+        current: limitCheck.current
+      }, { status: 429 });
     }
 
     // 获取请求体中的收件人选择（安全处理空body）
@@ -2224,6 +2192,9 @@ async function handleSendNow(request, env) {
       console.log('Sending daily summary to user');
       await sendDailySummary(user, workData, config, env);
     }
+
+    // 增加邮件发送计数
+    await incrementEmailCount(userId, env);
 
     // 记录测试日志
     const testEmail = recipient === 'emergency' ? config.emergency_email : user.email;
@@ -2399,6 +2370,8 @@ async function getUserConfig(userId, env) {
       min_json_size: result.min_json_size,
       user_notification_time: result.user_notification_time,
       emergency_notification_time: result.emergency_notification_time,
+      user_notification_hour: result.user_notification_hour !== undefined ? result.user_notification_hour : 22,
+      emergency_notification_hour: result.emergency_notification_hour !== undefined ? result.emergency_notification_hour : 22,
       enable_emergency_notification: result.enable_emergency_notification === 1,
       notification_schedule: result.notification_schedule || 'all',
       notification_excluded_days: result.notification_excluded_days || '[]',
@@ -2428,8 +2401,9 @@ async function saveUserConfig(userId, config, env) {
         user_id, enabled, send_time, timezone, emergency_email,
         emergency_name, min_work_hours, min_keyframes, min_json_size,
         user_notification_time, emergency_notification_time,
+        user_notification_hour, emergency_notification_hour,
         enable_emergency_notification, notification_schedule, notification_excluded_days
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         enabled = excluded.enabled,
         send_time = excluded.send_time,
@@ -2441,6 +2415,8 @@ async function saveUserConfig(userId, config, env) {
         min_json_size = excluded.min_json_size,
         user_notification_time = excluded.user_notification_time,
         emergency_notification_time = excluded.emergency_notification_time,
+        user_notification_hour = excluded.user_notification_hour,
+        emergency_notification_hour = excluded.emergency_notification_hour,
         enable_emergency_notification = excluded.enable_emergency_notification,
         notification_schedule = excluded.notification_schedule,
         notification_excluded_days = excluded.notification_excluded_days,
@@ -2457,6 +2433,8 @@ async function saveUserConfig(userId, config, env) {
       config.min_json_size || 10,
       config.user_notification_time || '22:00',
       config.emergency_notification_time || '22:00',
+      config.user_notification_hour !== undefined ? config.user_notification_hour : 22,
+      config.emergency_notification_hour !== undefined ? config.emergency_notification_hour : 22,
       config.enable_emergency_notification ? 1 : 0,
       config.notification_schedule || 'all',
       config.notification_excluded_days || '[]'
@@ -2474,20 +2452,25 @@ async function getWorkData(userId, date, env) {
     console.error('Database not available in getWorkData');
     return null;
   }
-  
+
   try {
     const result = await DB.prepare(
       'SELECT * FROM work_logs WHERE user_id = ? AND work_date = ?'
     )
       .bind(userId, date)
       .first();
+    
+    // 如果有数据，添加 last_work_date 字段（使用 work_date）
+    if (result && result.work_date) {
+      result.last_work_date = result.work_date;
+    }
+    
     return result;
   } catch (error) {
     console.error('Error in getWorkData:', error);
     return null;
   }
 }
-
 async function saveWorkData(userId, workData, env, date) {
   const DB = env.DB || env.rualive;
   // 如果没有传入日期，使用当天日期
@@ -2510,18 +2493,24 @@ async function saveWorkData(userId, workData, env, date) {
   const allWorkHours = [];
 
   if (workData.projects && workData.projects.length > 0) {
+    console.log('[saveWorkData] ========== 开始处理项目数据 ==========');
     console.log('[saveWorkData] 收到的项目数量:', workData.projects.length);
-    console.log('[saveWorkData] 项目列表:', JSON.stringify(workData.projects.map(p => ({ name: p.name, path: p.path }))));
-    
+    console.log('[saveWorkData] 完整项目数据:', JSON.stringify(workData.projects, null, 2));
+
     // 先对项目进行去重（按项目名称）
     const projectMap = new Map();
     workData.projects.forEach(project => {
-      // 过滤空项目（没有名称的项目）
+      // 过滤空项目（没有名称或没有路径的项目）
       if (!project.name || project.name.trim() === '') {
+        console.log('[saveWorkData] 过滤空项目: name=', project.name);
+        return;
+      }
+      if (!project.path || project.path.trim() === '') {
+        console.log('[saveWorkData] 过滤无路径项目: name=', project.name, ', path=', project.path);
         return;
       }
 
-      console.log('[saveWorkData] 处理项目:', project.name);
+      console.log('[saveWorkData] 处理项目:', project.name, ', projectId=', project.projectId);
       // 直接使用项目名称进行比较（不解码）
       const existingProject = projectMap.get(project.name);
 
@@ -2530,12 +2519,13 @@ async function saveWorkData(userId, workData, env, date) {
         // 如果项目已存在，更新其数据
         existingProject.statistics = project.statistics || existingProject.statistics;
         existingProject.details = project.details || existingProject.details;
+        existingProject.projectId = project.projectId || existingProject.projectId;
         // 合并运行时间
         if (project.accumulatedRuntime && project.accumulatedRuntime > 0) {
           existingProject.accumulatedRuntime = (existingProject.accumulatedRuntime || 0) + project.accumulatedRuntime;
         }
       } else {
-        console.log('[saveWorkData] 新项目，添加到映射:', project.name);
+        console.log('[saveWorkData] 新项目，添加到映射:', project.name, ', projectId=', project.projectId);
         // 添加新项目
         projectMap.set(project.name, {
           ...project,
@@ -2549,9 +2539,16 @@ async function saveWorkData(userId, workData, env, date) {
     // 处理去重后的项目
     projectMap.forEach(project => {
       // 项目列表
+      console.log('[saveWorkData] 添加项目到列表:', {
+        name: project.name,
+        path: project.path,
+        projectId: project.projectId,
+        compositions: project.statistics ? project.statistics.compositions : 0
+      });
       allProjects.push({
         name: project.name,
         path: project.path || '',
+        projectId: project.projectId || '',
         compositions: project.statistics ? project.statistics.compositions || 0 : 0,
         layers: project.statistics ? project.statistics.layers || 0 : 0,
         keyframes: project.statistics ? project.statistics.keyframes || 0 : 0,
@@ -2748,6 +2745,10 @@ async function saveWorkData(userId, workData, env, date) {
           existingProject.layers = newProject.layers || existingProject.layers;
           existingProject.keyframes = newProject.keyframes || existingProject.keyframes;
           existingProject.effects = newProject.effects || existingProject.effects;
+          // 更新 projectId（如果新项目有 projectId）
+          if (newProject.projectId) {
+            existingProject.projectId = newProject.projectId;
+          }
           // 更新或添加工作时长
           const existingWorkHour = existingWorkHours.find(function(w) { return w.project === newProject.name; });
           if (existingWorkHour) {
@@ -2851,6 +2852,11 @@ async function saveWorkData(userId, workData, env, date) {
       keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
       projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
       workHoursJson = existingWorkHours.length > 0 ? JSON.stringify(existingWorkHours) : null;
+
+      console.log('[saveWorkData] ========== 合并后的项目数据 ==========');
+      console.log('[saveWorkData] mergedProjects:', JSON.stringify(mergedProjects, null, 2));
+      console.log('[saveWorkData] projects_json (将保存到数据库):', projectsJson);
+      console.log('[saveWorkData] ========== 准备更新数据库 ==========');
 
       // 重新计算总数
       const mergedStats = {
@@ -2989,7 +2995,7 @@ async function logSend(userId, recipientType, recipientEmail, emailType, status,
 // ==================== 邮件发送 ====================
 
 async function sendDailySummary(user, workData, config, env) {
-  const html = generateDailySummaryEmail(user, workData, config);
+  const html = await generateDailySummaryEmail(user, workData, config);
   const date = new Date().toLocaleDateString('zh-CN');
   const subject = `[RuAlive] ${date} 工作总结报告`;
 
@@ -3006,7 +3012,7 @@ async function sendDailySummary(user, workData, config, env) {
 }
 
 async function sendWarningEmail(user, workData, config, env) {
-  const html = generateWarningEmail(user, workData, config);
+  const html = await generateWarningEmail(user, workData, config);
   const subject = `[紧急提醒] ${user.username} 今天工作量不足！`;
 
   // 使用紧急联系人邮箱
@@ -3048,7 +3054,7 @@ async function sendEmail(to, subject, html, env) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.FROM_EMAIL,
+      from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
       to: [to],
       subject: subject,
       html: html,
@@ -3506,15 +3512,19 @@ function generateLoginPage() {
         const data = await response.json();
 
         if (data.success) {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem('rualive_token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('[Login] Token saved to localStorage (rualive_token)');
           
           if (data.user.role === 'admin') {
+            console.log('[Login] Redirecting to /admin');
             window.location.href = '/admin';
           } else {
+            console.log('[Login] Redirecting to /user');
             window.location.href = '/user';
           }
         } else {
+          console.log('[Login] Login failed:', data.error);
           showAlert(data.error || '登录失败');
         }
       } catch (error) {
@@ -3569,7 +3579,7 @@ function generateLoginPage() {
 
     // 检查是否已登录
     window.onload = function() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('rualive_token');
       if (token) {
         fetch(API_BASE + '/api/auth/me', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -5200,392 +5210,14 @@ function generateAdminPage() {
 
 // ==================== 邮件模板 ====================
 
-function generateDailySummaryEmail(user, workData, config) {
-  const date = new Date().toLocaleDateString('zh-CN');
-  const hours = workData?.work_hours || 0;
-  const hoursText = `${Math.floor(hours)}小时${Math.round((hours % 1) * 60)}分钟`;
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1f2937;
-      background-color: #f3f4f6;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 32px 24px;
-      text-align: center;
-    }
-    .header h1 {
-      margin: 0 0 8px 0;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .header p {
-      margin: 0;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .content {
-      padding: 32px 24px;
-    }
-    .greeting {
-      font-size: 16px;
-      color: #4b5563;
-      margin-bottom: 24px;
-    }
-    .greeting strong {
-      color: #1f2937;
-    }
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin: 24px 0;
-    }
-    .stat-item {
-      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      border: 1px solid #e5e7eb;
-      transition: transform 0.2s;
-    }
-    .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #667eea;
-      margin-bottom: 4px;
-    }
-    .stat-label {
-      color: #6b7280;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .divider {
-      height: 1px;
-      background: #e5e7eb;
-      margin: 24px 0;
-    }
-    .motivation {
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      padding: 16px;
-      border-radius: 8px;
-      text-align: center;
-      color: #065f46;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .footer {
-      background: #f9fafb;
-      padding: 20px;
-      text-align: center;
-      border-top: 1px solid #e5e7eb;
-    }
-    .footer p {
-      margin: 4px 0;
-      color: #9ca3af;
-      font-size: 12px;
-    }
-    .footer a {
-      color: #667eea;
-      text-decoration: none;
-    }
-    .badge {
-      display: inline-block;
-      background: #dbeafe;
-      color: #1e40af;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📊 工作总结报告</h1>
-      <p>${date}</p>
-      <span class="badge">每日报告</span>
-    </div>
-    <div class="content">
-      <p class="greeting">尊敬的 <strong>${user.username}</strong>，</p>
-      <p style="color: #4b5563;">以下是您今天的工作统计数据：</p>
-      
-      <div class="stat-grid">
-        <div class="stat-item">
-          <div class="stat-value">${hoursText}</div>
-          <div class="stat-label">⏱️ 工作时长</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">${workData?.project_count || 0}</div>
-          <div class="stat-label">📁 打开项目</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">${workData?.composition_count || 0}</div>
-          <div class="stat-label">🎬 合成数量</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">${workData?.keyframe_count || 0}</div>
-          <div class="stat-label">🎞️ 关键帧数</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">${workData?.layer_count || 0}</div>
-          <div class="stat-label">📑 总层数</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">${workData?.effect_count || 0}</div>
-          <div class="stat-label">✨ 特效数</div>
-        </div>
-      </div>
-
-      <div class="motivation">
-        💪 继续保持，明天会更好！
-      </div>
-      
-      <div class="divider"></div>
-      
-      <div class="footer">
-        <p>📧 此邮件由 RuAlive 自动发送</p>
-        <p>如需修改设置，请联系管理员</p>
-        <p style="margin-top: 8px;">© ${new Date().getFullYear()} RuAlive. All rights reserved.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-  `;
+async function generateDailySummaryEmail(user, workData, config) {
+  // 动态导入邮件模板（使用幽默版）
+  const { generateDailySummaryHumorEmail: generateTemplate } = await import('./templates/daily-summary-humor.js');
+  return generateTemplate(user, workData, config);
 }
 
-function generateWarningEmail(user, workData, config) {
-  const date = new Date().toLocaleDateString('zh-CN');
-  const hasWork = workData !== null;
-  const thresholds = config.thresholds || {};
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1f2937;
-      background-color: #fef2f2;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      overflow: hidden;
-      border: 2px solid #fecaca;
-    }
-    .header {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      color: white;
-      padding: 32px 24px;
-      text-align: center;
-    }
-    .header h1 {
-      margin: 0 0 8px 0;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .header p {
-      margin: 0;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .content {
-      padding: 32px 24px;
-    }
-    .greeting {
-      font-size: 16px;
-      color: #4b5563;
-      margin-bottom: 24px;
-    }
-    .alert-box {
-      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-      border: 2px solid #fecaca;
-      border-radius: 10px;
-      padding: 24px;
-      margin: 24px 0;
-    }
-    .alert-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .alert-icon {
-      font-size: 32px;
-    }
-    .alert-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #dc2626;
-    }
-    .alert-info {
-      font-size: 14px;
-      color: #4b5563;
-      line-height: 2;
-    }
-    .alert-info strong {
-      color: #1f2937;
-    }
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin: 24px 0;
-    }
-    .stat-item {
-      background: #fef2f2;
-      padding: 20px;
-      border-radius: 10px;
-      border: 1px solid #fecaca;
-    }
-    .stat-label {
-      color: #6b7280;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
-    .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1f2937;
-    }
-    .stat-value.below-threshold {
-      color: #dc2626;
-    }
-    .stat-threshold {
-      display: block;
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-    .divider {
-      height: 1px;
-      background: #e5e7eb;
-      margin: 24px 0;
-    }
-    .action-box {
-      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-      border: 1px solid #fcd34d;
-      border-radius: 10px;
-      padding: 20px;
-      text-align: center;
-    }
-    .action-box p {
-      margin: 0;
-      color: #92400e;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .footer {
-      background: #fef2f2;
-      padding: 20px;
-      text-align: center;
-      border-top: 1px solid #fecaca;
-    }
-    .footer p {
-      margin: 4px 0;
-      color: #9ca3af;
-      font-size: 12px;
-    }
-    .badge {
-      display: inline-block;
-      background: #fecaca;
-      color: #dc2626;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>⚠️ 紧急提醒</h1>
-      <p>${date}</p>
-      <span class="badge">工作异常警报</span>
-    </div>
-    <div class="content">
-      <p class="greeting">尊敬的联系人，</p>
-      
-      <div class="alert-box">
-        <div class="alert-header">
-          <span class="alert-icon">🚨</span>
-          <span class="alert-title">警告信息</span>
-        </div>
-        <div class="alert-info">
-          <strong>用户：</strong>${user.username}<br>
-          <strong>日期：</strong>${date}<br>
-          <strong>状态：</strong>${hasWork ? '⚠️ 工作量不足' : '❌ 未工作'}
-        </div>
-      </div>
-
-      ${hasWork ? `
-      <h3 style="margin: 24px 0 16px 0; color: #1f2937; font-size: 18px;">📊 今日工作统计</h3>
-      <div class="stat-grid">
-        <div class="stat-item">
-          <div class="stat-label">⏱️ 工作时长</div>
-          <div class="stat-value ${workData.work_hours < thresholds.minWorkHours ? 'below-threshold' : ''}">
-            ${Math.floor(workData.work_hours)}小时${Math.round((workData.work_hours % 1) * 60)}分钟
-          </div>
-          <span class="stat-threshold">阈值: ${thresholds.minWorkHours}小时</span>
-        </div>
-      </div>
-      ` : `
-      <div style="background: #fef2f2; padding: 20px; border-radius: 10px; border: 1px solid #fecaca; margin: 24px 0;">
-        <p style="margin: 0; color: #dc2626; font-weight: 600; font-size: 16px;">❌ 用户今天未打开After Effects进行工作</p>
-        <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">最后工作日：${workData?.last_work_date || '未知'}</p>
-      </div>
-      `}
-
-      <div class="action-box">
-        <p>💡 建议您联系用户了解情况，确认是否需要帮助</p>
-      </div>
-      
-      <div class="divider"></div>
-      
-      <div class="footer">
-        <p>📧 此邮件由 RuAlive 自动发送</p>
-        <p>紧急联系人监督系统</p>
-        <p style="margin-top: 8px;">© ${new Date().getFullYear()} RuAlive. All rights reserved.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-  `;
+async function generateWarningEmail(user, workData, config) {
+  // 动态导入邮件模板（使用幽默版）
+  const { generateWarningHumorEmail: generateTemplate } = await import('./templates/warning-humor.js');
+  return generateTemplate(user, workData, config);
 }

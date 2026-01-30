@@ -161,7 +161,8 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
 
   // 初始化项目 - 使用数据库中的汇总字段作为默认值
   projectsJson.forEach((p) => {
-    const projectId = p.id || generateId(p.name);
+    // 使用 projectId 字段而不是 id 字段
+    const projectId = p.projectId || generateId(p.name);
     // 解码 URL 编码的项目名称
     const decodedName = decodeURIComponent(p.name);
     

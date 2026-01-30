@@ -1,1 +1,16 @@
-{"name":"rualive-frontend","version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},"dependencies":{"lucide-react":"^0.563.0","react":"^19.0.0","react-dom":"^19.0.0","recharts":"^3.7.0"},"devDependencies":{"@types/react":"^18.2.0","@types/react-dom":"^18.2.0","@vitejs/plugin-react":"^4.2.0","typescript":"^5.3.0","vite":"^5.0.0"}}
+{
+  "name": "rualive-frontend",
+  "version": "1.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && copy admin.html dist\\ && if not exist dist\\local mkdir dist\\local && copy local\\*.json dist\\local\\",
+    "preview": "vite preview",
+    "deploy": "npm run build && cd .. && npx wrangler deploy"
+  },
+  "description": "RuAlive Frontend - 构建和部署说明",
+  "notes": {
+    "build": "修改代码后必须执行 npm run build",
+    "deploy": "修改代码后执行 npm run deploy 会自动构建并部署",
+    "workflow": "修改代码 → npm run deploy → 等待部署完成 → 验证功能"
+  },"dependencies":{"lucide-react":"^0.563.0","react":"^19.0.0","react-dom":"^19.0.0","recharts":"^3.7.0"},"devDependencies":{"@types/react":"^18.2.0","@types/react-dom":"^18.2.0","@vitejs/plugin-react":"^4.2.0","typescript":"^5.3.0","vite":"^5.0.0"}}

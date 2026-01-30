@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "RuALive",
+    "subtitle": "管理控制台 v2.0",
+    "loading": "矩阵加载中...",
+    "language": "Language / 切换语言",
+    "logout": "断开连接"
+  },
+  "nav": {
+    "invites": "入场券管理",
+    "users": "人类资源部",
+    "api": "Resend API",
+    "logs": "案发现场"
+  },
+  "headers": {
+    "invites": "邀请码列表",
+    "users": "用户数据库",
+    "api": "Resend API 管理",
+    "logs": "系统日志"
+  },
+  "subheaders": {
+    "invites": "控制人口质量的关键道具。",
+    "users": "这些人是谁？他们想干什么？",
+    "api": "配置邮件发送服务的凭证 (Resend)。",
+    "logs": "一切罪证都在这里了。"
+  },
+  "actions": {
+    "create": "无中生有",
+    "delete": "物理毁灭",
+    "ban": "降维打击",
+    "reset": "记忆清除",
+    "edit": "修改权限",
+    "test": "连接测试",
+    "copy": "白嫖复制",
+    "confirm": "动手",
+    "cancel": "认怂",
+    "save": "保存修改",
+    "addKey": "添加密钥",
+    "view": "审查详情",
+    "sendTest": "发送测试",
+    "close": "关闭"
+  },
+  "labels": {
+    "maxUses": "最大使用次数",
+    "expires": "过期时间",
+    "limit": "每日限制",
+    "filterUser": "筛选嫌疑人",
+    "password": "新密码",
+    "autoGen": "自动生成",
+    "manualSet": "手动设置",
+    "apiKeyInput": "输入 API 密钥",
+    "testEmail": "测试收件箱 (可选)",
+    "joined": "注册时间",
+    "lastLogin": "最后登录",
+    "allSubjects": "所有嫌疑人",
+    "usage": "使用情况",
+    "code": "代码",
+    "created": "创建于",
+    "status": "状态",
+    "mails": "邮件数",
+    "time": "时间",
+    "recipient": "收件人",
+    "subject": "主题",
+    "userId": "用户 ID",
+    "metadata": "元数据",
+    "editingUser": "正在编辑"
+  },
+  "placeholders": {
+    "findSubject": "查找嫌疑人...",
+    "typePassword": "输入新密码...",
+    "keyExample": "re_...",
+    "emailDefault": "admin@rualive.com (默认)"
+  },
+  "messages": {
+    "confirmTitle": "确定要这样做吗？",
+    "confirmDesc": "此操作无法撤销，请三思。",
+    "invalidKey": "密钥必须以 \"re_\" 开头",
+    "noKeys": "未找到有效密钥",
+    "noLogs": "未发现任何证据",
+    "apiKeyHelp": "输入 Resend API 密钥以启用邮件服务。密钥已加密存储。",
+    "deliveryRate": "投递成功率",
+    "volume24h": "24小时发送量",
+    "testEmailNote": "将发送测试邮件至 {email}",
+    "testEmailDefault": "将发送测试邮件至默认管理员地址。",
+    "resetConfirm": "重置 {username} 的密码？",
+    "banConfirm": "冻结用户 {username}？",
+    "deleteUserConfirm": "永久删除用户 {username}？此操作不可逆。",
+    "revokeKeyConfirm": "撤销此密钥将立即停止所有相关应用。",
+    "copied": "已复制到剪贴板",
+    "ticketPrinted": "票据已打印",
+    "testSent": "测试邮件已发送至 {email}",
+    "limitsUpdated": "权限已更新",
+    "passwordReset": "密码已重置",
+    "userBanned": "用户已冻结",
+    "userDeleted": "用户已删除",
+    "keySaved": "密钥已保存",
+    "keyRevoked": "密钥已撤销",
+    "deleted": "已删除"
+  },
+  "table": {
+    "userIdentity": "用户身份",
+    "status": "状态",
+    "activity": "活动",
+    "control": "控制"
+  }
+}

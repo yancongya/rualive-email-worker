@@ -4,20 +4,47 @@ import react from '@vitejs/plugin-react';
 
 /**
  * Vite Configuration for RuAlive Frontend
- * 
+ *
+ * ==================== 构建流程说明 ====================
+ *
+ * 修改路由或页面后，必须按以下步骤操作：
+ *
+ * 1️⃣ 修改源文件（.html, .tsx, .css等）
+ * 2️⃣ 更新本文件的 rollupOptions.input 配置（如果添加/删除页面）
+ * 3️⃣ 执行构建: cd public && npm run build
+ * 4️⃣ 部署 Worker: cd .. && npx wrangler deploy
+ * 5️⃣ 验证功能是否正常
+ *
+ * ⚠️ 重要注意事项：
+ * - 不要手动修改 dist 目录中的文件
+ * - 每次修改后必须重新构建，不能跳过步骤3
+ * - 构建前确保所有依赖已安装（npm install）
+ * - 构建失败会阻止部署，请检查错误信息
+ *
+ * ==================== 入口点配置 ====================
+ *
  * Entry Points:
  * - index.html: Main landing page with React app
  * - auth.html: Authentication page (login/register)
- * - user.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
- * 
- * Note: user.html uses localStorage key 'rualive_token' for authentication (not 'token')
+ * - user-v6.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
+ *
+ * 路由映射 (src/index.js):
+ * - / → index.html
+ * - /login → auth.html
+ * - /user → user-v6.html (新用户界面)
+ *
+ * 注意：user.html 已删除，不再构建
+ * =========================================================
+ *
+ * Note: Uses localStorage key 'rualive_token' for authentication (not 'token')
+ * Updated: Removed user.html, /user route now points to user-v6.html (2026-01-30)
  */
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       root: '.',
-      publicDir: false, // 禁用默认的 public 目录
+      publicDir: 'local', // 只复制 local 目录中的文件
       build: {
         outDir: 'dist',
         emptyOutDir: true,
@@ -25,7 +52,6 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             auth: path.resolve(__dirname, 'auth.html'),
-            user: path.resolve(__dirname, 'user.html'),
             userV6: path.resolve(__dirname, 'user-v6.html')
           },
           output: {
@@ -35,7 +61,7 @@ export default defineConfig(({ mode }) => {
           }
         },
         assetsDir: 'assets',
-        copyPublicDir: false
+        copyPublicDir: true
       },
       server: {
         port: 3737,

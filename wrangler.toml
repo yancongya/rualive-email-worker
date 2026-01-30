@@ -2,7 +2,7 @@ name = "rualive-email-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-# Assets 配置 - 用于部署静态文件（React 应用）
+# Assets 配置 - 用于部署静态文件（React 应用和管理后台）
 [assets]
 directory = "public/dist"
 binding = "ASSETS"
@@ -26,3 +26,5 @@ crons = ["0 * * * *"]
 # 环境变量（敏感变量使用 wrangler secret put 命令设置）
 [vars]
 ENVIRONMENT = "production"
+FROM_EMAIL = "RuAlive@itycon.cn"
+DEPLOY_TIMESTAMP = "2026-01-30-18-25"

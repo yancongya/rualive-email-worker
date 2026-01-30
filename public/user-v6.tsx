@@ -275,6 +275,7 @@ export const Header = ({
     searchQuery,
     setSearchQuery,
     onRefresh,
+    currentUser,
 }: {
     lang: LangType,
     setLang: React.Dispatch<React.SetStateAction<LangType>>,
@@ -285,6 +286,7 @@ export const Header = ({
     searchQuery: string,
     setSearchQuery: (s: string) => void,
     onRefresh?: () => void,
+    currentUser?: any,
 }) => {    
     const isDashboard = currentView === 'dashboard';
     const isAnalytics = currentView === 'analytics';
@@ -307,12 +309,12 @@ export const Header = ({
                     onClick={() => onChangeView('dashboard')}
                 >
                 <div className="absolute inset-0 rounded-full border-t border-ru-primary animate-spin"></div>
-                <span className="font-bold text-base md:text-lg">A</span>
+                <span className="font-bold text-base md:text-lg">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-black rounded-full"></div>
                 </div>
                 <div>
                 <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
-                    RUALIVE <span className="text-ru-primary text-xs md:text-sm not-italic font-mono align-top">V6</span>
+                    RUALIVE
                 </h1>
                 <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
                     {TRANS[lang].subtitle} {currentView !== 'dashboard' && ` // ${TRANS[lang][currentView]}`}
@@ -2069,6 +2071,31 @@ const App = () => {
     }
   }, []);
 
+  // 用户信息状态
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // 获取用户信息
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('rualive_token');
+        const response = await fetch(`${window.location.origin}/api/auth/me`, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const result = await response.json();
+          setCurrentUser(result.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const [currentDate, setCurrentDate] = useState<string>(() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -2203,6 +2230,7 @@ const App = () => {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onRefresh={handleRefresh}
+        currentUser={currentUser}
       />
 
       <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
