@@ -108,9 +108,9 @@ export default {
 
     // 处理静态文件（从 Assets 绑定）
     // 只对非 API 路径使用 Assets，避免消耗 request body
-    // 排除 /login、/user 和 /admin/login 路由，这些路由需要返回 index.html
+    // 排除 /login、/user、/user-v6 和 /admin/login 路由，这些路由需要特殊处理
     // 注意：/admin 路由不排除，因为它需要返回后端生成的管理员仪表板 HTML
-    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/admin/login') {
+    if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/user-v6' && path !== '/admin/login') {
       try {
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
@@ -187,6 +187,14 @@ export default {
       }
       // 如果 Assets 失败，返回 404
       return new Response('Not Found', { status: 404 });
+    }
+
+    if (path === '/user-v6') {
+      // /user-v6 路由已废弃，返回 404
+      return new Response('Route deprecated. Please use /user instead.', { 
+        status: 404,
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }
+      });
     }
 
     if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
