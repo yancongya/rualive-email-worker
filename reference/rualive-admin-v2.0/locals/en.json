@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "RuALive",
+    "subtitle": "Administrative Console v2.0",
+    "loading": "LOADING THE MATRIX...",
+    "language": "Language / 切换语言",
+    "logout": "JACK OUT"
+  },
+  "nav": {
+    "invites": "GOLDEN TICKETS",
+    "users": "HUMAN RESOURCES",
+    "api": "RESEND API",
+    "logs": "THE PAPER TRAIL"
+  },
+  "headers": {
+    "invites": "INVITATION CODES",
+    "users": "USER DATABASE",
+    "api": "RESEND CONFIG",
+    "logs": "SYSTEM LOGS"
+  },
+  "subheaders": {
+    "invites": "Gatekeeping tools for the elite.",
+    "users": "Who are these people and why are they here?",
+    "api": "Manage your Resend.com API credentials here.",
+    "logs": "Evidence of everything that went wrong."
+  },
+  "actions": {
+    "create": "SPAWN NEW",
+    "delete": "OBLITERATE",
+    "ban": "BAN HAMMER",
+    "reset": "WIPE MEMORY",
+    "edit": "TWEAK LIMITS",
+    "test": "PING TEST",
+    "copy": "STEAL",
+    "confirm": "DO IT.",
+    "cancel": "NEVERMIND",
+    "save": "SAVE CHANGES",
+    "addKey": "ADD KEY",
+    "view": "INSPECT",
+    "sendTest": "SEND TEST",
+    "close": "CLOSE"
+  },
+  "labels": {
+    "maxUses": "MAX USES",
+    "expires": "EXPIRATION",
+    "limit": "DAILY LIMIT",
+    "filterUser": "FILTER SUBJECT",
+    "password": "NEW PASSWORD",
+    "autoGen": "AUTO-GENERATE",
+    "manualSet": "MANUAL SET",
+    "apiKeyInput": "ENTER API KEY",
+    "testEmail": "TEST RECIPIENT (OPTIONAL)",
+    "joined": "JOINED",
+    "lastLogin": "LAST SEEN",
+    "allSubjects": "ALL SUBJECTS",
+    "usage": "USAGE",
+    "code": "CODE",
+    "created": "CREATED",
+    "status": "STATUS",
+    "mails": "MAILS",
+    "time": "TIME",
+    "recipient": "RECIPIENT",
+    "subject": "SUBJECT",
+    "userId": "USER ID",
+    "metadata": "METADATA",
+    "editingUser": "EDITING USER"
+  },
+  "placeholders": {
+    "findSubject": "FIND SUBJECT...",
+    "typePassword": "Type new password...",
+    "keyExample": "re_...",
+    "emailDefault": "admin@rualive.com (Default)"
+  },
+  "messages": {
+    "confirmTitle": "ARE YOU SURE?",
+    "confirmDesc": "This action cannot be undone. Proceed with caution.",
+    "invalidKey": "Key must start with \"re_\"",
+    "noKeys": "NO ACTIVE KEYS FOUND",
+    "noLogs": "NO EVIDENCE FOUND",
+    "apiKeyHelp": "Enter your Resend API key to enable mailing services. Keys are encrypted at rest.",
+    "deliveryRate": "Delivery Rate",
+    "volume24h": "Volume (Last 24h)",
+    "testEmailNote": "Sending test email to {email}",
+    "testEmailDefault": "Will send test email to the configured admin address.",
+    "resetConfirm": "Reset password for {username}?",
+    "banConfirm": "Suspend user {username}?",
+    "deleteUserConfirm": "Permanently delete user {username}? This cannot be undone.",
+    "revokeKeyConfirm": "Revoking this key will immediately stop all associated applications.",
+    "copied": "Copied to Clipboard",
+    "ticketPrinted": "Ticket Printed",
+    "testSent": "Test Sent to {email}",
+    "limitsUpdated": "Limits Updated",
+    "passwordReset": "Password Reset",
+    "userBanned": "User Banned",
+    "userDeleted": "User Deleted",
+    "keySaved": "KEY SAVED",
+    "keyRevoked": "Revoked",
+    "deleted": "Deleted"
+  },
+  "table": {
+    "userIdentity": "User Identity",
+    "status": "Status",
+    "activity": "Activity",
+    "control": "Control"
+  }
+}
