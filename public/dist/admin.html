@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuAlive 管理后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logout-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.3s;
+    }
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #f5576c;
+      margin-bottom: 0.5rem;
+    }
+    .stat-card p {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1.5rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #f5576c;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-admin {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .badge-user {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #f5576c;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #e04659;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .btn-group .btn {
+      white-space: nowrap;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .alert.show {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .sensitive-info {
+      font-family: 'Courier New', monospace;
+      background: #f3f4f6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1>🔐 RuAlive 管理后台</h1>
+      <div class="user-info">
+        <span id="userInfo">加载中...</span>
+        <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <div id="alert" class="alert"></div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3 id="stat-users">0</h3>
+        <p>用户总数</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-invites">0</h3>
+        <p>邀请码总数</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-emails">0</h3>
+        <p>已发送邮件</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="stat-today">0</h3>
+        <p>今日发送</p>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div>
+        <div class="card">
+          <h2>🎫 邀请码管理</h2>
+          <div class="form-group">
+            <label>最大使用次数</label>
+            <input type="number" id="maxUses" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label>有效期（天）</label>
+            <input type="number" id="expiresInDays" value="30" min="1">
+          </div>
+          <button class="btn btn-primary" onclick="createInviteCode()">创建邀请码</button>
+        </div>
+
+        <div class="card">
+          <h2>📋 邀请码列表</h2>
+          <div class="table-container">
+            <table id="inviteCodesTable">
+              <thead>
+                <tr>
+                  <th>邀请码</th>
+                  <th>状态</th>
+                  <th>使用情况</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #6b7280;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🔑 API密钥管理</h2>
+          <div id="apiKeyStatus">
+            <p style="color: #6b7280; margin-bottom: 1rem;">加载中...</p>
+          </div>
+          <div class="form-group">
+            <label>新的API密钥</label>
+            <form style="position: relative;" onsubmit="return false;">
+              <input type="password" id="newApiKey" placeholder="re_xxxxxxxxxxxxxx" style="padding-right: 50px;" autocomplete="new-password">
+              <button type="button" onclick="toggleApiKeyVisibility()" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 5px;">
+                <span id="toggleIcon">👁️</span>
+              </button>
+            </form>
+          </div>
+          <div class="form-group">
+            <label>测试邮件接收邮箱（可选，留空则发送到管理员邮箱）</label>
+            <input type="email" id="testEmail" placeholder="test@example.com">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="setApiKey()">更新密钥</button>
+            <button class="btn btn-secondary" onclick="testApiKey()">测试密钥</button>
+            <button class="btn btn-danger" onclick="deleteApiKey()">删除密钥</button>
+          </div>
+          <p style="font-size: 0.75rem; color: #6b7280; margin-top: 1rem;">
+            <strong>提示：</strong>密钥更新后立即生效，无需重新部署。测试密钥时如未输入新密钥，将使用已保存的密钥进行测试。
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>👥 用户管理</h2>
+          <div class="table-container">
+            <table id="usersTable">
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>邮箱</th>
+                  <th>角色</th>
+                  <th>注册时间</th>
+                  <th>最后登录</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" style="text-align: center; color: #6b7280;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📧 邮件发送日志</h2>
+          <div class="table-container">
+            <table id="logsTable">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>收件人类型</th>
+                  <th>收件人邮箱</th>
+                  <th>邮件类型</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="text-align: center; color: #6b7280;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔐 密码验证</h3>
+        <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>请输入管理员密码</label>
+        <form onsubmit="return false;">
+          <input type="password" id="adminPassword" placeholder="请输入密码" autocomplete="new-password">
+        </form>
+      </div>
+      <button class="btn btn-primary" onclick="verifyPassword()">验证</button>
+      <button class="btn" onclick="closePasswordModal()">取消</button>
+    </div>
+  </div>
+
+  <div id="userDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>👤 用户详情</h3>
+        <button class="modal-close" onclick="closeUserDetailModal()">&times;</button>
+      </div>
+      <div id="userDetailContent"></div>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn" onclick="closeUserDetailModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resetPasswordModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔑 重置密码</h3>
+        <button class="modal-close" onclick="closeResetPasswordModal()">&times;</button>
+      </div>
+      <input type="hidden" id="resetUserId">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="resetUsername" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>新密码</label>
+        <input type="password" id="newPassword" placeholder="留空则自动生成随机密码" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>强制用户下次登录时修改密码</label>
+        <select id="forcePasswordReset">
+          <option value="1">是</option>
+          <option value="0">否</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="resetPassword()">重置密码</button>
+      <button class="btn" onclick="closeResetPasswordModal()">取消</button>
+    </div>
+  </div>
+
+  <div id="emailStatsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>📧 邮件统计</h3>
+        <button class="modal-close" onclick="closeEmailStatsModal()">&times;</button>
+      </div>
+      <div id="emailStatsContent"></div>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn" onclick="closeEmailStatsModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="emailLimitModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ 邮件限制设置</h3>
+        <button class="modal-close" onclick="closeEmailLimitModal()">&times;</button>
+      </div>
+      <input type="hidden" id="limitUserId">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="limitUsername" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>每日最大发送次数</label>
+        <input type="number" id="dailyEmailLimit" min="0" max="100" value="10">
+      </div>
+      <div class="form-group">
+        <label>已发送次数（今日）</label>
+        <input type="text" id="currentEmailCount" readonly style="background: #f3f4f6;">
+      </div>
+      <button class="btn btn-primary" onclick="setEmailLimit()">保存设置</button>
+      <button class="btn" onclick="closeEmailLimitModal()">取消</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let pendingAction = null;
+
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('alert');
+      const icon = type === 'success' ? '✅' : '❌';
+      alert.className = 'alert alert-' + type + ' show';
+      alert.innerHTML = '<span>' + icon + '</span><span>' + message + '</span>';
+      setTimeout(() => alert.classList.remove('show'), 4000);
+    }
+
+    function getAuthHeader() {
+      const token = localStorage.getItem('rualive_token');
+      console.log('[AuthHeader] Token from localStorage:', !!token, token ? token.substring(0, 20) + '...' : 'none');
+      return { 'Authorization': 'Bearer ' + token };
+    }
+
+    function maskEmail(email) {
+      if (!email) return '-';
+      const [name, domain] = email.split('@');
+      if (name.length <= 2) return name[0] + '***@' + domain;
+      return name.substring(0, 2) + '***@' + domain;
+    }
+
+    async function loadUserInfo() {
+      try {
+        console.log('[Admin] Loading user info...');
+        const token = localStorage.getItem('rualive_token');
+        console.log('[Admin] Token exists:', !!token);
+        
+        const response = await fetch(API_BASE + '/api/auth/me', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+        
+        console.log('[Admin] Response:', { status: response.status, success: data.success, user: data.user });
+
+        if (data.success && data.user && data.user.role === 'admin') {
+          document.getElementById('userInfo').textContent = data.user.username;
+          loadStats();
+          loadUsers();
+          loadInviteCodes();
+          loadLogs();
+          loadApiKey();
+        } else {
+          console.log('[Admin] Not admin or failed, redirecting to login');
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        console.error('[Admin] Error loading user info:', error);
+        window.location.href = '/login';
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+          headers: getAuthHeader()
+        });
+        const usersData = await usersResponse.json();
+
+        const invitesResponse = await fetch(API_BASE + '/api/admin/invite-codes', {
+          headers: getAuthHeader()
+        });
+        const invitesData = await invitesResponse.json();
+
+        if (usersData.success) document.getElementById('stat-users').textContent = usersData.users.length;
+        if (invitesData.success) document.getElementById('stat-invites').textContent = invitesData.codes.length;
+      } catch (error) {
+        console.error('加载统计失败:', error);
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#usersTable tbody');
+          tbody.innerHTML = data.users.map(user => `
+            <tr>
+              <td>${user.username}</td>
+              <td><span class="sensitive-info">${maskEmail(user.email)}</span></td>
+              <td><span class="badge badge-${user.role}">${user.role === 'admin' ? '管理员' : '用户'}</span></td>
+              <td>${new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
+              <td>${user.last_login ? new Date(user.last_login).toLocaleDateString('zh-CN') : '从未登录'}</td>
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm" onclick="showUserDetail('${user.id}')">详情</button>
+                  <button class="btn btn-sm btn-primary" onclick="showEmailStats('${user.id}')">邮件</button>
+                  <button class="btn btn-sm btn-primary" onclick="showEmailLimitModal('${user.id}')">限制</button>
+                  <button class="btn btn-sm btn-primary" onclick="showResetPasswordModal('${user.id}')">重置密码</button>
+                  ${user.role !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">删除</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载用户失败:', error);
+      }
+    }
+
+    async function loadInviteCodes() {
+      try {
+        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#inviteCodesTable tbody');
+          tbody.innerHTML = data.codes.map(code => `
+            <tr>
+              <td><span class="sensitive-info">${code.code}</span></td>
+              <td><span class="badge badge-${code.is_active ? 'active' : 'inactive'}">${code.is_active ? '有效' : '已失效'}</span></td>
+              <td>${code.used_count}/${code.max_uses}</td>
+              <td>${code.is_active ? `<button class="btn btn-sm btn-danger" onclick="deleteInviteCode('${code.id}')">删除</button>` : '-'}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载邀请码失败:', error);
+      }
+    }
+
+    async function loadApiKey() {
+      try {
+        const response = await fetch(API_BASE + '/api/admin/api-key', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        const statusDiv = document.getElementById('apiKeyStatus');
+        const inputField = document.getElementById('newApiKey');
+
+        if (data.success) {
+          if (data.isSet) {
+            // 将已保存的密钥填充到输入框
+            inputField.value = data.apiKey;
+            statusDiv.innerHTML = `
+              <p style="color: #10b981; margin-bottom: 1rem;">✅ API密钥已设置</p>
+              <p style="font-size: 0.875rem; color: #6b7280;">当前密钥: <span class="sensitive-info">${data.apiKey}</span></p>
+            `;
+          } else {
+            inputField.value = '';
+            statusDiv.innerHTML = `
+              <p style="color: #ef4444; margin-bottom: 1rem;">⚠️ API密钥未设置</p>
+              <p style="font-size: 0.875rem; color: #6b7280;">请设置Resend API密钥以启用邮件发送功能</p>
+            `;
+          }
+        } else {
+          statusDiv.innerHTML = `<p style="color: #ef4444; margin-bottom: 1rem;">加载失败: ${data.error}</p>`;
+        }
+      } catch (error) {
+        document.getElementById('apiKeyStatus').innerHTML = `<p style="color: #ef4444; margin-bottom: 1rem;">加载失败: ${error.message}</p>`;
+      }
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById('newApiKey');
+      const icon = document.getElementById('toggleIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁️';
+      }
+    }
+
+    async function setApiKey() {
+      const apiKey = document.getElementById('newApiKey').value.trim();
+      if (!apiKey) {
+        showAlert('请输入API密钥', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/api-key', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('API密钥验证成功！请按照以下命令更新：');
+          alert(`请复制以下命令并在Worker目录中运行：
+
+${data.message}
+
+然后运行: wrangler deploy`);
+          document.getElementById('newApiKey').value = '';
+        } else {
+          showAlert('设置失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('设置失败: ' + error.message, 'error');
+      }
+    }
+
+    async function testApiKey() {
+      let apiKey = document.getElementById('newApiKey').value.trim();
+      const testEmail = document.getElementById('testEmail').value.trim();
+
+      // 如果未输入新密钥，使用已保存的密钥
+      if (!apiKey) {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/api-key', {
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+          if (data.success && data.apiKey) {
+            apiKey = data.apiKey;
+          } else {
+            showAlert('未找到已保存的API密钥，请输入新密钥进行测试', 'error');
+            return;
+          }
+        } catch (error) {
+          showAlert('获取已保存的密钥失败: ' + error.message, 'error');
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/api-key/test', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey, testEmail })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const recipient = testEmail || '管理员邮箱';
+          showAlert(data.message);
+        } else {
+          showAlert('测试失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('测试失败: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteApiKey() {
+      if (!confirm('确定要删除API密钥吗？删除后将无法发送邮件。')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/api-key', {
+          method: 'DELETE',
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('请按照以下命令删除API密钥：');
+          alert(`请复制以下命令并在Worker目录中运行：
+
+${data.message}
+
+然后运行: wrangler deploy`);
+          loadApiKey();
+        } else {
+          showAlert('删除失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('删除失败: ' + error.message, 'error');
+      }
+    }
+
+    async function loadLogs() {
+      try {
+        const response = await fetch(API_BASE + '/api/logs?limit=20', {
+          headers: getAuthHeader()
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const tbody = document.querySelector('#logsTable tbody');
+          tbody.innerHTML = data.data.map(log => `
+            <tr>
+              <td>${new Date(log.sent_at).toLocaleString('zh-CN')}</td>
+              <td>${log.recipient_type === 'user' ? '用户' : '紧急联系人'}</td>
+              <td><span class="sensitive-info">${maskEmail(log.recipient_email)}</span></td>
+              <td>${log.email_type === 'summary' ? '总结' : '警告'}</td>
+              <td><span class="badge badge-${log.status === 'success' ? 'active' : 'inactive'}">${log.status === 'success' ? '成功' : '失败'}</span></td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('加载日志失败:', error);
+      }
+    }
+
+    async function createInviteCode() {
+      const maxUses = parseInt(document.getElementById('maxUses').value);
+      const expiresInDays = parseInt(document.getElementById('expiresInDays').value);
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/invite-codes', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ maxUses, expiresInDays })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('邀请码创建成功: ' + data.code);
+          loadInviteCodes();
+          loadStats();
+        } else {
+          showAlert('创建失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('创建失败: ' + error.message, 'error');
+      }
+    }
+
+    function deleteInviteCode(codeId) {
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/invite-codes?id=' + codeId, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert('邀请码已删除');
+            loadInviteCodes();
+            loadStats();
+          } else {
+            showAlert('删除失败: ' + data.error, 'error');
+          }
+        } catch (error) {
+          showAlert('删除失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function showUserDetail(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              const content = `
+                <div style="margin-bottom: 1rem;">
+                  <p><strong>用户名:</strong> ${user.username}</p>
+                  <p><strong>邮箱:</strong> <span class="sensitive-info">${maskEmail(user.email)}</span></p>
+                  <p><strong>角色:</strong> ${user.role === 'admin' ? '管理员' : '用户'}</p>
+                  <p><strong>注册时间:</strong> ${new Date(user.created_at).toLocaleString('zh-CN')}</p>
+                  <p><strong>最后登录:</strong> ${user.last_login ? new Date(user.last_login).toLocaleString('zh-CN') : '从未登录'}</p>
+                </div>
+              `;
+              document.getElementById('userDetailContent').innerHTML = content;
+              document.getElementById('userDetailModal').classList.add('show');
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户详情失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeUserDetailModal() {
+      document.getElementById('userDetailModal').classList.remove('show');
+    }
+
+    function deleteUser(userId) {
+      if (!confirm('确定要删除该用户吗？此操作不可恢复！')) {
+        return;
+      }
+
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/users/' + userId, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert('用户已成功删除');
+            loadUsers();
+            loadStats();
+          } else {
+            showAlert('删除失败: ' + data.error, 'error');
+          }
+        } catch (error) {
+          showAlert('删除失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function showResetPasswordModal(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              document.getElementById('resetUserId').value = userId;
+              document.getElementById('resetUsername').value = user.username;
+              document.getElementById('newPassword').value = '';
+              document.getElementById('forcePasswordReset').value = '1';
+              document.getElementById('resetPasswordModal').classList.add('show');
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户信息失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeResetPasswordModal() {
+      document.getElementById('resetPasswordModal').classList.remove('show');
+      document.getElementById('newPassword').value = '';
+    }
+
+    async function resetPassword() {
+      const userId = document.getElementById('resetUserId').value;
+      const newPassword = document.getElementById('newPassword').value.trim();
+      const forceReset = document.getElementById('forcePasswordReset').value === '1';
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/reset-password', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newPassword, forceReset })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('密码重置成功！' + (data.password ? ' 新密码: ' + data.password : ''));
+          closeResetPasswordModal();
+        } else {
+          showAlert('重置失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('重置失败: ' + error.message, 'error');
+      }
+    }
+
+    function showEmailStats(userId) {
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/email-stats', {
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            const stats = data.data;
+            const content = `
+              <div style="margin-bottom: 1rem;">
+                <p><strong>用户名:</strong> ${stats.username}</p>
+                <p><strong>总发送次数:</strong> ${stats.totalSent + stats.totalFailed + stats.totalPending}</p>
+                <p><strong>成功:</strong> ${stats.totalSent}</p>
+                <p><strong>失败:</strong> ${stats.totalFailed}</p>
+                <p><strong>待发送:</strong> ${stats.totalPending}</p>
+                <p><strong>最近发送:</strong> ${stats.lastSentAt ? new Date(stats.lastSentAt).toLocaleString('zh-CN') : '从未发送'}</p>
+              </div>
+            `;
+            document.getElementById('emailStatsContent').innerHTML = content;
+            document.getElementById('emailStatsModal').classList.add('show');
+          } else {
+            showAlert('获取邮件统计失败: ' + (data.error || '未知错误'), 'error');
+          }
+        } catch (error) {
+          showAlert('获取邮件统计失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeEmailStatsModal() {
+      document.getElementById('emailStatsModal').classList.remove('show');
+    }
+
+    function showEmailLimitModal(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              document.getElementById('limitUserId').value = userId;
+              document.getElementById('limitUsername').value = user.username;
+              document.getElementById('dailyEmailLimit').value = user.daily_email_limit || 10;
+              document.getElementById('currentEmailCount').value = user.daily_email_count || 0;
+              document.getElementById('emailLimitModal').classList.add('show');
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户信息失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeEmailLimitModal() {
+      document.getElementById('emailLimitModal').classList.remove('show');
+    }
+
+    async function setEmailLimit() {
+      const userId = document.getElementById('limitUserId').value;
+      const dailyEmailLimit = parseInt(document.getElementById('dailyEmailLimit').value);
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/email-limit', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dailyEmailLimit })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('邮件限制已更新');
+          closeEmailLimitModal();
+        } else {
+          showAlert('更新失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('更新失败: ' + error.message, 'error');
+      }
+    }
+
+    function verifyPassword() {
+      if (pendingAction) {
+        pendingAction();
+        pendingAction = null;
+      }
+      closePasswordModal();
+    }
+
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('show');
+      document.getElementById('adminPassword').value = '';
+      pendingAction = null;
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch(API_BASE + '/api/auth/logout', {
+          method: 'POST',
+          headers: getAuthHeader()
+        });
+      } catch (error) {
+        console.error('登出失败:', error);
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+    }
+
+    window.onload = loadUserInfo;
+  </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 
 # Assets 配置 - 用于部署静态文件（React 应用和管理后台）
 [assets]
-directory = "public"
+directory = "public/dist"
 binding = "ASSETS"
 
 # KV 命名空间绑定
