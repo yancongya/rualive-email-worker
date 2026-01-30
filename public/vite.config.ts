@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       root: '.',
-      publicDir: false, // 禁用默认的 public 目录
+      publicDir: 'local', // 只复制 local 目录中的文件
       build: {
         outDir: 'dist',
         emptyOutDir: true,
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
           }
         },
         assetsDir: 'assets',
-        copyPublicDir: false
+        copyPublicDir: true
       },
       server: {
         port: 3737,
