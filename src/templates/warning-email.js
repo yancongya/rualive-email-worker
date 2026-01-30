@@ -1,454 +1,144 @@
 /**
- * 工作警告邮件模板（全新设计）
- * 用途：发送给紧急联系人（工作时长不足时）
- * 设计理念：紧急通知 + 数据对比 + 行动建议
+ * 生成工作警告 / 低活跃提醒邮件 HTML
+ * @param {Object} user - 用户信息
+ * @param {Object} workData - 工作数据
+ * @param {Object} config - 配置（包含紧急联系人及阈值）
+ * @returns {string} HTML 字符串
  */
-
 export function generateWarningEmail(user, workData, config) {
-  const date = new Date().toLocaleDateString('zh-CN');
-  const hasWork = workData !== null;
-  const thresholds = config.thresholds || {};
-  
-  // 计算差距
-  const hours = workData?.work_hours || 0;
-  const minHours = thresholds.minWorkHours || 8;
-  const shortfall = Math.max(0, minHours - hours);
-  const completionRate = hasWork ? Math.round((hours / minHours) * 100) : 0;
+  // 安全取值 & 默认值
+  const username      = user?.username        || '同事';
+  const email         = user?.email           || '';
 
+  const workHours     = Number(workData?.work_hours)     || 0;
+  const projectCount  = workData?.project_count  || 0;
+  const lastWorkDate  = workData?.last_work_date || '—';
+
+  const emergencyName  = config?.emergency_name  || '管理员';
+  const emergencyEmail = config?.emergency_email || 'admin@example.com';
+  const minWorkHours   = Number(config?.thresholds?.minWorkHours) || 6;
+
+  // 格式化日期（当前日期为系统时间或传入）
+  const today = new Date(); // 或从外部传入
+  const dateStr = today.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  }); // 示例：2026年1月30日 星期五
+
+  const hoursText = workHours >= 1 
+    ? `${workHours}小时` 
+    : `${Math.round(workHours * 60)}分钟`;
+
+  const shortfall = Math.max(0, minWorkHours - workHours);
+  const shortfallText = shortfall > 0 ? `（还差 ${shortfall} 小时）` : '';
+
+  // ────────────────────────────────────────────────
+  // HTML（警告风格：红色调、强 CTA）
+  // ────────────────────────────────────────────────
   return `
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作提醒 - RuAlive</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1f2937;
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      margin: 0;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-      overflow: hidden;
-    }
-    
-    /* 紧急横幅 */
-    .emergency-banner {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: #ffffff;
-      padding: 40px 32px 30px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .emergency-banner::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-      animation: rotate 15s linear infinite;
-    }
-    
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    
-    .banner-content {
-      position: relative;
-      z-index: 1;
-    }
-    
-    .alert-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    
-    .banner-title {
-      font-size: 32px;
-      font-weight: 800;
-      margin: 0 0 8px 0;
-      letter-spacing: -1px;
-    }
-    
-    .banner-subtitle {
-      font-size: 16px;
-      opacity: 0.95;
-      margin: 0;
-      font-weight: 500;
-    }
-    
-    .date-badge {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(10px);
-      padding: 8px 20px;
-      border-radius: 30px;
-      font-size: 14px;
-      font-weight: 600;
-      margin-top: 16px;
-    }
-    
-    /* 内容区域 */
-    .content {
-      padding: 32px;
-    }
-    
-    /* 用户信息卡片 */
-    .user-card {
-      background: #fef2f2;
-      border: 2px solid #fecaca;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 32px;
-    }
-    
-    .user-card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    
-    .user-icon {
-      width: 48px;
-      height: 48px;
-      background: #dc2626;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-    
-    .user-info h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      color: #dc2626;
-    }
-    
-    .user-info p {
-      margin: 4px 0 0 0;
-      font-size: 14px;
-      color: #6b7280;
-    }
-    
-    .user-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-    
-    .user-stat {
-      background: #ffffff;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid #fecaca;
-    }
-    
-    .user-stat-label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    
-    .user-stat-value {
-      font-size: 18px;
-      font-weight: 700;
-      color: #1f2937;
-    }
-    
-    /* 进度对比 */
-    .progress-comparison {
-      margin-bottom: 32px;
-    }
-    
-    .comparison-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 16px;
-    }
-    
-    .comparison-bar-container {
-      margin-bottom: 16px;
-    }
-    
-    .comparison-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
-    
-    .comparison-bar {
-      height: 24px;
-      background: #e5e7eb;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    
-    .comparison-fill {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #ffffff;
-      transition: width 0.5s ease;
-    }
-    
-    .comparison-fill.current {
-      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-    }
-    
-    .comparison-fill.target {
-      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-    }
-    
-    .gap-indicator {
-      background: #fef3c7;
-      border: 1px solid #fcd34d;
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-    }
-    
-    .gap-indicator p {
-      margin: 0;
-      font-size: 14px;
-      color: #92400e;
-    }
-    
-    .gap-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #dc2626;
-    }
-    
-    /* 行动建议 */
-    .action-steps {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 32px;
-    }
-    
-    .action-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #059669;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    
-    .step-number {
-      width: 28px;
-      height: 28px;
-      background: #10b981;
-      color: #ffffff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    
-    .step-content p {
-      margin: 0;
-      font-size: 14px;
-      color: #4b5563;
-    }
-    
-    .step-content strong {
-      color: #059669;
-    }
-    
-    /* 底部信息 */
-    .footer {
-      background: #fef2f2;
-      padding: 24px 32px;
-      text-align: center;
-      border-top: 1px solid #fecaca;
-    }
-    
-    .footer p {
-      margin: 4px 0;
-      color: #9ca3af;
-      font-size: 12px;
-    }
-    
-    /* 响应式 */
-    @media only screen and (max-width: 600px) {
-      .user-stats {
-        grid-template-columns: 1fr;
-      }
-      
-      .banner-title {
-        font-size: 24px;
-      }
-      
-      .content {
-        padding: 24px;
-      }
-    }
-  </style>
+  <title>工作提醒 - ${dateStr}</title>
 </head>
-<body>
-  <div class="container">
-    <!-- 紧急横幅 -->
-    <div class="emergency-banner">
-      <div class="banner-content">
-        <div class="alert-icon">🚨</div>
-        <h1 class="banner-title">工作提醒</h1>
-        <p class="banner-subtitle">${user.username} 的每日报告</p>
-        <div class="date-badge">${date}</div>
-      </div>
-    </div>
-    
-    <!-- 内容区域 -->
-    <div class="content">
-      <!-- 用户信息卡片 -->
-      <div class="user-card">
-        <div class="user-card-header">
-          <div class="user-icon">👤</div>
-          <div class="user-info">
-            <h3>${user.username}</h3>
-            <p>${hasWork ? '⚠️ 工作量不足' : '❌ 今日未工作'}</p>
-          </div>
-        </div>
-        ${hasWork ? `
-        <div class="user-stats">
-          <div class="user-stat">
-            <div class="user-stat-label">工作时长</div>
-            <div class="user-stat-value">${Math.floor(hours)}h${Math.round((hours % 1) * 60)}m</div>
-          </div>
-          <div class="user-stat">
-            <div class="user-stat-label">合成数量</div>
-            <div class="user-stat-value">${workData?.composition_count || 0}</div>
-          </div>
-          <div class="user-stat">
-            <div class="user-stat-label">关键帧数</div>
-            <div class="user-stat-value">${workData?.keyframe_count || 0}</div>
-          </div>
-        </div>
-        ` : `
-        <div style="background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #fecaca; margin-top: 12px;">
-          <p style="margin: 0; color: #dc2626; font-weight: 600; font-size: 14px;">❌ 今天未打开 After Effects</p>
-          <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 13px;">最后工作日：${workData?.last_work_date || '未知'}</p>
-        </div>
-        `}
-      </div>
-      
-      ${hasWork ? `
-      <!-- 进度对比 -->
-      <div class="progress-comparison">
-        <div class="comparison-title">📊 工作进度对比</div>
-        
-        <div class="comparison-bar-container">
-          <div class="comparison-label">
-            <span>实际完成</span>
-            <span>${Math.floor(hours)}h${Math.round((hours % 1) * 60)}m (${completionRate}%)</span>
-          </div>
-          <div class="comparison-bar">
-            <div class="comparison-fill current" style="width: ${completionRate}%">${completionRate}%</div>
-          </div>
-        </div>
-        
-        <div class="comparison-bar-container">
-          <div class="comparison-label">
-            <span>目标要求</span>
-            <span>${minHours}h (100%)</span>
-          </div>
-          <div class="comparison-bar">
-            <div class="comparison-fill target" style="width: 100%">${minHours}h</div>
-          </div>
-        </div>
-        
-        <div class="gap-indicator">
-          <p>距离目标还差</p>
-          <div class="gap-value">${Math.floor(shortfall)}h${Math.round((shortfall % 1) * 60)}m</div>
-        </div>
-      </div>
-      ` : `
-      <!-- 未工作提示 -->
-      <div class="gap-indicator" style="margin-bottom: 32px;">
-        <p>今日工作状态</p>
-        <div class="gap-value">0% 完成</div>
-        <p style="margin-top: 8px;">距离目标：${minHours}h</p>
-      </div>
-      `}
-      
-      <!-- 行动建议 -->
-      <div class="action-steps">
-        <div class="action-title">
-          <span>💡</span>
-          <span>建议行动</span>
-        </div>
-        <div class="step-item">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <p><strong>联系用户</strong> - 了解工作进度和遇到的困难</p>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <p><strong>提供支持</strong> - 协助解决技术问题或资源需求</p>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <p><strong>跟进进度</strong> - 确认后续工作计划和时间安排</p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 页脚 -->
-      <div class="footer">
-        <p>📧 此邮件由 RuAlive 自动生成</p>
-        <p>紧急联系人监督系统</p>
-        <p>© ${new Date().getFullYear()} RuAlive. All rights reserved.</p>
-      </div>
-    </div>
-  </div>
+<body style="margin:0; padding:0; background-color:#f9f1f1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f9f1f1; padding:20px 0;">
+    <tr>
+      <td align="center">
+
+        <table role="presentation" width="100%" style="max-width:600px; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+
+          <!-- 头部 - 警告色 -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #ef4444, #f87171); padding:32px 24px; text-align:center; color:white;">
+              <h1 style="margin:0; font-size:30px; font-weight:700;">工作提醒</h1>
+              <p style="margin:12px 0 0; font-size:16px; opacity:0.95;">${dateStr}</p>
+            </td>
+          </tr>
+
+          <!-- 主要警示内容 -->
+          <tr>
+            <td style="padding:32px 24px 20px; font-size:16px; line-height:1.6; color:#1f2937;">
+              <p style="margin:0 0 20px;">Hi，<strong>${username}</strong></p>
+              
+              <p style="margin:0 0 24px; font-weight:500; color:#991b1b;">
+                系统检测到您今日的工作时长 <strong style="color:#b91c1c; font-size:1.15em;">${hoursText}</strong> ${shortfallText}，
+                <br>明显低于公司最低目标（${minWorkHours}小时）。
+              </p>
+
+              <p style="margin:0 0 16px;">
+                这可能会影响项目进度与团队整体计划。
+                请合理安排时间，尽快补足今日工作量，或说明情况。
+              </p>
+            </td>
+          </tr>
+
+          <!-- 数据概览（简洁版） -->
+          <tr>
+            <td style="padding:0 24px 32px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding:0 8px; width:50%;">
+                    <div style="background:#fef2f2; border-radius:10px; padding:20px 16px; text-align:center; border:1px solid #fecaca;">
+                      <div style="font-size:32px; font-weight:700; color:#b91c1c;">${hoursText}</div>
+                      <div style="margin-top:8px; font-size:14px; color:#7f1d1d;">今日工作时长</div>
+                      <div style="margin-top:10px; font-size:13px; color:#991b1b; font-weight:500;">未达标</div>
+                    </div>
+                  </td>
+                  <td style="padding:0 8px; width:50%;">
+                    <div style="background:#fefce8; border-radius:10px; padding:20px 16px; text-align:center; border:1px solid #fef08a;">
+                      <div style="font-size:32px; font-weight:700; color:#a16207;">${projectCount}</div>
+                      <div style="margin-top:8px; font-size:14px; color:#713f12;">今日项目数</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 行动呼吁 -->
+          <tr>
+            <td style="padding:0 24px 32px; text-align:center;">
+              <p style="margin:0 0 20px; font-size:15px; color:#374151; font-weight:500;">
+                请在24小时内：
+              </p>
+              <p style="margin:0 0 28px; font-size:15px; line-height:1.5;">
+                1. 继续完成今日剩余工作<br>
+                2. 或回复本邮件 / 联系下方人员说明情况
+              </p>
+
+              <a href="mailto:${emergencyEmail}" style="display:inline-block; padding:14px 32px; background:#dc2626; color:white; font-weight:600; text-decoration:none; border-radius:8px; font-size:16px;">
+                立即联系 ${emergencyName}
+              </a>
+            </td>
+          </tr>
+
+          <!-- 紧急联系 & 免责 -->
+          <tr>
+            <td style="padding:24px; background:#f1f5f9; text-align:center; font-size:14px; color:#4b5563; border-top:1px solid #e2e8f0;">
+              <p style="margin:0 0 16px;">
+                如有特殊情况，请尽快联系：
+                <br><strong>${emergencyName}</strong> 
+                <a href="mailto:${emergencyEmail}" style="color:#dc2626; text-decoration:none; font-weight:500;">${emergencyEmail}</a>
+              </p>
+              <p style="margin:16px 0 0; font-size:13px; color:#6b7280;">
+                这是一封自动发送的提醒邮件，请勿直接回复（除非说明情况）。
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
 </body>
 </html>
-  `;
+  `.trim();
 }
