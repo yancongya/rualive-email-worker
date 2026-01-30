@@ -252,6 +252,10 @@ export default {
       return handleUpdateCurrentUser(request, env);
     }
 
+    if (path === '/api/auth/change-password' && request.method === 'POST') {
+      return handleChangePassword(request, env);
+    }
+
     if (path === '/api/auth/init' && request.method === 'POST') {
       return handleInitAdmin(request, env);
     }
@@ -829,6 +833,63 @@ async function handleUpdateCurrentUser(request, env) {
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// 修改密码
+async function handleChangePassword(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  try {
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ success: false, error: '未授权' }, { status: 401 });
+    }
+    
+    const body = await request.json();
+    const { currentPassword, newPassword } = body;
+    
+    // 验证输入
+    if (!currentPassword || !newPassword) {
+      return Response.json({ success: false, error: '请填写所有字段' }, { status: 400 });
+    }
+    
+    if (newPassword.length < 6) {
+      return Response.json({ success: false, error: '新密码长度至少需要6个字符' }, { status: 400 });
+    }
+    
+    // 获取当前用户信息
+    const user = await DB.prepare(
+      'SELECT id, email, username, password_hash FROM users WHERE id = ?'
+    ).bind(payload.userId).first();
+    
+    if (!user) {
+      return Response.json({ success: false, error: '用户不存在' }, { status: 404 });
+    }
+    
+    // 验证当前密码
+    const bcrypt = require('bcryptjs');
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    
+    if (!isCurrentPasswordValid) {
+      return Response.json({ success: false, error: '当前密码不正确' }, { status: 401 });
+    }
+    
+    // 生成新密码哈希
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    // 更新密码
+    await DB.prepare(
+      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(newPasswordHash, payload.userId).run();
+    
+    return Response.json({ 
+      success: true, 
+      message: '密码修改成功'
+    });
+  } catch (error) {
+    console.error('[ChangePassword] Error:', error);
+    return Response.json({ success: false, error: '密码修改失败' }, { status: 500 });
   }
 }
 

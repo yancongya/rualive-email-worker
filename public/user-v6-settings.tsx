@@ -42,7 +42,7 @@ const S_TRANS = {
     systemSubtitle: "SYSTEM_CONFIG_V6.2.0 // ROOT_ACCESS_GRANTED",
     on: "ON",
     off: "OFF",
-    weekDays: ["S", "M", "T", "W", "T", "F", "S"], // Sun, Mon, Tue...
+    weekDays: ["S", "M", "T", "W", "T", "F", "S"],
     timezone: "TIMEZONE",
     userNotificationTime: "USER NOTIFICATION TIME",
     enableEmergency: "ENABLE EMERGENCY CONTACT",
@@ -56,6 +56,18 @@ const S_TRANS = {
     role: "ROLE",
     createdAt: "CREATED AT",
     lastLogin: "LAST LOGIN",
+    changePassword: "CHANGE PASSWORD",
+    currentPassword: "CURRENT PASSWORD",
+    newPassword: "NEW PASSWORD",
+    confirmPassword: "CONFIRM PASSWORD",
+    passwordUpdateSuccess: "PASSWORD UPDATED SUCCESSFULLY",
+    passwordUpdateFailed: "PASSWORD UPDATE FAILED",
+    passwordsDoNotMatch: "PASSWORDS DO NOT MATCH",
+    passwordTooShort: "PASSWORD MUST BE AT LEAST 6 CHARACTERS",
+    incorrectPassword: "INCORRECT CURRENT PASSWORD",
+    passwordUpdating: "UPDATING PASSWORD...",
+    cancel: "CANCEL",
+    save: "SAVE",
     loadError: "LOAD ERROR",
     saveError: "SAVE ERROR",
     sendError: "SEND ERROR"
@@ -108,6 +120,18 @@ const S_TRANS = {
     role: "角色",
     createdAt: "创建时间",
     lastLogin: "最后登录",
+    changePassword: "修改密码",
+    currentPassword: "当前密码",
+    newPassword: "新密码",
+    confirmPassword: "确认密码",
+    passwordUpdateSuccess: "密码更新成功",
+    passwordUpdateFailed: "密码更新失败",
+    passwordsDoNotMatch: "两次输入的密码不一致",
+    passwordTooShort: "密码长度至少需要6个字符",
+    incorrectPassword: "当前密码不正确",
+    passwordUpdating: "正在更新密码...",
+    cancel: "取消",
+    save: "保存",
     loadError: "加载失败",
     saveError: "保存失败",
     sendError: "发送失败"
@@ -430,6 +454,29 @@ async function updateCurrentUser(username: string) {
 }
 
 /**
+ * 修改密码
+ */
+async function changePassword(currentPassword: string, newPassword: string) {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/change-password`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `API request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to change password:', error);
+    throw error;
+  }
+}
+
+/**
  * 用户登出
  */
 async function logoutUser() {
@@ -466,10 +513,57 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
   const [editingUsername, setEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  
+  // 修改密码状态
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const handleLogout = async () => {
     if (confirm(lang === 'ZH' ? '确定要登出吗？' : 'Are you sure you want to logout?')) {
       await logoutUser();
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // 验证表单
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError(t.passwordTooShort);
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError(t.passwordsDoNotMatch);
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      setPasswordError(null);
+      setFeedback(t.passwordUpdating);
+
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+
+      // 清空表单并关闭模态窗
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setShowPasswordModal(false);
+
+      setFeedback(t.passwordUpdateSuccess);
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (error: any) {
+      setPasswordError(error.message || t.passwordUpdateFailed);
+      setFeedback(null);
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -764,7 +858,14 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
               </div>
               
               {/* Logout Button */}
-              <div className="pt-4 mt-4 border-t border-white/10">
+              <div className="pt-4 mt-4 border-t border-white/10 space-y-2">
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ru-primary/10 border border-ru-primary/30 text-ru-primary text-sm font-bold rounded-sm hover:bg-ru-primary/20 hover:border-ru-primary/50 hover:text-white transition-all"
+                >
+                  <Lock size={16} />
+                  {t.changePassword}
+                </button>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-bold rounded-sm hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 transition-all"
@@ -915,6 +1016,117 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                 </button>
               </div>
             </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+          <div className="bg-ru-glass border border-ru-glassBorder rounded-[2rem] p-8 sm:p-12 w-full max-w-md shadow-2xl relative">
+            <button 
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                setPasswordError(null);
+              }}
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-ru-primary/20 rounded-full mb-4">
+                <Lock size={32} className="text-ru-primary" />
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2">
+                {t.changePassword}
+                <span className="text-ru-primary">.</span>
+              </h3>
+              <p className="text-white/40 text-xs font-bold italic uppercase tracking-wider">
+                PASSWORD_UPDATE_PROTOCOL
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-ru-textMuted ml-1 block mb-2">
+                  {t.currentPassword}
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 font-bold text-sm focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all"
+                  placeholder="•••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-ru-textMuted ml-1 block mb-2">
+                  {t.newPassword}
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 font-bold text-sm focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all"
+                  placeholder="•••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-ru-textMuted ml-1 block mb-2">
+                  {t.confirmPassword}
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 font-bold text-sm focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all"
+                  placeholder="•••••••••"
+                />
+              </div>
+
+              {passwordError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-[10px] text-red-400 font-mono">
+                  {passwordError}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    setPasswordError(null);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 text-white text-sm font-bold rounded-xl hover:bg-white/10 transition-all"
+                  disabled={passwordLoading}
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={passwordLoading}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-ru-primary hover:bg-[#ff8559] text-black text-sm font-bold rounded-xl shadow-lg shadow-ru-primary/30 transition-all disabled:opacity-70 disabled:pointer-events-none"
+                >
+                  {passwordLoading ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" />
+                      {t.passwordUpdating}
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      {t.save}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

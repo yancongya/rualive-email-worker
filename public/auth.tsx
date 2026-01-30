@@ -50,6 +50,7 @@ interface Popup { id: number; x: number; y: number; text: string; }
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [popups, setPopups] = useState<Popup[]>([]);
   const popupId = useRef(0);
   const formRef = useRef<HTMLDivElement>(null);
@@ -155,7 +156,14 @@ const AuthPage = () => {
             <div className="space-y-1">
               <div className="flex justify-between items-end mb-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">密码 Password</label>
-                {isLogin && <a href="#" className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary">忘记密码？</a>}
+                {isLogin && (
+                  <button 
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary transition-colors"
+                  >
+                    忘记密码？
+                  </button>
+                )}
               </div>
               <input type="password" placeholder="••••••••" className="input-field w-full h-12 px-4 rounded-xl font-bold text-sm" />
             </div>
@@ -185,6 +193,65 @@ const AuthPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+          <div 
+            ref={formRef}
+            className="glass-card rounded-[2rem] p-8 sm:p-12 w-full max-w-md shadow-2xl relative"
+          >
+            <button 
+              onClick={() => setShowForgotPassword(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full mb-4">
+                <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.667 15h4.666" />
+                </svg>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2">
+                重置密码
+                <span className="text-primary">.</span>
+              </h3>
+              <p className="text-white/40 text-xs font-bold italic uppercase tracking-wider">
+                PASSWORD RESET PROTOCOL
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                <p className="text-white/80 text-sm font-mono text-center leading-relaxed">
+                  需要重置密码？请联系管理员：
+                </p>
+                <p className="text-primary font-black text-lg text-center mt-3">
+                  2655283737@qq.com
+                </p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-white/30 text-[11px] font-bold italic">
+                  管理员将协助您完成密码重置流程
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setShowForgotPassword(false)}
+                className="w-full bg-white/10 hover:bg-white/20 text-white h-12 rounded-xl font-bold text-sm uppercase tracking-wider transition-all"
+              >
+                返回登录
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
