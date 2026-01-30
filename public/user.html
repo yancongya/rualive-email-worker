@@ -5,177 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RuAlive - User Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!--
-  RuAlive User Dashboard - 完整功能用户仪表板
-  =========================================
-  功能：
-  - 工作数据统计（工作时长、合成数量、关键帧数量、工作天数）
-  - 图表展示（使用 Chart.js，支持日/月/年视图）
-  - AE 状态监控（在线/离线状态、项目信息、合成信息）
-  - 邮件配置（启用/禁用通知、紧急联系人、工作阈值）
-  - 工作历史记录
-  - 深色模式支持
-  - 实时数据更新
-
-  认证：
-  - 使用 localStorage.getItem('rualive_token') 进行认证
-  - 使用 localStorage.getItem('rualive_user') 获取用户信息
-
-  API 端点：
-  - /api/work-logs - 获取工作日志
-  - /api/config - 获取/保存用户配置
-  - /api/send-now - 发送测试邮件
-  - /api/heartbeat - 发送心跳
-  - /api/ae-status - 获取/更新 AE 状态
-
-  注意：此文件从原始的 user_page.html 复制而来，并修复了以下问题：
-  1. Token 键名从 'token' 改为 'rualive_token' 以与主应用保持一致
-  2. 添加了完整的 CSS 变量定义以支持浅色/深色主题
-  -->
   
   
-<style>
-:root {
-  /* Light Theme Colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f3f4f6;
-  --bg-card: #ffffff;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --border-color: #e5e7eb;
-  --accent-primary: #667eea;
-  --accent-secondary: #764ba2;
-  --success: #10b981;
-  --error: #ef4444;
-  --warning: #f59e0b;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.dark {
-  /* Dark Theme Colors */
-  --bg-primary: #1f2937;
-  --bg-secondary: #374151;
-  --bg-card: #111827;
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --border-color: #4b5563;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-}
-
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  transition: background 0.3s, color 0.3s;
-}
-
-/* Navbar Styles */
-.navbar {
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  padding: 1rem 2rem;
-  box-shadow: var(--shadow);
-}
-
-.navbar-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.navbar h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.dark-mode-toggle {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.dark-mode-toggle:hover {
-  border-color: var(--accent-primary);
-}
-
-.logout-btn {
-  background: var(--error);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.logout-btn:hover {
-  background: #dc2626;
-}
-
-/* Main Container */
-.main-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-/* Content Grid */
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 1024px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Card Styles */
-.card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-}
-
-.card h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.left-column,
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-</style>
-<style>/**
+<style></style><style>/**
  * User Dashboard Styles
  */
 
@@ -718,6 +550,20 @@ table tbody tr:hover {
             </div>
           </div>
 
+          <div class="form-section">
+            <h3>⏰ Notification Time</h3>
+            <div class="form-group">
+              <label>User Notification Hour (0-23)</label>
+              <select id="userNotificationHour">
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Emergency Notification Hour (0-23)</label>
+              <select id="emergencyNotificationHour">
+              </select>
+            </div>
+          </div>
+
           <div class="btn-group">
             <button class="btn btn-primary" onclick="saveConfig()">💾 Save Config</button>
             <button class="btn btn-success" onclick="sendTestEmail()">📧 Send Test Email</button>
@@ -747,8 +593,8 @@ table tbody tr:hover {
     };
 
     window.handleLogout = function() {
-      localStorage.removeItem('rualive_token');
-      localStorage.removeItem('rualive_user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
       window.location.href = '/login';
     };
   </script>
@@ -770,7 +616,7 @@ const API_BASE = window.location.origin;
  * Get Auth Header
  */
 function getAuthHeader() {
-  const token = localStorage.getItem('rualive_token');
+  const token = localStorage.getItem('token');
   return {
     'Authorization': 'Bearer ' + token,
     'Content-Type': 'application/json'
@@ -1495,6 +1341,9 @@ async function initApp() {
     window.chartView = new ChartView('chartView');
     window.logsTable = new LogsTable('logsView');
 
+    // Initialize hour selectors
+    initHourSelectors();
+
     // Load data
     await loadData();
 
@@ -1506,6 +1355,9 @@ async function initApp() {
 
     // Load user info
     await loadUserInfo();
+
+    // Load config
+    await loadConfig();
 
     // Update online status
     await updateOnlineStatus();
@@ -1577,16 +1429,132 @@ function handleTimeRangeChange(range, date) {
  */
 async function loadUserInfo() {
   try {
-    const token = localStorage.getItem('rualive_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       window.location.href = '/login';
       return;
     }
 
     // Parse token to get user info (simplified version)
-    const userInfo = JSON.parse(localStorage.getItem('rualive_user') || '{}');
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
     document.getElementById('userInfo').textContent = userInfo.username || userInfo.email || 'User';
   } catch (error) {
+    console.error('Failed to load user info:', error);
+  }
+}
+
+/**
+ * Initialize Hour Selectors
+ */
+function initHourSelectors() {
+  const userSelect = document.getElementById('userNotificationHour');
+  const emergencySelect = document.getElementById('emergencyNotificationHour');
+
+  if (userSelect) {
+    for (let i = 0; i < 24; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `${String(i).padStart(2, '0')}:00`;
+      userSelect.appendChild(option);
+    }
+  }
+
+  if (emergencySelect) {
+    for (let i = 0; i < 24; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `${String(i).padStart(2, '0')}:00`;
+      emergencySelect.appendChild(option);
+    }
+  }
+}
+
+/**
+ * Load Config
+ */
+async function loadConfig() {
+  try {
+    const response = await apiRequest('/api/config', {
+      method: 'GET'
+    });
+
+    if (response.success && response.data) {
+      const config = response.data;
+
+      // Load email settings
+      if (config.enabled !== undefined) {
+        document.getElementById('enabled').value = config.enabled;
+      }
+      if (config.emergency_email) {
+        document.getElementById('emergencyEmail').value = config.emergency_email;
+      }
+      if (config.emergency_name) {
+        document.getElementById('emergencyName').value = config.emergency_name;
+      }
+
+      // Load thresholds
+      if (config.thresholds) {
+        if (config.thresholds.minWorkHours !== undefined) {
+          document.getElementById('minHours').value = config.thresholds.minWorkHours;
+        }
+        if (config.thresholds.minKeyframes !== undefined) {
+          document.getElementById('minKeyframes').value = config.thresholds.minKeyframes;
+        }
+        if (config.thresholds.minJsonSize !== undefined) {
+          document.getElementById('minJsonSize').value = config.thresholds.minJsonSize;
+        }
+      }
+
+      // Load notification hours
+      if (config.user_notification_hour !== undefined) {
+        document.getElementById('userNotificationHour').value = config.user_notification_hour;
+      } else {
+        document.getElementById('userNotificationHour').value = 1; // Default: 01:00
+      }
+      if (config.emergency_notification_hour !== undefined) {
+        document.getElementById('emergencyNotificationHour').value = config.emergency_notification_hour;
+      } else {
+        document.getElementById('emergencyNotificationHour').value = 22; // Default: 22:00
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load config:', error);
+  }
+}
+
+/**
+ * Save Config
+ */
+async function saveConfig() {
+  try {
+    const config = {
+      enabled: document.getElementById('enabled').value === 'true',
+      emergency_email: document.getElementById('emergencyEmail').value,
+      emergency_name: document.getElementById('emergencyName').value,
+      thresholds: {
+        minWorkHours: parseFloat(document.getElementById('minHours').value),
+        minKeyframes: parseInt(document.getElementById('minKeyframes').value),
+        minJsonSize: parseInt(document.getElementById('minJsonSize').value)
+      },
+      user_notification_hour: parseInt(document.getElementById('userNotificationHour').value),
+      emergency_notification_hour: parseInt(document.getElementById('emergencyNotificationHour').value)
+    };
+
+    const response = await apiRequest('/api/config', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    });
+
+    if (response.success) {
+      showToast('Configuration saved successfully', 'success');
+    } else {
+      showToast('Failed to save configuration', 'error');
+    }
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    showToast('Failed to save configuration', 'error');
+  }
+}
     console.error('Failed to load user info:', error);
   }
 }
@@ -1604,9 +1572,12 @@ function updateOnlineStatusDisplay(isOnline, statusData = null) {
     statusDot.className = 'status-dot online';
     let statusMessage = 'AE Online';
 
-    // 如果有项目信息，显示项目名称
+    // 如果有项目信息，显示项目名称和项目ID
     if (statusData && statusData.projectName) {
       statusMessage += ` - ${statusData.projectName}`;
+      if (statusData.projectId) {
+        statusMessage += ` (${statusData.projectId})`;
+      }
     }
     // 如果有合成信息，显示合成名称
     if (statusData && statusData.compositionName) {
@@ -1673,6 +1644,13 @@ function updateAEStatusCard(isOnline, statusData = null) {
       html += '<div class="ae-status-detail">';
       html += '<span class="ae-status-label">Project:</span>';
       html += `<span class="ae-status-value">${statusData.projectName}</span>`;
+      html += '</div>';
+    }
+
+    if (statusData.projectId) {
+      html += '<div class="ae-status-detail">';
+      html += '<span class="ae-status-label">Project ID:</span>';
+      html += `<span class="ae-status-value">${statusData.projectId}</span>`;
       html += '</div>';
     }
 
