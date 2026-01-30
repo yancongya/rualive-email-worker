@@ -532,12 +532,12 @@ export default {
           </div>
           <div class="form-group">
             <label>新的API密钥</label>
-            <div style="position: relative;">
+            <form style="position: relative;" onsubmit="return false;">
               <input type="password" id="newApiKey" placeholder="re_xxxxxxxxxxxxxx" style="padding-right: 50px;">
               <button type="button" onclick="toggleApiKeyVisibility()" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 5px;">
                 <span id="toggleIcon">👁️</span>
               </button>
-            </div>
+            </form>
           </div>
           <div class="form-group">
             <label>测试邮件接收邮箱（可选，留空则发送到管理员邮箱）</label>
@@ -607,7 +607,8 @@ export default {
       </div>
       <div class="form-group">
         <label>请输入管理员密码</label>
-        <input type="password" id="adminPassword" placeholder="请输入密码">
+        <form onsubmit="return false;">
+          <input type="password" id="adminPassword" placeholder="请输入密码">
       </div>
       <button class="btn btn-primary" onclick="verifyPassword()">验证</button>
       <button class="btn" onclick="closePasswordModal()">取消</button>
@@ -1454,20 +1455,32 @@ async function handleGetCurrentUser(request, env) {
   const DB = env.DB || env.rualive;
   
   try {
+    console.log('[GetCurrentUser] Starting...');
     const payload = await verifyAuth(request, env);
+    console.log('[GetCurrentUser] Payload:', payload ? { userId: payload.userId, role: payload.role } : 'null');
+    
     if (!payload) {
+      console.log('[GetCurrentUser] No payload, returning 401');
       return Response.json({ success: false, error: '未授权' }, { status: 401 });
     }
     
     const authHeader = request.headers.get('Authorization');
+    console.log('[GetCurrentUser] Auth header exists:', !!authHeader);
     const token = authHeader.substring(7);
+    console.log('[GetCurrentUser] Token (first 20 chars):', token.substring(0, 20));
     
     // 检查会话是否存在
     const session = await DB.prepare(
       'SELECT * FROM sessions WHERE token = ? AND expires_at > datetime("now")'
     ).bind(token).first();
     
+    console.log('[GetCurrentUser] Session found:', !!session);
+    if (session) {
+      console.log('[GetCurrentUser] Session user_id:', session.user_id);
+    }
+    
     if (!session) {
+      console.log('[GetCurrentUser] No valid session, returning 401');
       return Response.json({ success: false, error: '会话已过期' }, { status: 401 });
     }
     
