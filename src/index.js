@@ -1,7 +1,25 @@
 /**
  * RuAlive Email Notification Worker
  * MVP版本 - 每日工作总结和紧急联系人监督
- * Updated: Removed user.html, /user route now returns user-v6.html (2026-01-30)
+ *
+ * ==================== 重要路由配置说明 ====================
+ *
+ * 用户路由变更 (2026-01-30):
+ * - /user 路由现在返回 user-v6.html（新用户界面）
+ * - /user-v6 路由已删除，不再可用
+ * - 旧 user.html 文件已删除，不再构建
+ *
+ * 修改路由后的部署步骤（必须按顺序执行）:
+ * 1. 修改 public/vite.config.ts - 更新构建入口点
+ * 2. cd public && npm run build - React构建前端
+ * 3. cd .. && npx wrangler deploy - Worker部署到Cloudflare
+ * 4. 验证 /user 路由显示新界面
+ *
+ * ⚠️ 注意事项：
+ * - 修改路由配置后必须重新构建前端
+ * - 构建完成后必须部署 Worker 才能生效
+ * - 不要直接修改 dist 目录，必须通过构建生成
+ * =========================================================
  */
 
 // 导入认证模块（注意：在Cloudflare Workers中需要使用动态导入）
