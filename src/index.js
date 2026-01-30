@@ -533,7 +533,8 @@ async function handleInitAdmin(request, env) {
     }
     
     const adminId = 'admin_' + Date.now();
-    const passwordHash = await authModule.hashPassword('admin123');
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash('admin123', 10);
     
     await DB.prepare(
       'INSERT INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)'
@@ -593,7 +594,8 @@ async function handleRegister(request, env) {
     
     // 创建用户
     const userId = authModule.generateUserId();
-    const passwordHash = await authModule.hashPassword(password);
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
     
     await DB.prepare(
       'INSERT INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)'
@@ -641,7 +643,8 @@ async function handleLogin(request, env) {
       return Response.json({ success: false, error: '邮箱或密码错误' }, { status: 401 });
     }
     
-    const isValid = await authModule.verifyPassword(password, user.password_hash);
+    const bcrypt = require('bcryptjs');
+    const isValid = await bcrypt.compare(password, user.password_hash);
     console.log('[Login] Password valid:', isValid);
     
     if (!isValid) {
@@ -1449,7 +1452,9 @@ async function handleResetPassword(request, env) {
     const pathParts = url.pathname.split('/');
     const userId = pathParts[pathParts.length - 2];
     const body = await request.json();
-    const method = body.method || 'generate';
+
+    // 自动判断模式：如果提供了newPassword则使用'set'模式，否则使用'generate'模式
+    const method = body.method || (body.newPassword ? 'set' : 'generate');
 
     // 3. 检查用户是否存在
     const user = await DB.prepare(
@@ -1469,18 +1474,19 @@ async function handleResetPassword(request, env) {
       // 生成12位随机密码
       newPassword = generateSecurePassword(12);
     } else if (method === 'set') {
-      // 验证密码强度
-      if (!isPasswordStrong(body.newPassword)) {
+      // 验证密码长度（管理员重置密码只需至少6位）
+      if (!body.newPassword || body.newPassword.length < 6) {
         return Response.json({
           success: false,
-          error: '密码强度不足，必须包含大小写字母、数字和特殊字符'
+          error: '密码长度至少需要6个字符'
         }, { status: 400 });
       }
       newPassword = body.newPassword;
     }
 
-    // 5. 生成密码哈希
-    const passwordHash = await authModule.hashPassword(newPassword);
+    // 5. 生成密码哈希（使用bcrypt，与验证保持一致）
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(newPassword, 10);
 
     // 6. 更新用户密码和强制修改标记
     await DB.prepare(`
