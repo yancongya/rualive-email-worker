@@ -1949,7 +1949,7 @@ async function handleTestApiKey(request, env) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: env.FROM_EMAIL,
+          from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
           to: [recipientEmail],
           subject: testSubject,
           html: testHtml
@@ -3092,7 +3092,7 @@ async function sendEmail(to, subject, html, env) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.FROM_EMAIL,
+      from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
       to: [to],
       subject: subject,
       html: html,
