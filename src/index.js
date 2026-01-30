@@ -1051,6 +1051,31 @@ export default {
       return handleGetUsers(request, env);
     }
 
+    // 用户管理路由（仅管理员）
+    if (path.match(/^\/api\/admin\/users\/[^\/]+$/) && request.method === 'DELETE') {
+      return handleDeleteUser(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/reset-password$/) && request.method === 'POST') {
+      return handleResetPassword(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-stats$/) && request.method === 'GET') {
+      return handleGetUserEmailStats(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-limit$/) && request.method === 'POST') {
+      return handleSetEmailLimit(request, env);
+    }
+
+    if (path.match(/^\/api\/admin\/users\/[^\/]+\/email-limit-status$/) && request.method === 'GET') {
+      return handleGetEmailLimitStatus(request, env);
+    }
+
+    if (path === '/api/admin/email-stats' && request.method === 'GET') {
+      return handleGetEmailStats(request, env);
+    }
+
     // API密钥管理（仅管理员）
     if (path === '/api/admin/api-key' && request.method === 'GET') {
       return handleGetApiKey(request, env);
@@ -2040,6 +2065,578 @@ async function handleTestApiKey(request, env) {
   }
 }
 
+// ==================== 用户管理功能 - 管理员专用 ====================
+
+// 删除用户
+async function handleDeleteUser(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可删除用户'
+      }, { status: 403 });
+    }
+
+    // 2. 获取要删除的用户ID
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userIdToDelete = pathParts[pathParts.length - 1];
+
+    // 3. 防止删除自己
+    if (userIdToDelete === payload.userId) {
+      return Response.json({
+        success: false,
+        error: '无法删除自己的账户'
+      }, { status: 400 });
+    }
+
+    // 4. 检查用户是否存在
+    const userToDelete = await DB.prepare(
+      'SELECT id, username, role FROM users WHERE id = ?'
+    ).bind(userIdToDelete).first();
+
+    if (!userToDelete) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 5. 检查是否是最后一个管理员
+    if (userToDelete.role === 'admin') {
+      const adminCount = await DB.prepare(
+        'SELECT COUNT(*) as count FROM users WHERE role = ?'
+      ).bind('admin').first();
+
+      if (adminCount.count <= 1) {
+        return Response.json({
+          success: false,
+          error: '无法删除最后一个管理员账户'
+        }, { status: 400 });
+      }
+    }
+
+    // 6. 执行删除（级联删除会自动处理关联表）
+    await DB.prepare('DELETE FROM users WHERE id = ?').bind(userIdToDelete).run();
+
+    // 7. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} deleted user ${userIdToDelete} (${userToDelete.username})`);
+
+    // 8. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '用户已成功删除',
+      deletedUserId: userIdToDelete,
+      deletedUsername: userToDelete.username
+    });
+
+  } catch (error) {
+    console.error('[DeleteUser] Error:', error);
+    return Response.json({
+      success: false,
+      error: '删除用户失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 重置密码
+async function handleResetPassword(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可重置密码'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和请求数据
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const body = await request.json();
+    const method = body.method || 'generate';
+
+    // 3. 检查用户是否存在
+    const user = await DB.prepare(
+      'SELECT id, username, email FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 4. 生成或设置密码
+    let newPassword;
+    if (method === 'generate') {
+      // 生成12位随机密码
+      newPassword = generateSecurePassword(12);
+    } else if (method === 'set') {
+      // 验证密码强度
+      if (!isPasswordStrong(body.newPassword)) {
+        return Response.json({
+          success: false,
+          error: '密码强度不足，必须包含大小写字母、数字和特殊字符'
+        }, { status: 400 });
+      }
+      newPassword = body.newPassword;
+    }
+
+    // 5. 生成密码哈希
+    const passwordHash = await authModule.hashPassword(newPassword);
+
+    // 6. 更新用户密码和强制修改标记
+    await DB.prepare(`
+      UPDATE users
+      SET password_hash = ?,
+          force_password_reset = 1,
+          password_reset_token = ?,
+          password_reset_expires_at = ?
+      WHERE id = ?
+    `).bind(
+      passwordHash,
+      null,
+      null,
+      userId
+    ).run();
+
+    // 7. 发送邮件通知
+    const emailSubject = 'RuAlive 密码重置通知';
+    const emailBody = `
+      <h2>密码已重置</h2>
+      <p>您好，${user.username}：</p>
+      <p>您的密码已被管理员重置。</p>
+      <p>临时密码：<strong>${newPassword}</strong></p>
+      <p>请使用此密码登录，登录后请立即修改密码。</p>
+      <p>临时密码有效期：24小时</p>
+      <p>如果这不是您本人的操作，请立即联系管理员。</p>
+    `;
+
+    // 获取API密钥
+    const KV = env.KV;
+    let actualApiKey = '';
+    if (KV) {
+      actualApiKey = await KV.get('RESEND_API_KEY') || '';
+    }
+    if (!actualApiKey) {
+      actualApiKey = env.RESEND_API_KEY || '';
+    }
+
+    let emailSent = false;
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + actualApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: env.FROM_EMAIL || 'RuAlive@itycon.cn',
+          to: [user.email],
+          subject: emailSubject,
+          html: emailBody
+        })
+      });
+      emailSent = response.ok;
+    } catch (error) {
+      console.error('[ResetPassword] Email send failed:', error);
+    }
+
+    // 8. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} reset password for user ${userId} (${user.username})`);
+
+    // 9. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '密码已重置',
+      userId,
+      username: user.username,
+      method,
+      emailSent
+    });
+
+  } catch (error) {
+    console.error('[ResetPassword] Error:', error);
+    return Response.json({
+      success: false,
+      error: '重置密码失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取用户邮件统计
+async function handleGetUserEmailStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看统计'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和查询参数
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const startDate = url.searchParams.get('startDate') || '1970-01-01';
+    const endDate = url.searchParams.get('endDate') || new Date().toISOString().split('T')[0];
+    const status = url.searchParams.get('status') || 'all';
+
+    // 3. 获取用户信息
+    const user = await DB.prepare(
+      'SELECT id, username, email FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 4. 构建查询条件
+    let query = 'SELECT * FROM email_logs WHERE user_id = ? AND sent_at >= ? AND sent_at <= ?';
+    const params = [userId, startDate + ' 00:00:00', endDate + ' 23:59:59'];
+
+    if (status !== 'all') {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    // 5. 获取统计信息
+    const logs = await DB.prepare(query).bind(...params).all();
+
+    const totalSent = logs.results.filter(l => l.status === 'sent').length;
+    const totalFailed = logs.results.filter(l => l.status === 'failed').length;
+    const totalPending = logs.results.filter(l => l.status === 'pending').length;
+    const lastSentAt = logs.results.filter(l => l.status === 'sent').sort((a, b) =>
+      new Date(b.sent_at) - new Date(a.sent_at)
+    )[0]?.sent_at;
+
+    // 6. 按日期分组统计
+    const dailyStats = {};
+    logs.results.forEach(log => {
+      const date = log.sent_at ? log.sent_at.split(' ')[0] : log.created_at.split(' ')[0];
+      if (!dailyStats[date]) {
+        dailyStats[date] = { sent: 0, failed: 0, pending: 0 };
+      }
+      dailyStats[date][log.status]++;
+    });
+
+    const dailyStatsArray = Object.entries(dailyStats).map(([date, stats]) => ({
+      date,
+      ...stats
+    }));
+
+    // 7. 获取最近的10条日志
+    const recentLogs = logs.results
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10)
+      .map(log => ({
+        id: log.id,
+        subject: log.subject,
+        status: log.status,
+        sentAt: log.sent_at,
+        errorMessage: log.error_message
+      }));
+
+    // 8. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        totalSent,
+        totalFailed,
+        totalPending,
+        lastSentAt,
+        dailyStats: dailyStatsArray,
+        recentLogs
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetUserEmailStats] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取统计失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取全局邮件统计
+async function handleGetEmailStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看统计'
+      }, { status: 403 });
+    }
+
+    // 2. 获取全局统计
+    const totalUsers = await DB.prepare('SELECT COUNT(*) as count FROM users').first();
+    const totalSent = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('sent').first();
+    const totalFailed = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('failed').first();
+    const totalPending = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('pending').first();
+
+    // 3. 获取发送最多的用户
+    const topUsers = await DB.prepare(`
+      SELECT u.id, u.username, COUNT(e.id) as totalSent
+      FROM users u
+      LEFT JOIN email_logs e ON u.id = e.user_id AND e.status = 'sent'
+      GROUP BY u.id
+      ORDER BY totalSent DESC
+      LIMIT 10
+    `).all();
+
+    // 4. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        totalUsers: totalUsers.count,
+        totalSent: totalSent.count,
+        totalFailed: totalFailed.count,
+        totalPending: totalPending.count,
+        topUsers: topUsers.results
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetEmailStats] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取统计失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 设置邮件限制
+async function handleSetEmailLimit(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可设置限制'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID和请求数据
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+    const body = await request.json();
+    const dailyEmailLimit = body.dailyEmailLimit;
+
+    // 3. 验证限制值
+    if (dailyEmailLimit < 0 || dailyEmailLimit > 100) {
+      return Response.json({
+        success: false,
+        error: '邮件限制必须在 0-100 之间'
+      }, { status: 400 });
+    }
+
+    // 4. 检查用户是否存在
+    const user = await DB.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return Response.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 404 });
+    }
+
+    // 5. 更新邮件限制
+    await DB.prepare(`
+      INSERT INTO user_configs (user_id, daily_email_limit)
+      VALUES (?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET daily_email_limit = excluded.daily_email_limit
+    `).bind(userId, dailyEmailLimit).run();
+
+    // 6. 记录操作日志
+    console.log(`[Admin] User ${payload.userId} set email limit to ${dailyEmailLimit} for user ${userId}`);
+
+    // 7. 返回成功响应
+    return Response.json({
+      success: true,
+      message: '邮件限制已设置',
+      userId,
+      dailyEmailLimit
+    });
+
+  } catch (error) {
+    console.error('[SetEmailLimit] Error:', error);
+    return Response.json({
+      success: false,
+      error: '设置限制失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 获取邮件限制状态
+async function handleGetEmailLimitStatus(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 1. 验证管理员权限
+    const payload = await verifyAuth(request, env);
+    if (!payload || payload.role !== 'admin') {
+      return Response.json({
+        success: false,
+        error: '权限不足，仅管理员可查看状态'
+      }, { status: 403 });
+    }
+
+    // 2. 获取用户ID
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const userId = pathParts[pathParts.length - 2];
+
+    // 3. 获取配置
+    const config = await DB.prepare(
+      'SELECT daily_email_limit, daily_email_count, last_email_date FROM user_configs WHERE user_id = ?'
+    ).bind(userId).first();
+
+    // 4. 如果配置不存在，返回默认值
+    if (!config) {
+      return Response.json({
+        success: true,
+        data: {
+          userId,
+          dailyEmailLimit: 10,
+          dailyEmailCount: 0,
+          remaining: 10,
+          lastEmailDate: null
+        }
+      });
+    }
+
+    // 5. 检查是否是新的一天
+    const today = new Date().toISOString().split('T')[0];
+    let dailyEmailCount = config.daily_email_count;
+    if (config.last_email_date !== today) {
+      dailyEmailCount = 0;
+    }
+
+    // 6. 返回结果
+    return Response.json({
+      success: true,
+      data: {
+        userId,
+        dailyEmailLimit: config.daily_email_limit,
+        dailyEmailCount,
+        remaining: config.daily_email_limit - dailyEmailCount,
+        lastEmailDate: config.last_email_date
+      }
+    });
+
+  } catch (error) {
+    console.error('[GetEmailLimitStatus] Error:', error);
+    return Response.json({
+      success: false,
+      error: '获取状态失败: ' + error.message
+    }, { status: 500 });
+  }
+}
+
+// 检查邮件限制
+async function checkEmailLimit(userId, env) {
+  const DB = env.DB || env.rualive;
+  const today = new Date().toISOString().split('T')[0];
+
+  // 获取用户配置
+  const config = await DB.prepare(
+    'SELECT daily_email_limit, daily_email_count, last_email_date FROM user_configs WHERE user_id = ?'
+  ).bind(userId).first();
+
+  // 如果配置不存在，创建默认配置
+  if (!config) {
+    await DB.prepare(`
+      INSERT INTO user_configs (user_id, daily_email_limit, daily_email_count, last_email_date)
+      VALUES (?, 10, 0, ?)
+    `).bind(userId, today).run();
+    return { allowed: true, remaining: 10 };
+  }
+
+  // 如果是新的一天，重置计数器
+  if (config.last_email_date !== today) {
+    await DB.prepare(`
+      UPDATE user_configs
+      SET daily_email_count = 0, last_email_date = ?
+      WHERE user_id = ?
+    `).bind(today, userId).run();
+    config.daily_email_count = 0;
+  }
+
+  // 检查是否超限
+  if (config.daily_email_count >= config.daily_email_limit) {
+    return {
+      allowed: false,
+      reason: 'daily_limit_exceeded',
+      limit: config.daily_email_limit,
+      current: config.daily_email_count,
+      message: `每日发送次数已达上限 (${config.daily_email_limit})`
+    };
+  }
+
+  return {
+    allowed: true,
+    remaining: config.daily_email_limit - config.daily_email_count
+  };
+}
+
+// 增加发送计数
+async function incrementEmailCount(userId, env) {
+  const DB = env.DB || env.rualive;
+  await DB.prepare(`
+    UPDATE user_configs
+    SET daily_email_count = daily_email_count + 1
+    WHERE user_id = ?
+  `).bind(userId).run();
+}
+
+// 生成安全密码
+function generateSecurePassword(length = 12) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+// 验证密码强度
+function isPasswordStrong(password) {
+  // 至少8位，包含大小写字母、数字和特殊字符
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return strongPasswordRegex.test(password);
+}
+
 // ==================== API处理函数 ====================
 
 async function handleGetConfig(request, env) {
@@ -2244,6 +2841,16 @@ async function handleSendNow(request, env) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // 检查邮件发送限制
+    const limitCheck = await checkEmailLimit(userId, env);
+    if (!limitCheck.allowed) {
+      return Response.json({
+        error: limitCheck.message,
+        limit: limitCheck.limit,
+        current: limitCheck.current
+      }, { status: 429 });
+    }
+
     // 获取请求体中的收件人选择（安全处理空body）
     let body = {};
     try {
@@ -2292,6 +2899,9 @@ async function handleSendNow(request, env) {
       console.log('Sending daily summary to user');
       await sendDailySummary(user, workData, config, env);
     }
+
+    // 增加邮件发送计数
+    await incrementEmailCount(userId, env);
 
     // 记录测试日志
     const testEmail = recipient === 'emergency' ? config.emergency_email : user.email;
