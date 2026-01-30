@@ -204,25 +204,18 @@ const TimeDigit = ({ value, onChange }: { value: string, onChange: (dir: 1 | -1)
 
 // Digital Clock Style Time Selector
 const DigitalTimeSelector = ({ label, value, onChange, icon: Icon }: any) => {
-  const [hStr, mStr] = (value || '00:00').split(':');
+  const [hStr] = (value || '00:00').split(':');
   const h = parseInt(hStr, 10) || 0;
-  const m = parseInt(mStr, 10) || 0;
 
-  const updateTime = (newH: number, newM: number) => {
+  const updateTime = (newH: number) => {
     const formattedH = newH.toString().padStart(2, '0');
-    const formattedM = newM.toString().padStart(2, '0');
-    onChange(`${formattedH}:${formattedM}`);
+    onChange(`${formattedH}:00`);
   };
 
   const adjustH = useCallback((dir: 1 | -1) => {
     const next = (h + dir + 24) % 24;
-    updateTime(next, m);
-  }, [h, m, updateTime]);
-
-  const adjustM = useCallback((dir: 1 | -1) => {
-    const next = (m + dir + 60) % 60;
-    updateTime(h, next);
-  }, [h, m, updateTime]);
+    updateTime(next);
+  }, [h, updateTime]);
 
   return (
     <div className="flex flex-col gap-1.5 mb-6">
@@ -236,9 +229,13 @@ const DigitalTimeSelector = ({ label, value, onChange, icon: Icon }: any) => {
          
          <TimeDigit value={hStr} onChange={adjustH} />
 
-         <div className="text-2xl font-mono font-bold text-ru-textMuted/50 pb-2 animate-pulse z-10 select-none">:</div>
+         <div className="text-2xl font-mono font-bold text-ru-textMuted/50 pb-2 z-10 select-none">:</div>
 
-         <TimeDigit value={mStr} onChange={adjustM} />
+         <div className="text-2xl font-mono font-bold text-ru-textMuted/50 pb-2 z-10 select-none">00</div>
+      </div>
+      
+      <div className="text-[9px] text-ru-textDim text-center mt-1">
+        仅支持小时选择，分钟固定为00
       </div>
     </div>
   );
@@ -453,8 +450,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
     min_work_hours: 8,
     min_keyframes: 50,
     min_json_size: 10,
-    user_notification_time: '22:00',
-    emergency_notification_time: '20:00',
+    user_notification_time: '01:00',
+    emergency_notification_time: '22:00',
     enable_emergency_notification: true,
     notification_schedule: [1, 2, 3, 4, 5],
     notification_excluded_days: []
@@ -488,8 +485,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
             min_work_hours: userConfig.min_work_hours === 2 ? 8 : (userConfig.min_work_hours || 8),
             min_keyframes: userConfig.min_keyframes || 50,
             min_json_size: userConfig.min_json_size || 10,
-            user_notification_time: userConfig.user_notification_time || '22:00',
-            emergency_notification_time: userConfig.emergency_notification_time || '20:00',
+            user_notification_time: userConfig.user_notification_time || '01:00',
+            emergency_notification_time: userConfig.emergency_notification_time || '22:00',
             enable_emergency_notification: userConfig.enable_emergency_notification ?? true,
             notification_schedule: safeParseJSON(userConfig.notification_schedule, [1, 2, 3, 4, 5]),
             notification_excluded_days: safeParseJSON(userConfig.notification_excluded_days, [])
@@ -528,6 +525,8 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
         min_json_size: config.min_json_size,
         user_notification_time: config.user_notification_time,
         emergency_notification_time: config.emergency_notification_time,
+        user_notification_hour: parseInt(config.user_notification_time.split(':')[0]) || 1,
+        emergency_notification_hour: parseInt(config.emergency_notification_time.split(':')[0]) || 22,
         enable_emergency_notification: config.enable_emergency_notification,
         notification_schedule: JSON.stringify(config.notification_schedule),
         notification_excluded_days: JSON.stringify(config.notification_excluded_days)
