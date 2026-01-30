@@ -1362,7 +1362,10 @@ async function handleLogin(request, env) {
     const body = await request.json();
     const { email, password } = body;
     
+    console.log('[Login] Attempt:', { email, hasPassword: !!password });
+    
     if (!email || !password) {
+      console.log('[Login] Missing parameters');
       return Response.json({ success: false, error: '缺少必要参数' }, { status: 400 });
     }
     
@@ -1370,12 +1373,18 @@ async function handleLogin(request, env) {
       'SELECT id, email, username, password_hash, role FROM users WHERE email = ?'
     ).bind(email).first();
     
+    console.log('[Login] User found:', !!user, user ? user.email : 'none');
+    
     if (!user) {
+      console.log('[Login] User not found');
       return Response.json({ success: false, error: '邮箱或密码错误' }, { status: 401 });
     }
     
     const isValid = await authModule.verifyPassword(password, user.password_hash);
+    console.log('[Login] Password valid:', isValid);
+    
     if (!isValid) {
+      console.log('[Login] Invalid password');
       return Response.json({ success: false, error: '邮箱或密码错误' }, { status: 401 });
     }
     
