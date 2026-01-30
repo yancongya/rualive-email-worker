@@ -1,6 +1,7 @@
 /**
  * RuAlive Email Notification Worker
  * MVP版本 - 每日工作总结和紧急联系人监督
+ * Last Deploy: 2026-01-30 15:00 - Disabled /user-v6 route
  *
  * ==================== 重要路由配置说明 ====================
  *
@@ -112,8 +113,10 @@ export default {
     // 注意：/admin 路由不排除，因为它需要返回后端生成的管理员仪表板 HTML
     if (ASSETS && !path.startsWith('/api/') && path !== '/login' && path !== '/user' && path !== '/user-v6' && path !== '/admin/login') {
       try {
+        console.log('[Assets] Fetching static file for path:', path);
         const assetResponse = await ASSETS.fetch(request);
         if (assetResponse && assetResponse.status !== 404) {
+          console.log('[Assets] Static file found, returning response');
           return assetResponse;
         }
       } catch (error) {
@@ -179,7 +182,13 @@ export default {
           const userUrl = new URL('/user-v6.html', request.url);
           const assetResponse = await ASSETS.fetch(new Request(userUrl, { method: 'GET' }));
           if (assetResponse && assetResponse.status !== 404) {
-            return assetResponse;
+            // 添加缓存控制头部，确保 Cloudflare 不缓存动态页面
+            const newHeaders = new Headers(assetResponse.headers);
+            newHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            return new Response(assetResponse.body, {
+              status: assetResponse.status,
+              headers: newHeaders
+            });
           }
         } catch (error) {
           console.error('Failed to fetch user-v6.html from Assets:', error);
@@ -190,10 +199,14 @@ export default {
     }
 
     if (path === '/user-v6') {
-      // /user-v6 路由已废弃，返回 404
-      return new Response('Route deprecated. Please use /user instead.', { 
-        status: 404,
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }
+      // /user-v6 路由已废弃，重定向到 /user
+      console.log('[Route] /user-v6 accessed, redirecting to /user');
+      return new Response(null, {
+        status: 308, // Permanent Redirect
+        headers: {
+          'Location': '/user',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+        }
       });
     }
 
