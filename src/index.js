@@ -914,17 +914,21 @@ async function handleDeleteInviteCode(request, env) {
 // 获取用户列表（仅管理员）
 async function handleGetUsers(request, env) {
   const DB = env.DB || env.rualive;
-  
+
   try {
     const payload = await verifyAuth(request, env);
     if (!payload || payload.role !== 'admin') {
       return Response.json({ success: false, error: '权限不足' }, { status: 403 });
     }
-    
+
     const users = await DB.prepare(
-      'SELECT id, email, username, role, created_at, last_login FROM users ORDER BY created_at DESC'
+      `SELECT u.id, u.email, u.username, u.role, u.created_at, u.last_login,
+              uc.daily_email_limit, uc.daily_email_count, uc.last_email_date
+       FROM users u
+       LEFT JOIN user_configs uc ON u.id = uc.user_id
+       ORDER BY u.created_at DESC`
     ).all();
-    
+
     return Response.json({
       success: true,
       users: users.results

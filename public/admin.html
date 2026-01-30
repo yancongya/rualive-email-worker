@@ -958,21 +958,22 @@ ${data.message}
           });
           const data = await response.json();
 
-          if (data.success) {
-            const stats = data.stats;
+          if (data.success && data.data) {
+            const stats = data.data;
             const content = `
               <div style="margin-bottom: 1rem;">
                 <p><strong>用户名:</strong> ${stats.username}</p>
-                <p><strong>总发送次数:</strong> ${stats.totalEmails}</p>
-                <p><strong>成功:</strong> ${stats.successCount}</p>
-                <p><strong>失败:</strong> ${stats.failureCount}</p>
+                <p><strong>总发送次数:</strong> ${stats.totalSent + stats.totalFailed + stats.totalPending}</p>
+                <p><strong>成功:</strong> ${stats.totalSent}</p>
+                <p><strong>失败:</strong> ${stats.totalFailed}</p>
+                <p><strong>待发送:</strong> ${stats.totalPending}</p>
                 <p><strong>最近发送:</strong> ${stats.lastSentAt ? new Date(stats.lastSentAt).toLocaleString('zh-CN') : '从未发送'}</p>
               </div>
             `;
             document.getElementById('emailStatsContent').innerHTML = content;
             document.getElementById('emailStatsModal').classList.add('show');
           } else {
-            showAlert('获取邮件统计失败: ' + data.error, 'error');
+            showAlert('获取邮件统计失败: ' + (data.error || '未知错误'), 'error');
           }
         } catch (error) {
           showAlert('获取邮件统计失败: ' + error.message, 'error');
