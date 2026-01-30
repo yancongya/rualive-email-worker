@@ -161,6 +161,14 @@
       padding: 0.25rem 0.5rem;
       font-size: 0.75rem;
     }
+    .btn-group {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .btn-group .btn {
+      white-space: nowrap;
+    }
     .form-group {
       margin-bottom: 1rem;
     }
@@ -395,9 +403,87 @@
         <label>请输入管理员密码</label>
         <form onsubmit="return false;">
           <input type="password" id="adminPassword" placeholder="请输入密码" autocomplete="new-password">
+        </form>
       </div>
       <button class="btn btn-primary" onclick="verifyPassword()">验证</button>
       <button class="btn" onclick="closePasswordModal()">取消</button>
+    </div>
+  </div>
+
+  <div id="userDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>👤 用户详情</h3>
+        <button class="modal-close" onclick="closeUserDetailModal()">&times;</button>
+      </div>
+      <div id="userDetailContent"></div>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn" onclick="closeUserDetailModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resetPasswordModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔑 重置密码</h3>
+        <button class="modal-close" onclick="closeResetPasswordModal()">&times;</button>
+      </div>
+      <input type="hidden" id="resetUserId">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="resetUsername" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>新密码</label>
+        <input type="password" id="newPassword" placeholder="留空则自动生成随机密码" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>强制用户下次登录时修改密码</label>
+        <select id="forcePasswordReset">
+          <option value="1">是</option>
+          <option value="0">否</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="resetPassword()">重置密码</button>
+      <button class="btn" onclick="closeResetPasswordModal()">取消</button>
+    </div>
+  </div>
+
+  <div id="emailStatsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>📧 邮件统计</h3>
+        <button class="modal-close" onclick="closeEmailStatsModal()">&times;</button>
+      </div>
+      <div id="emailStatsContent"></div>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn" onclick="closeEmailStatsModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="emailLimitModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ 邮件限制设置</h3>
+        <button class="modal-close" onclick="closeEmailLimitModal()">&times;</button>
+      </div>
+      <input type="hidden" id="limitUserId">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="limitUsername" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>每日最大发送次数</label>
+        <input type="number" id="dailyEmailLimit" min="0" max="100" value="10">
+      </div>
+      <div class="form-group">
+        <label>已发送次数（今日）</label>
+        <input type="text" id="currentEmailCount" readonly style="background: #f3f4f6;">
+      </div>
+      <button class="btn btn-primary" onclick="setEmailLimit()">保存设置</button>
+      <button class="btn" onclick="closeEmailLimitModal()">取消</button>
     </div>
   </div>
 
@@ -491,7 +577,15 @@
               <td><span class="badge badge-${user.role}">${user.role === 'admin' ? '管理员' : '用户'}</span></td>
               <td>${new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
               <td>${user.last_login ? new Date(user.last_login).toLocaleDateString('zh-CN') : '从未登录'}</td>
-              <td><button class="btn btn-sm" onclick="showUserDetail('${user.id}')">查看详情</button></td>
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm" onclick="showUserDetail('${user.id}')">详情</button>
+                  <button class="btn btn-sm btn-primary" onclick="showEmailStats('${user.id}')">邮件</button>
+                  <button class="btn btn-sm btn-primary" onclick="showEmailLimitModal('${user.id}')">限制</button>
+                  <button class="btn btn-sm btn-primary" onclick="showResetPasswordModal('${user.id}')">重置密码</button>
+                  ${user.role !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">删除</button>` : ''}
+                </div>
+              </td>
             </tr>
           `).join('');
         }
@@ -751,13 +845,17 @@ ${data.message}
           if (usersData.success) {
             const user = usersData.users.find(u => u.id === userId);
             if (user) {
-              alert('用户详情:\
-\
-用户名: ' + user.username + '\
-邮箱: ' + user.email + '\
-角色: ' + user.role + '\
-注册时间: ' + new Date(user.created_at).toLocaleString('zh-CN') + '\
-最后登录: ' + (user.last_login ? new Date(user.last_login).toLocaleString('zh-CN') : '从未登录'));
+              const content = `
+                <div style="margin-bottom: 1rem;">
+                  <p><strong>用户名:</strong> ${user.username}</p>
+                  <p><strong>邮箱:</strong> <span class="sensitive-info">${maskEmail(user.email)}</span></p>
+                  <p><strong>角色:</strong> ${user.role === 'admin' ? '管理员' : '用户'}</p>
+                  <p><strong>注册时间:</strong> ${new Date(user.created_at).toLocaleString('zh-CN')}</p>
+                  <p><strong>最后登录:</strong> ${user.last_login ? new Date(user.last_login).toLocaleString('zh-CN') : '从未登录'}</p>
+                </div>
+              `;
+              document.getElementById('userDetailContent').innerHTML = content;
+              document.getElementById('userDetailModal').classList.add('show');
             }
           }
         } catch (error) {
@@ -765,6 +863,178 @@ ${data.message}
         }
       };
       document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeUserDetailModal() {
+      document.getElementById('userDetailModal').classList.remove('show');
+    }
+
+    function deleteUser(userId) {
+      if (!confirm('确定要删除该用户吗？此操作不可恢复！')) {
+        return;
+      }
+
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/users/' + userId, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert('用户已成功删除');
+            loadUsers();
+            loadStats();
+          } else {
+            showAlert('删除失败: ' + data.error, 'error');
+          }
+        } catch (error) {
+          showAlert('删除失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function showResetPasswordModal(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              document.getElementById('resetUserId').value = userId;
+              document.getElementById('resetUsername').value = user.username;
+              document.getElementById('newPassword').value = '';
+              document.getElementById('forcePasswordReset').value = '1';
+              document.getElementById('resetPasswordModal').classList.add('show');
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户信息失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeResetPasswordModal() {
+      document.getElementById('resetPasswordModal').classList.remove('show');
+      document.getElementById('newPassword').value = '';
+    }
+
+    async function resetPassword() {
+      const userId = document.getElementById('resetUserId').value;
+      const newPassword = document.getElementById('newPassword').value.trim();
+      const forceReset = document.getElementById('forcePasswordReset').value === '1';
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/reset-password', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newPassword, forceReset })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('密码重置成功！' + (data.password ? ' 新密码: ' + data.password : ''));
+          closeResetPasswordModal();
+        } else {
+          showAlert('重置失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('重置失败: ' + error.message, 'error');
+      }
+    }
+
+    function showEmailStats(userId) {
+      pendingAction = async () => {
+        try {
+          const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/email-stats', {
+            headers: getAuthHeader()
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            const stats = data.stats;
+            const content = `
+              <div style="margin-bottom: 1rem;">
+                <p><strong>用户名:</strong> ${stats.username}</p>
+                <p><strong>总发送次数:</strong> ${stats.totalEmails}</p>
+                <p><strong>成功:</strong> ${stats.successCount}</p>
+                <p><strong>失败:</strong> ${stats.failureCount}</p>
+                <p><strong>最近发送:</strong> ${stats.lastSentAt ? new Date(stats.lastSentAt).toLocaleString('zh-CN') : '从未发送'}</p>
+              </div>
+            `;
+            document.getElementById('emailStatsContent').innerHTML = content;
+            document.getElementById('emailStatsModal').classList.add('show');
+          } else {
+            showAlert('获取邮件统计失败: ' + data.error, 'error');
+          }
+        } catch (error) {
+          showAlert('获取邮件统计失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeEmailStatsModal() {
+      document.getElementById('emailStatsModal').classList.remove('show');
+    }
+
+    function showEmailLimitModal(userId) {
+      pendingAction = async () => {
+        try {
+          const usersResponse = await fetch(API_BASE + '/api/admin/users', {
+            headers: getAuthHeader()
+          });
+          const usersData = await usersResponse.json();
+
+          if (usersData.success) {
+            const user = usersData.users.find(u => u.id === userId);
+            if (user) {
+              document.getElementById('limitUserId').value = userId;
+              document.getElementById('limitUsername').value = user.username;
+              document.getElementById('dailyEmailLimit').value = user.daily_email_limit || 10;
+              document.getElementById('currentEmailCount').value = user.daily_email_count || 0;
+              document.getElementById('emailLimitModal').classList.add('show');
+            }
+          }
+        } catch (error) {
+          showAlert('获取用户信息失败: ' + error.message, 'error');
+        }
+      };
+      document.getElementById('passwordModal').classList.add('show');
+    }
+
+    function closeEmailLimitModal() {
+      document.getElementById('emailLimitModal').classList.remove('show');
+    }
+
+    async function setEmailLimit() {
+      const userId = document.getElementById('limitUserId').value;
+      const dailyEmailLimit = parseInt(document.getElementById('dailyEmailLimit').value);
+
+      try {
+        const response = await fetch(API_BASE + '/api/admin/users/' + userId + '/email-limit', {
+          method: 'POST',
+          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dailyEmailLimit })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('邮件限制已更新');
+          closeEmailLimitModal();
+        } else {
+          showAlert('更新失败: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showAlert('更新失败: ' + error.message, 'error');
+      }
     }
 
     function verifyPassword() {
