@@ -627,7 +627,8 @@ export default {
     }
 
     function getAuthHeader() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('rualive_token');
+      console.log('[AuthHeader] Token from localStorage:', !!token, token ? token.substring(0, 20) + '...' : 'none');
       return { 'Authorization': 'Bearer ' + token };
     }
 
@@ -640,10 +641,16 @@ export default {
 
     async function loadUserInfo() {
       try {
+        console.log('[Admin] Loading user info...');
+        const token = localStorage.getItem('rualive_token');
+        console.log('[Admin] Token exists:', !!token);
+        
         const response = await fetch(API_BASE + '/api/auth/me', {
           headers: getAuthHeader()
         });
         const data = await response.json();
+        
+        console.log('[Admin] Response:', { status: response.status, success: data.success, user: data.user });
 
         if (data.success && data.user && data.user.role === 'admin') {
           document.getElementById('userInfo').textContent = data.user.username;
@@ -653,9 +660,11 @@ export default {
           loadLogs();
           loadApiKey();
         } else {
+          console.log('[Admin] Not admin or failed, redirecting to login');
           window.location.href = '/login';
         }
       } catch (error) {
+        console.error('[Admin] Error loading user info:', error);
         window.location.href = '/login';
       }
     }
@@ -3587,15 +3596,19 @@ function generateLoginPage() {
         const data = await response.json();
 
         if (data.success) {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem('rualive_token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          console.log('[Login] Token saved to localStorage (rualive_token)');
           
           if (data.user.role === 'admin') {
+            console.log('[Login] Redirecting to /admin');
             window.location.href = '/admin';
           } else {
+            console.log('[Login] Redirecting to /user');
             window.location.href = '/user';
           }
         } else {
+          console.log('[Login] Login failed:', data.error);
           showAlert(data.error || '登录失败');
         }
       } catch (error) {
@@ -3650,7 +3663,7 @@ function generateLoginPage() {
 
     // 检查是否已登录
     window.onload = function() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('rualive_token');
       if (token) {
         fetch(API_BASE + '/api/auth/me', {
           headers: { 'Authorization': 'Bearer ' + token }
