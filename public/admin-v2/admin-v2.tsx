@@ -1146,19 +1146,17 @@ function AdminDashboard() {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
-  
-  useEffect(() => {
-    let token = localStorage.getItem('rualive_token');
-    // --- FORCE AUTO-LOGIN IF NO TOKEN EXISTS (DEV CONVENIENCE) ---
-    // If you want "default login", we inject a dev token here so we don't bounce to /login
-    // The API requests might fail later if the backend is real, but the UI will show up.
-    if (!token) {
-       console.log("No token found. Injecting 'dev-auto-token' for default access.");
-       token = 'dev-auto-token';
-       localStorage.setItem('rualive_token', token);
-    }
 
-    if (token) setAuthed(true);
+  useEffect(() => {
+    const token = localStorage.getItem('rualive_token');
+
+    // 如果没有 token，跳转到登录页
+    if (!token) {
+      setAuthed(false);
+    } else {
+      // 如果有 token，设置为已登录
+      setAuthed(true);
+    }
     setLoading(false);
   }, []);
 
