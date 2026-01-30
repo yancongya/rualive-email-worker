@@ -277,6 +277,16 @@ export default {
       return handleInitAdmin(request, env);
     }
 
+    // 重置管理员密码（临时调试用）
+    if (path === '/api/auth/reset-admin-password' && request.method === 'POST') {
+      return handleResetAdminPassword(request, env);
+    }
+
+    // 调试：查看管理员账户信息（临时调试用）
+    if (path === '/api/auth/debug-admin' && request.method === 'GET') {
+      return handleDebugAdmin(request, env);
+    }
+
     // 管理员API
     if (path === '/api/admin/invite-codes' && request.method === 'GET') {
       return handleGetInviteCodes(request, env);
@@ -574,6 +584,57 @@ async function handleInitAdmin(request, env) {
       }
     });
   } catch (error) {
+    return Response.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// 重置管理员密码（临时调试用）
+async function handleResetAdminPassword(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    console.log('[ResetAdmin] Starting password reset');
+
+    // 更新所有管理员账户的密码为 bcrypt 格式
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash('admin123', 10);
+
+    const result = await DB.prepare(
+      'UPDATE users SET password_hash = ? WHERE role = "admin"'
+    ).bind(passwordHash).run();
+
+    console.log('[ResetAdmin] Updated', result.changes, 'admin accounts');
+
+    return Response.json({
+      success: true,
+      message: '管理员密码已重置为 admin123',
+      updated: result.changes
+    });
+  } catch (error) {
+    console.error('[ResetAdmin] Error:', error);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// 调试：查看管理员账户信息（临时调试用）
+async function handleDebugAdmin(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    console.log('[DebugAdmin] Fetching admin accounts');
+
+    const admins = await DB.prepare(
+      'SELECT id, email, username, role, created_at FROM users WHERE role = "admin"'
+    ).all();
+
+    console.log('[DebugAdmin] Found', admins.results.length, 'admin accounts');
+
+    return Response.json({
+      success: true,
+      admins: admins.results
+    });
+  } catch (error) {
+    console.error('[DebugAdmin] Error:', error);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
