@@ -429,6 +429,33 @@ async function updateCurrentUser(username: string) {
   }
 }
 
+/**
+ * 用户登出
+ */
+async function logoutUser() {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      headers: getAuthHeader()
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    // 清除本地存储的token
+    localStorage.removeItem('rualive_token');
+    
+    // 跳转到登录页
+    window.location.href = '/login';
+  } catch (error) {
+    console.error('Failed to logout:', error);
+    // 即使API调用失败，也清除本地token并跳转
+    localStorage.removeItem('rualive_token');
+    window.location.href = '/login';
+  }
+}
+
 export const SettingsView = ({ lang }: { lang: LangType }) => {
   const t = S_TRANS[lang];
   const [loading, setLoading] = useState(true);
@@ -439,6 +466,12 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
   const [editingUsername, setEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
   const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    if (confirm(lang === 'ZH' ? '确定要登出吗？' : 'Are you sure you want to logout?')) {
+      await logoutUser();
+    }
+  };
 
   // 配置状态
   const [config, setConfig] = useState({
@@ -728,6 +761,17 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
                   <Globe size={12} className="text-ru-primary" />
                   {config.timezone}
                 </span>
+              </div>
+              
+              {/* Logout Button */}
+              <div className="pt-4 mt-4 border-t border-white/10">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-bold rounded-sm hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 transition-all"
+                >
+                  <Power size={16} />
+                  {lang === 'ZH' ? '登出' : 'LOGOUT'}
+                </button>
               </div>
             </div>
           </div>
