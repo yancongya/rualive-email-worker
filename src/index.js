@@ -2330,7 +2330,7 @@ async function handleSendNow(request, env) {
 
 async function handleGetLogs(request, env) {
   const DB = env.DB || env.rualive;
-  
+
   try {
     // 从token获取用户ID
     const payload = await verifyAuth(request, env);
@@ -2343,7 +2343,7 @@ async function handleGetLogs(request, env) {
 
     const userId = payload.userId;
     const logs = await getSendLogs(userId, limit, env);
-    return Response.json({ success: true, data: logs });
+    return Response.json({ success: true, logs: logs });
   } catch (error) {
     console.error('handleGetLogs error:', error);
     return Response.json({ error: error.message }, { status: 500 });
@@ -3083,19 +3083,19 @@ async function getSendLogs(userId, limit, env) {
   }
 }
 
-async function logSend(userId, recipientType, recipientEmail, emailType, status, errorMessage, env) {
+async function logSend(userId, recipientType, recipientEmail, emailType, status, errorMessage, env, resendEmailId = null) {
   const DB = env.DB || env.rualive;
-  
+
   if (!DB) {
     console.error('Database not available in logSend');
     return;
   }
-  
+
   try {
     await DB.prepare(`
-      INSERT INTO email_logs (user_id, recipient_type, recipient_email, email_type, status, error_message)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(userId, recipientType, recipientEmail, emailType, status, errorMessage).run();
+      INSERT INTO email_logs (user_id, email_address, subject, status, error_message, sent_at, resend_email_id)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
+    `).bind(userId, recipientEmail, emailType, status, errorMessage, resendEmailId).run();
   } catch (error) {
     console.error('Error in logSend:', error);
   }
@@ -3111,9 +3111,9 @@ async function sendDailySummary(user, workData, config, env) {
   // 使用用户的邮箱
   const email = user.email;
   try {
-    await sendEmail(email, subject, html, env);
-    await logSend(user.id, 'user', email, 'summary', 'success', null, env);
-    console.log(`Daily summary sent to ${email}`);
+    const resendResult = await sendEmail(email, subject, html, env);
+    await logSend(user.id, 'user', email, 'summary', 'success', null, env, resendResult?.id || null);
+    console.log(`Daily summary sent to ${email}, Resend ID: ${resendResult?.id}`);
   } catch (error) {
     console.error(`Failed to send to ${email}:`, error);
     await logSend(user.id, 'user', email, 'summary', 'failed', error.message, env);
@@ -3127,9 +3127,9 @@ async function sendWarningEmail(user, workData, config, env) {
   // 使用紧急联系人邮箱
   if (config.emergency_email) {
     try {
-      await sendEmail(config.emergency_email, subject, html, env);
-      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'success', null, env);
-      console.log(`Warning sent to ${config.emergency_email}`);
+      const resendResult = await sendEmail(config.emergency_email, subject, html, env);
+      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'success', null, env, resendResult?.id || null);
+      console.log(`Warning sent to ${config.emergency_email}, Resend ID: ${resendResult?.id}`);
     } catch (error) {
       console.error(`Failed to send to ${config.emergency_email}:`, error);
       await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'failed', error.message, env);
@@ -3182,6 +3182,146 @@ async function sendEmail(to, subject, html, env) {
   }
 
   return await response.json();
+}
+
+// ==================== Resend 日志同步 ====================
+
+/**
+ * 从 Resend API 获取邮件日志并同步到本地数据库
+ * @param {Object} env - Cloudflare 环境变量
+ * @param {number} limit - 获取的日志数量限制
+ */
+async function syncResendLogs(env, limit = 50) {
+  const DB = env.DB || env.rualive;
+  const KV = env.KV;
+
+  if (!DB || !KV) {
+    console.error('Database or KV not available in syncResendLogs');
+    return;
+  }
+
+  try {
+    // 获取 API 密钥
+    const apiKey = await KV.get('RESEND_API_KEY') || env.RESEND_API_KEY || '';
+    if (!apiKey) {
+      console.log('RESEND_API_KEY not set, skipping sync');
+      return;
+    }
+
+    // 从 Resend API 获取邮件日志
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch Resend logs:', await response.text());
+      return;
+    }
+
+    const resendData = await response.json();
+    const resendLogs = resendData.data || [];
+
+    console.log(`Fetched ${resendLogs.length} logs from Resend`);
+
+    // 同步到本地数据库
+    let syncedCount = 0;
+    for (const resendLog of resendLogs) {
+      // 检查是否已存在此日志
+      const existing = await DB.prepare(
+        'SELECT id FROM email_logs WHERE resend_email_id = ?'
+      ).bind(resendLog.id).first();
+
+      if (!existing) {
+        // 获取用户邮箱（从 to 数组中）
+        const recipientEmail = resendLog.to && resendLog.to[0] ? resendLog.to[0] : 'unknown';
+
+        // 查找对应用户
+        const user = await DB.prepare(
+          'SELECT id FROM users WHERE email = ?'
+        ).bind(recipientEmail).first();
+
+        if (user) {
+          // 根据主题判断邮件类型
+          let emailType = 'unknown';
+          if (resendLog.subject?.includes('工作总结')) {
+            emailType = 'summary';
+          } else if (resendLog.subject?.includes('紧急提醒')) {
+            emailType = 'warning';
+          }
+
+          // 根据 last_event 判断状态
+          const status = resendLog.last_event === 'delivered' ? 'sent' : 'failed';
+
+          // 保存到本地数据库
+          await DB.prepare(`
+            INSERT INTO email_logs (user_id, email_address, subject, status, sent_at, resend_email_id, last_event, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `).bind(
+            user.id,
+            recipientEmail,
+            resendLog.subject || 'No Subject',
+            status,
+            resendLog.sent_at || resendLog.created_at,
+            resendLog.id,
+            resendLog.last_event
+          ).run();
+
+          syncedCount++;
+        }
+      }
+    }
+
+    console.log(`Synced ${syncedCount} new logs from Resend`);
+    return syncedCount;
+  } catch (error) {
+    console.error('Error in syncResendLogs:', error);
+    return 0;
+  }
+}
+
+/**
+ * 获取单个邮件的事件详情
+ * @param {string} resendEmailId - Resend 邮件 ID
+ * @param {Object} env - Cloudflare 环境变量
+ */
+async function fetchResendEmailEvents(resendEmailId, env) {
+  const KV = env.KV;
+
+  if (!KV) {
+    console.error('KV not available in fetchResendEmailEvents');
+    return null;
+  }
+
+  try {
+    const apiKey = await KV.get('RESEND_API_KEY') || env.RESEND_API_KEY || '';
+    if (!apiKey) {
+      console.log('RESEND_API_KEY not set');
+      return null;
+    }
+
+    const response = await fetch(`https://api.resend.com/emails/${resendEmailId}/events`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch events for email ${resendEmailId}:`, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error(`Error fetching events for email ${resendEmailId}:`, error);
+    return null;
+  }
 }
 
 // ==================== 落地页面 ====================
