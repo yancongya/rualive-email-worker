@@ -1701,7 +1701,7 @@ async function handleGetUserEmailStats(request, env) {
     // 6. 按日期分组统计
     const dailyStats = {};
     logs.results.forEach(log => {
-      const date = log.sent_at ? log.sent_at.split(' ')[0] : log.created_at.split(' ')[0];
+      const date = log.sent_at ? log.sent_at.split(' ')[0] : new Date().toISOString().split('T')[0];
       if (!dailyStats[date]) {
         dailyStats[date] = { sent: 0, failed: 0, pending: 0 };
       }
@@ -1713,31 +1713,43 @@ async function handleGetUserEmailStats(request, env) {
       ...stats
     }));
 
-    // 7. 获取最近的10条日志
-    const recentLogs = logs.results
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 10)
-      .map(log => ({
-        id: log.id,
-        subject: log.subject,
-        status: log.status,
-        sentAt: log.sent_at,
-        errorMessage: log.error_message
-      }));
+    // 7. 获取用户邮件限制配置
+    const config = await DB.prepare(
+      'SELECT enabled, daily_report_time FROM user_configs WHERE user_id = ?'
+    ).bind(userId).first();
 
-    // 8. 返回结果
+    // 计算今日发送数量
+    const today = new Date().toISOString().split('T')[0];
+    const emailsSentToday = logs.results.filter(l =>
+      l.sent_at && l.sent_at.startsWith(today) && l.status === 'sent'
+    ).length;
+
+    // 8. 返回结果（符合前端 UserEmailStats 接口）
     return Response.json({
       success: true,
       data: {
         userId: user.id,
         username: user.username,
         email: user.email,
-        totalSent,
-        totalFailed,
-        totalPending,
-        lastSentAt,
+        totalEmailsSent: totalSent,
+        totalEmailsFailed: totalFailed,
+        lastEmailSentAt: lastSentAt,
+        emailLimit: {
+          dailyLimit: config && config.enabled ? 100 : 0, // 简化处理，从配置中获取
+          emailsSentToday: emailsSentToday,
+          remainingToday: config && config.enabled ? Math.max(0, 100 - emailsSentToday) : 0
+        },
         dailyStats: dailyStatsArray,
-        recentLogs
+        recentLogs: logs.results
+          .sort((a, b) => new Date(b.sent_at || 0) - new Date(a.sent_at || 0))
+          .slice(0, 10)
+          .map(log => ({
+            id: log.id,
+            subject: log.subject,
+            status: log.status,
+            sentAt: log.sent_at,
+            errorMessage: log.error_message
+          }))
       }
     });
 
@@ -1773,22 +1785,22 @@ async function handleGetEmailStats(request, env) {
       SELECT COUNT(*) as count
       FROM email_logs
       WHERE status = 'sent'
-      AND datetime(created_at) >= datetime('now', '-24 hours')
+      AND datetime(sent_at) >= datetime('now', '-24 hours')
     `).first();
 
     const last24hFailed = await DB.prepare(`
       SELECT COUNT(*) as count
       FROM email_logs
       WHERE status = 'failed'
-      AND datetime(created_at) >= datetime('now', '-24 hours')
+      AND datetime(sent_at) >= datetime('now', '-24 hours')
     `).first();
 
     // 4. 获取最后发送时间
     const lastEmail = await DB.prepare(`
-      SELECT created_at
+      SELECT sent_at
       FROM email_logs
       WHERE status = 'sent'
-      ORDER BY created_at DESC
+      ORDER BY sent_at DESC
       LIMIT 1
     `).first();
 
@@ -1807,7 +1819,7 @@ async function handleGetEmailStats(request, env) {
           sent: last24hSent.count || 0,
           failed: last24hFailed.count || 0
         },
-        lastEmailSentAt: lastEmail ? lastEmail.created_at : null
+        lastEmailSentAt: lastEmail ? lastEmail.sent_at : null
       }
     });
 
