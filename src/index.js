@@ -3093,9 +3093,9 @@ async function logSend(userId, recipientType, recipientEmail, emailType, status,
 
   try {
     await DB.prepare(`
-      INSERT INTO email_logs (user_id, email_address, subject, status, error_message, sent_at, resend_email_id)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
-    `).bind(userId, recipientEmail, emailType, status, errorMessage, resendEmailId).run();
+      INSERT INTO email_logs (user_id, recipient_type, recipient_email, email_type, status, error_message, sent_at, resend_email_id)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+    `).bind(userId, recipientType, recipientEmail, emailType, status, errorMessage, resendEmailId).run();
   } catch (error) {
     console.error('Error in logSend:', error);
   }
