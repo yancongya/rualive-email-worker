@@ -142,10 +142,10 @@ const AuthPage = () => {
         }
 
         alert(isLogin ? '登录成功！' : '注册成功！');
-        
-        // 跳转到首页或用户页面
+
+        // 跳转到管理后台或用户页面
         if (data.user && data.user.role === 'admin') {
-          window.location.href = '/admin';
+          window.location.href = '/admin-v2';
         } else {
           window.location.href = '/user';
         }
