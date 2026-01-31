@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { 
   Users, Ticket, Key, FileText, Trash2, RotateCcw, 
   Ban, Search, Plus, RefreshCw, Copy, CheckCircle, 
@@ -340,113 +340,6 @@ const Toast = ({ msg, type }: { msg: string | null, type: 'success' | 'error' })
       ${type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
       {type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
       <span className="font-bold uppercase tracking-wide">{msg}</span>
-    </div>
-  );
-};
-
-// --- FORMS & VIEWS ---
-
-const LoginView = () => {
-  const [identity, setIdentity] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const handleLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      const data = await apiClient('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ username: identity, password }) 
-      });
-
-      if (data.success || data.token) { 
-        const token = data.token || 'mock-token'; 
-        localStorage.setItem('rualive_token', token);
-        navigate('/admin-v2');
-      } else {
-        throw new Error(data.error || 'Login failed');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Connection failed');
-      // FALLBACK
-      if (identity === 'admin') {
-         localStorage.setItem('rualive_token', 'demo-token');
-         navigate('/admin-v2');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-background">
-        <BrickLoader />
-        
-        {/* Background effects */}
-        <div className="fixed top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="fixed bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
-        
-        <GlassCard className="w-full max-w-md relative z-10 flex flex-col items-center gap-8 py-12 border-primary/20">
-             <div className="flex flex-col items-center gap-2 text-primary">
-                <RuaLogo className="w-16 h-16 text-primary" />
-                <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white">RuALive</h1>
-                <p className="text-xs font-mono text-white/40 tracking-[0.3em]">ADMIN CONSOLE</p>
-             </div>
-
-             <form onSubmit={handleLogin} className="w-full space-y-4 px-4">
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-white/30 pl-1">Identity</label>
-                    <div className="relative group">
-                        <Users className="absolute left-4 top-3.5 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
-                        <input 
-                            type="text" 
-                            value={identity}
-                            onChange={e => setIdentity(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 pl-10 text-white font-mono text-sm focus:border-primary/50 focus:outline-none transition-all placeholder-white/10"
-                            placeholder="USERNAME / EMAIL"
-                        />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-white/30 pl-1">Password</label>
-                    <div className="relative group">
-                        <Key className="absolute left-4 top-3.5 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
-                        <input 
-                            type="password" 
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 pl-10 text-white font-mono text-sm focus:border-primary/50 focus:outline-none transition-all placeholder-white/10"
-                            placeholder="••••••••"
-                        />
-                    </div>
-                </div>
-
-                {error && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-xs font-bold uppercase animate-pulse">
-                        <AlertTriangle className="w-4 h-4" />
-                        {error}
-                    </div>
-                )}
-
-                <ActionButton 
-                    onClick={() => handleLogin()} 
-                    label={loading ? "AUTHENTICATING..." : "ENTER MATRIX"} 
-                    loading={loading}
-                    variant="primary"
-                    className="w-full mt-4 justify-center"
-                />
-             </form>
-        </GlassCard>
-        
-        <div className="absolute bottom-8 text-[10px] text-white/20 font-mono text-center">
-            UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED<br/>
-            IP LOGGED AND TRACED
-        </div>
     </div>
   );
 };
@@ -1150,9 +1043,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem('rualive_token');
 
-    // 如果没有 token，跳转到登录页
+    // 如果没有 token，跳转到外部登录页
     if (!token) {
       setAuthed(false);
+      // 重定向到 /login（外部路由）
+      window.location.href = '/login';
     } else {
       // 如果有 token，设置为已登录
       setAuthed(true);
@@ -1161,17 +1056,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (loading) return <div className="h-screen w-full bg-background flex items-center justify-center text-primary font-black italic text-2xl animate-pulse">INIT...</div>;
-  return authed ? <>{children}</> : <Navigate to="/login" />;
+  return authed ? <>{children}</> : null;
 };
 
 function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginView />} />
-        <Route path="/admin-v2" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
       </Routes>
     </HashRouter>
   );
