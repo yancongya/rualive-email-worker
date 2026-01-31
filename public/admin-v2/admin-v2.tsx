@@ -78,6 +78,7 @@ interface InviteCode {
   usedCount: number;
   expiresAt: string;
   createdAt: string;
+  created_by_name?: string;
 }
 
 interface UserEmailStats {
@@ -503,30 +504,78 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                  <div className="text-white/40">{t('labels.usage')}</div>
                  <div className="font-bold">{invite.maxUses - invite.usedCount} / {invite.maxUses}</div>
                </div>
-               <button 
-                onClick={() => setModalConfig({
-                  isOpen: true,
-                  title: t('messages.confirmTitle'),
-                  content: (
-                    <div className="space-y-6">
-                      <p className="text-white/60">{t('messages.confirmDesc')}</p>
-                      <div className="flex gap-4 justify-end">
-                        <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
-                        <ActionButton 
-                          onClick={() => handleAsyncAction(async () => {
-                            await apiClient(`/admin/invite-codes?id=${invite.id}`, { method: 'DELETE' });
-                            reloadData();
-                          }, t('messages.deleted'))} 
-                          variant="danger" label={t('actions.delete')} 
-                        />
+               <div className="flex gap-2">
+                 <button 
+                  onClick={() => setModalConfig({
+                    isOpen: true,
+                    title: t('invites.messages.inviteDetails'),
+                    content: (
+                      <div className="space-y-6">
+                        <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl text-center">
+                          <div className="text-xs text-primary/60 mb-1">{t('labels.code')}</div>
+                          <div className="text-3xl font-black text-primary tracking-widest font-mono">{invite.code}</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white/5 p-3 rounded-xl">
+                            <div className="text-xs text-white/40 mb-1">{t('labels.maxUses')}</div>
+                            <div className="text-xl font-bold text-white">{invite.maxUses}</div>
+                          </div>
+                          <div className="bg-white/5 p-3 rounded-xl">
+                            <div className="text-xs text-white/40 mb-1">{t('labels.usage')}</div>
+                            <div className="text-xl font-bold text-white">{invite.usedCount} / {invite.maxUses}</div>
+                          </div>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded-xl">
+                          <div className="text-xs text-white/40 mb-1">{t('labels.expires')}</div>
+                          <div className="font-mono text-white">{new Date(invite.expiresAt).toLocaleString()}</div>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded-xl">
+                          <div className="text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
+                          <div className="font-mono text-white">{new Date(invite.createdAt).toLocaleString()}</div>
+                        </div>
+                        {invite.created_by_name && (
+                          <div className="bg-white/5 p-3 rounded-xl">
+                            <div className="text-xs text-white/40 mb-1">{t('labels.createdBy')}</div>
+                            <div className="font-bold text-white">{invite.created_by_name}</div>
+                          </div>
+                        )}
+                        <div className="flex justify-end pt-2">
+                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} />
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-                className="p-2 bg-white/5 rounded-lg hover:bg-red-500 hover:text-white transition-colors text-white/40"
-               >
-                 <Trash2 className="w-4 h-4" />
-               </button>
+                    )
+                  })}
+                  className="p-2 bg-white/5 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-white/40"
+                  title={t('actions.view')}
+                 >
+                   <Info className="w-4 h-4" />
+                 </button>
+                 <button 
+                  onClick={() => setModalConfig({
+                    isOpen: true,
+                    title: t('messages.confirmTitle'),
+                    content: (
+                      <div className="space-y-6">
+                        <p className="text-white/60">{t('messages.confirmDesc')}</p>
+                        <div className="flex gap-4 justify-end">
+                          <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
+                          <ActionButton 
+                            onClick={() => handleAsyncAction(async () => {
+                              await apiClient(`/admin/invite-codes?id=${invite.id}`, { method: 'DELETE' });
+                              reloadData();
+                            }, t('messages.deleted'))} 
+                            variant="danger" label={t('actions.delete')} 
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                  className="p-2 bg-white/5 rounded-lg hover:bg-red-500 hover:text-white transition-colors text-white/40"
+                  title={t('actions.delete')}
+                 >
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
              </div>
              <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
                <div className="h-full bg-primary" style={{ width: `${((invite.maxUses - invite.usedCount) / invite.maxUses) * 100}%` }} />
