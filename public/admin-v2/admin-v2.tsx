@@ -514,7 +514,7 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                         <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
                         <ActionButton 
                           onClick={() => handleAsyncAction(async () => {
-                            await apiClient(`/admin/invite-codes?codeId=${invite.id}`, { method: 'DELETE' });
+                            await apiClient(`/admin/invite-codes?id=${invite.id}`, { method: 'DELETE' });
                             reloadData();
                           }, t('messages.deleted'))} 
                           variant="danger" label={t('actions.delete')} 
@@ -890,7 +890,7 @@ function AdminDashboard() {
   const fetchInvites = useCallback(async () => {
     try {
       const data = await apiClient('/admin/invite-codes');
-      if (data.success) setInvites(data.inviteCodes || []);
+      if (data.success) setInvites(data.codes || []);
     } catch (e: any) { showToast(e.message, 'error'); }
   }, []);
 
