@@ -228,13 +228,16 @@ const apiClient = async (endpoint: string, options: RequestInit = {}) => {
 
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
-    
+
     // Safety check: is it actually JSON?
     const contentType = response.headers.get("content-type");
     if (!response.ok) {
-       if (response.status === 401) {
-          console.warn('Unauthorized, clearing token.');
+       // 401未授权或403权限不足：清除token并跳转到登录页
+       if (response.status === 401 || response.status === 403) {
+          console.warn('Unauthorized or insufficient permissions, clearing token and redirecting to login.');
           localStorage.removeItem('rualive_token');
+          window.location.href = '/login';
+          return; // 阻止继续执行
        }
        // If fetch worked but returned error status, try to parse error, else throw generic
        if (contentType && contentType.indexOf("application/json") !== -1) {
