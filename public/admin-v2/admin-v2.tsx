@@ -417,11 +417,11 @@ const EditUserForm = ({ user, t, closeModal, handleAsyncAction }: any) => {
       {stats && (
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-white/5 p-3 rounded-xl text-center">
-            <div className="text-[10px] uppercase text-white/40 mb-1">Total Sent</div>
+            <div className="text-[10px] uppercase text-white/40 mb-1">{t('api.messages.totalSent')}</div>
             <div className="text-xl font-mono font-bold text-white">{stats.totalEmailsSent}</div>
           </div>
           <div className="bg-white/5 p-3 rounded-xl text-center">
-            <div className="text-[10px] uppercase text-white/40 mb-1">Failed</div>
+            <div className="text-[10px] uppercase text-white/40 mb-1">{t('api.messages.totalFailed')}</div>
             <div className="text-xl font-mono font-bold text-red-400">{stats.totalEmailsFailed}</div>
           </div>
         </div>
