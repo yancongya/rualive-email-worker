@@ -1765,30 +1765,49 @@ async function handleGetEmailStats(request, env) {
     }
 
     // 2. 获取全局统计
-    const totalUsers = await DB.prepare('SELECT COUNT(*) as count FROM users').first();
     const totalSent = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('sent').first();
     const totalFailed = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('failed').first();
-    const totalPending = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('pending').first();
 
-    // 3. 获取发送最多的用户
-    const topUsers = await DB.prepare(`
-      SELECT u.id, u.username, COUNT(e.id) as totalSent
-      FROM users u
-      LEFT JOIN email_logs e ON u.id = e.user_id AND e.status = 'sent'
-      GROUP BY u.id
-      ORDER BY totalSent DESC
-      LIMIT 10
-    `).all();
+    // 3. 获取最近24小时的统计
+    const last24hSent = await DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM email_logs
+      WHERE status = 'sent'
+      AND datetime(created_at) >= datetime('now', '-24 hours')
+    `).first();
 
-    // 4. 返回结果
+    const last24hFailed = await DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM email_logs
+      WHERE status = 'failed'
+      AND datetime(created_at) >= datetime('now', '-24 hours')
+    `).first();
+
+    // 4. 获取最后发送时间
+    const lastEmail = await DB.prepare(`
+      SELECT created_at
+      FROM email_logs
+      WHERE status = 'sent'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).first();
+
+    // 5. 计算成功率
+    const total = totalSent.count + totalFailed.count;
+    const successRate = total > 0 ? ((totalSent.count / total) * 100).toFixed(1) : 0;
+
+    // 6. 返回结果
     return Response.json({
       success: true,
       data: {
-        totalUsers: totalUsers.count,
-        totalSent: totalSent.count,
-        totalFailed: totalFailed.count,
-        totalPending: totalPending.count,
-        topUsers: topUsers.results
+        totalEmailsSent: totalSent.count || 0,
+        totalEmailsFailed: totalFailed.count || 0,
+        successRate: parseFloat(successRate),
+        last24Hours: {
+          sent: last24hSent.count || 0,
+          failed: last24hFailed.count || 0
+        },
+        lastEmailSentAt: lastEmail ? lastEmail.created_at : null
       }
     });
 
