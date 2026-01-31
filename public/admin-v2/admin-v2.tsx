@@ -404,7 +404,7 @@ const EditUserForm = ({ user, t, closeModal, handleAsyncAction }: any) => {
     fetchData();
   }, [user.id]);
 
-  if (loading) return <div className="p-8 text-center text-primary font-mono animate-pulse">LOADING MATRIX DATA...</div>;
+  if (loading) return <div className="p-8 text-center text-primary font-mono animate-pulse">{t('api.messages.loadingData')}</div>;
 
   return (
     <div className="space-y-6">
@@ -430,12 +430,12 @@ const EditUserForm = ({ user, t, closeModal, handleAsyncAction }: any) => {
       <div>
          <div className="flex justify-between text-xs font-black uppercase text-white/40 mb-4">
            <span>{t('labels.limit')}</span>
-           <span className="text-white font-mono">{newLimit} / day</span>
+           <span className="text-white font-mono">{newLimit} {t('api.messages.perDay')}</span>
          </div>
          <input type="range" min="0" max="100" step="1" value={newLimit} onChange={e => setNewLimit(Number(e.target.value))} className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary" />
          <div className="flex justify-between text-[10px] text-white/20 mt-2 font-mono">
-            <span>0 (BAN)</span>
-            <span>100 (VIP)</span>
+            <span>0 ({t('api.messages.ban')})</span>
+            <span>100 ({t('api.messages.vip')})</span>
          </div>
       </div>
 
@@ -687,13 +687,13 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
         {/* CURRENT KEY STATUS */}
         <GlassCard className="flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-3 text-primary mb-4"><Key className="w-6 h-6" /><h3 className="text-xl font-black italic uppercase">Current Config</h3></div>
+            <div className="flex items-center gap-3 text-primary mb-4"><Key className="w-6 h-6" /><h3 className="text-xl font-black italic uppercase">{t('api.messages.currentConfig')}</h3></div>
             {loading ? <div className="animate-pulse h-8 bg-white/10 rounded w-full"></div> : (
               apiKey ? (
                 <div className="bg-black/40 border border-white/10 p-4 rounded-xl font-mono text-lg tracking-widest text-green-400 break-all">
                   {apiKey}
                 </div>
-              ) : <div className="text-white/30 italic">NO KEY CONFIGURED</div>
+              ) : <div className="text-white/30 italic">{t('api.messages.noKeyConfigured')}</div>
             )}
           </div>
           {apiKey && (
@@ -702,23 +702,23 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
                  variant="secondary" label={t('actions.test')} 
                  onClick={() => handleAsyncAction(async () => {
                    await apiClient('/admin/api-key/test', { method: 'POST' });
-                 }, 'CONNECTION VALID')} 
+                 }, t('api.messages.connectionValid'))} 
                />
                <ActionButton 
                  variant="danger" label={t('actions.delete')} 
                  onClick={() => setModalConfig({
-                   isOpen: true, title: 'REVOKE KEY?',
+                   isOpen: true, title: t('api.messages.revokeKey'),
                    content: (
                     <div className="space-y-6">
-                      <p className="text-white/60">{t('messages.revokeKeyConfirm')}</p>
+                      <p className="text-white/60">{t('api.messages.revokeKeyConfirm')}</p>
                       <div className="flex gap-4 justify-end">
                         <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
                         <ActionButton 
                           onClick={() => handleAsyncAction(async () => {
                             await apiClient('/admin/api-key', { method: 'DELETE' });
                             setApiKey(null);
-                          }, t('messages.keyRevoked'))} 
-                          variant="danger" label="REVOKE" 
+                          }, t('api.messages.keyRevoked'))} 
+                          variant="danger" label={t('api.messages.revokeKey')} 
                         />
                       </div>
                     </div>
@@ -731,8 +731,8 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
 
         {/* SET NEW KEY */}
         <GlassCard className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
-          <h3 className="text-xl font-black italic uppercase mb-4">{t('actions.addKey')}</h3>
-          <p className="text-sm text-white/60 mb-6">{t('messages.apiKeyHelp')}</p>
+          <h3 className="text-xl font-black italic uppercase mb-4">{t('api.actions.addKey')}</h3>
+          <p className="text-sm text-white/60 mb-6">{t('api.messages.apiKeyHelp')}</p>
           <div className="space-y-4">
             <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="re_123..." className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white font-mono text-sm focus:border-primary/50 focus:outline-none placeholder-white/20" />
             <ActionButton 
