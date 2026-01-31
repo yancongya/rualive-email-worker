@@ -725,11 +725,11 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
     fetchData();
   }, []);
 
-  if (loading) return <div className="h-64 flex items-center justify-center animate-pulse text-primary font-black italic">LOADING LOGS...</div>;
+  if (loading) return <div className="h-64 flex items-center justify-center animate-pulse text-primary font-black italic">{t('logs.messages.loading')}</div>;
 
   const pieData = stats ? [
-    { name: 'Sent', value: stats.totalEmailsSent }, 
-    { name: 'Failed', value: stats.totalEmailsFailed }
+    { name: t('status.success'), value: stats.totalEmailsSent },
+    { name: t('status.failed'), value: stats.totalEmailsFailed }
   ] : [];
   const COLORS = ['#FF6B35', '#333333'];
 
@@ -745,7 +745,7 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
       {stats && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <GlassCard className="lg:col-span-1 h-64 flex flex-col justify-center items-center relative">
-             <h4 className="absolute top-6 left-6 text-xs font-black uppercase text-white/30">{t('messages.deliveryRate')}</h4>
+             <h4 className="absolute top-6 left-6 text-xs font-black uppercase text-white/30">{t('logs.messages.deliveryRate')}</h4>
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
                  <Pie data={pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
@@ -758,12 +758,12 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
           </GlassCard>
           <GlassCard className="lg:col-span-2 h-64 flex items-center justify-around">
              <div className="text-center">
-               <div className="text-xs font-black uppercase text-white/30 mb-2">24H SENT</div>
+               <div className="text-xs font-black uppercase text-white/30 mb-2">{t('logs.messages.sent24h')}</div>
                <div className="text-5xl font-black italic text-primary">{stats.last24Hours.sent}</div>
              </div>
              <div className="w-px h-24 bg-white/10"></div>
              <div className="text-center">
-               <div className="text-xs font-black uppercase text-white/30 mb-2">24H FAILED</div>
+               <div className="text-xs font-black uppercase text-white/30 mb-2">{t('logs.messages.failed24h')}</div>
                <div className="text-5xl font-black italic text-white/20">{stats.last24Hours.failed}</div>
              </div>
           </GlassCard>
@@ -789,21 +789,21 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
                   <td className="hidden lg:table-cell p-4 font-bold">{log.recipient}</td>
                   <td className="p-4 text-white/70 max-w-[150px] truncate">{log.subject}</td>
                   <td className="p-4 text-right">
-                     <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold uppercase ${log.status === 'success' ? 'text-green-500' : 'text-red-500'}`}>{log.status === 'success' ? <CheckCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}{log.status}</span>
+                     <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold uppercase ${log.status === 'success' ? 'text-green-500' : 'text-red-500'}`}>{log.status === 'success' ? <CheckCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}{t(`status.${log.status}`)}</span>
                   </td>
                   <td className="p-4 text-right">
-                     <button onClick={() => setModalConfig({ isOpen: true, title: 'LOG DETAILS', content: (
+                     <button onClick={() => setModalConfig({ isOpen: true, title: t('logs.messages.logDetails'), content: (
                          <div className="space-y-6">
                            <div className="flex items-center gap-4 border-b border-white/10 pb-4">
                              <div className={`p-4 rounded-full ${log.status === 'success' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{log.status === 'success' ? <CheckCircle className="w-8 h-8" /> : <AlertTriangle className="w-8 h-8" />}</div>
-                             <div><h4 className="text-xl font-black italic uppercase">{log.status}</h4><p className="text-white/50 font-mono text-xs">{new Date(log.sentAt).toLocaleString()}</p></div>
+                             <div><h4 className="text-xl font-black italic uppercase">{t(`status.${log.status}`)}</h4><p className="text-white/50 font-mono text-xs">{new Date(log.sentAt).toLocaleString()}</p></div>
                            </div>
                            <div className="space-y-4">
                              <div><label className="text-[10px] font-bold uppercase text-white/30">{t('labels.recipient')}</label><div className="font-mono text-white select-all">{log.recipient}</div></div>
                              <div><label className="text-[10px] font-bold uppercase text-white/30">{t('labels.subject')}</label><div className="font-bold text-white text-lg">{log.subject}</div></div>
                              {log.error && (
                                <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
-                                 <label className="text-[10px] font-bold uppercase text-red-400">ERROR</label>
+                                 <label className="text-[10px] font-bold uppercase text-red-400">{t('logs.messages.error')}</label>
                                  <div className="text-red-300 font-mono text-xs mt-1">{log.error}</div>
                                </div>
                              )}
