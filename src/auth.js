@@ -36,20 +36,20 @@ async function verifyPassword(password, hash) {
 }
 
 // 生成JWT token
-function generateToken(userId, role) {
+function generateToken(userId, role, env) {
   const header = {
     alg: 'HS256',
     typ: 'JWT'
   };
-  
+
   const payload = {
     userId: userId,
     role: role,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60) // 30天过期
   };
-  
-  const secret = env.JWT_SECRET || 'rualive_secret_key_2024';
+
+  const secret = env ? (env.JWT_SECRET || 'rualive_secret_key_2024') : 'rualive_secret_key_2024';
   
   const headerBase64 = btoa(JSON.stringify(header));
   const payloadBase64 = btoa(JSON.stringify(payload));
@@ -72,21 +72,21 @@ function generateToken(userId, role) {
 }
 
 // 验证JWT token
-async function verifyToken(token) {
+async function verifyToken(token, env) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     const header = JSON.parse(atob(parts[0]));
     const payload = JSON.parse(atob(parts[1]));
-    
+
     // 检查过期
     if (payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
-    
+
     // 验证签名
-    const secret = env.JWT_SECRET || 'rualive_secret_key_2024';
+    const secret = env ? (env.JWT_SECRET || 'rualive_secret_key_2024') : 'rualive_secret_key_2024';
     const signature = parts[2];
     
     const expectedSignature = await crypto.subtle.sign(
@@ -173,10 +173,10 @@ async function loginUser(email, password, env) {
   if (!isValid) {
     return { success: false, error: '邮箱或密码错误' };
   }
-  
+
   // 生成token
-  const token = await generateToken(user.id, user.role);
-  
+  const token = await generateToken(user.id, user.role, env);
+
   // 保存会话
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await DB.prepare(
