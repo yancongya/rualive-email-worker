@@ -1803,14 +1803,14 @@ async function handleGetEmailStats(request, env) {
     }
 
     // 2. 获取全局统计
-    const totalSent = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('sent').first();
+    const totalSent = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('success').first();
     const totalFailed = await DB.prepare('SELECT COUNT(*) as count FROM email_logs WHERE status = ?').bind('failed').first();
 
     // 3. 获取最近24小时的统计
     const last24hSent = await DB.prepare(`
       SELECT COUNT(*) as count
       FROM email_logs
-      WHERE status = 'sent'
+      WHERE status = 'success'
       AND datetime(sent_at) >= datetime('now', '-24 hours')
     `).first();
 
@@ -1825,7 +1825,7 @@ async function handleGetEmailStats(request, env) {
     const lastEmail = await DB.prepare(`
       SELECT sent_at
       FROM email_logs
-      WHERE status = 'sent'
+      WHERE status = 'success'
       ORDER BY sent_at DESC
       LIMIT 1
     `).first();
@@ -2367,6 +2367,13 @@ async function handleGetLogs(request, env) {
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '50');
 
+    // 如果是管理员，返回所有用户的邮件日志
+    if (payload.role === 'admin') {
+      const logs = await getAllSendLogs(limit, env);
+      return Response.json({ success: true, logs: logs });
+    }
+
+    // 普通用户只返回自己的邮件日志
     const userId = payload.userId;
     const logs = await getSendLogs(userId, limit, env);
     return Response.json({ success: true, logs: logs });
@@ -3090,26 +3097,85 @@ async function saveWorkData(userId, workData, env, date) {
 
 async function getSendLogs(userId, limit, env) {
   const DB = env.DB || env.rualive;
-  
+
   if (!DB) {
     console.error('Database not available in getSendLogs');
     return [];
   }
-  
+
   try {
     const result = await DB.prepare(
       'SELECT * FROM email_logs WHERE user_id = ? ORDER BY sent_at DESC LIMIT ?'
     )
       .bind(userId, limit)
       .all();
-    return result.results || [];
+
+    // Convert snake_case to camelCase for frontend
+    const convertedLogs = result.results.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      sentAt: row.sent_at,
+      recipientType: row.recipient_type,
+      recipient: row.recipient_email,
+      subject: row.subject,
+      emailType: row.email_type,
+      status: row.status,
+      error: row.error_message,
+      errorMessage: row.error_message,
+      resendEmailId: row.resend_email_id,
+      lastEvent: row.last_event,
+      eventsJson: row.events_json,
+      updatedAt: row.updated_at
+    }));
+
+    return convertedLogs;
   } catch (error) {
     console.error('Error in getSendLogs:', error);
     return [];
   }
 }
 
-async function logSend(userId, recipientType, recipientEmail, emailType, status, errorMessage, env, resendEmailId = null) {
+async function getAllSendLogs(limit, env) {
+  const DB = env.DB || env.rualive;
+
+  if (!DB) {
+    console.error('Database not available in getAllSendLogs');
+    return [];
+  }
+
+  try {
+    const result = await DB.prepare(
+      'SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT ?'
+    )
+      .bind(limit)
+      .all();
+
+    // Convert snake_case to camelCase for frontend
+    const convertedLogs = result.results.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      sentAt: row.sent_at,
+      recipientType: row.recipient_type,
+      recipient: row.recipient_email,
+      subject: row.subject,
+      emailType: row.email_type,
+      status: row.status,
+      error: row.error_message,
+      errorMessage: row.error_message,
+      resendEmailId: row.resend_email_id,
+      lastEvent: row.last_event,
+      eventsJson: row.events_json,
+      updatedAt: row.updated_at
+    }));
+
+    return convertedLogs;
+  } catch (error) {
+    console.error('Error in getAllSendLogs:', error);
+    return [];
+  }
+}
+
+async function logSend(userId, recipientType, recipientEmail, emailType, status, errorMessage, env, resendEmailId = null, subject = null) {
   const DB = env.DB || env.rualive;
 
   if (!DB) {
@@ -3119,9 +3185,9 @@ async function logSend(userId, recipientType, recipientEmail, emailType, status,
 
   try {
     await DB.prepare(`
-      INSERT INTO email_logs (user_id, recipient_type, recipient_email, email_type, status, error_message, sent_at, resend_email_id)
-      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
-    `).bind(userId, recipientType, recipientEmail, emailType, status, errorMessage, resendEmailId).run();
+      INSERT INTO email_logs (user_id, recipient_type, recipient_email, email_type, status, error_message, sent_at, resend_email_id, subject)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
+    `).bind(userId, recipientType, recipientEmail, emailType, status, errorMessage, resendEmailId, subject || 'No Subject').run();
   } catch (error) {
     console.error('Error in logSend:', error);
   }
@@ -3138,11 +3204,11 @@ async function sendDailySummary(user, workData, config, env) {
   const email = user.email;
   try {
     const resendResult = await sendEmail(email, subject, html, env);
-    await logSend(user.id, 'user', email, 'summary', 'success', null, env, resendResult?.id || null);
+    await logSend(user.id, 'user', email, 'summary', 'success', null, env, resendResult?.id || null, subject);
     console.log(`Daily summary sent to ${email}, Resend ID: ${resendResult?.id}`);
   } catch (error) {
     console.error(`Failed to send to ${email}:`, error);
-    await logSend(user.id, 'user', email, 'summary', 'failed', error.message, env);
+    await logSend(user.id, 'user', email, 'summary', 'failed', error.message, env, null, subject);
   }
 }
 
@@ -3154,11 +3220,11 @@ async function sendWarningEmail(user, workData, config, env) {
   if (config.emergency_email) {
     try {
       const resendResult = await sendEmail(config.emergency_email, subject, html, env);
-      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'success', null, env, resendResult?.id || null);
+      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'success', null, env, resendResult?.id || null, subject);
       console.log(`Warning sent to ${config.emergency_email}, Resend ID: ${resendResult?.id}`);
     } catch (error) {
       console.error(`Failed to send to ${config.emergency_email}:`, error);
-      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'failed', error.message, env);
+      await logSend(user.id, 'emergency', config.emergency_email, 'warning', 'failed', error.message, env, null, subject);
     }
   }
 }

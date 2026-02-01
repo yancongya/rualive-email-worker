@@ -767,75 +767,197 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
   );
 };
 
+const FilterDropdown = ({ label, value, options, onChange }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt: any) => opt.value === value);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-glass backdrop-blur-xl border border-glass-border rounded-xl px-4 py-2.5 text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-all min-w-[140px] flex items-center justify-between"
+      >
+        <span className="truncate">{selectedOption?.label || label}</span>
+        <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-glass backdrop-blur-xl border border-glass-border rounded-xl shadow-xl py-2 z-50 min-w-[140px] max-h-[300px] overflow-y-auto">
+          {options.map((option: any) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                value === option.value 
+                  ? 'bg-white/20 text-white font-bold' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LogsView = ({ t, setModalConfig, closeModal }: any) => {
   const [logs, setLogs] = useState<MailLog[]>([]);
-  const [stats, setStats] = useState<GlobalStats | null>(null);
+  const [filteredLogs, setFilteredLogs] = useState<MailLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    subject: 'all',
+    recipient: 'all',
+    dateRange: 'all'
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [statsData, logsData] = await Promise.all([
-          apiClient('/admin/email-stats'),
-          apiClient('/logs?limit=50')
-        ]);
-        if(statsData.success) setStats(statsData.data);
-        if(logsData.success) setLogs(logsData.logs);
-      } catch (e) { console.error(e); } 
+        const logsData = await apiClient('/logs?limit=50');
+        if(logsData.success) {
+          setLogs(logsData.logs);
+          setFilteredLogs(logsData.logs);
+        }
+      } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
     fetchData();
   }, []);
 
+  useEffect(() => {
+    let result = logs;
+    
+    if (filters.status !== 'all') {
+      result = result.filter(log => log.status === filters.status);
+    }
+    
+    if (filters.subject !== 'all') {
+      result = result.filter(log => log.subject === filters.subject);
+    }
+    
+    if (filters.recipient !== 'all') {
+      result = result.filter(log => log.recipient === filters.recipient);
+    }
+    
+    if (filters.dateRange !== 'all') {
+      const now = new Date();
+      const startDate = new Date();
+      
+      switch (filters.dateRange) {
+        case '24h':
+          startDate.setHours(now.getHours() - 24);
+          break;
+        case '7d':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case '30d':
+          startDate.setDate(now.getDate() - 30);
+          break;
+      }
+      
+      result = result.filter(log => new Date(log.sentAt) >= startDate);
+    }
+    
+    setFilteredLogs(result);
+  }, [filters, logs]);
+
+  const uniqueSubjects = [...new Set(logs.map(log => log.subject))];
+  const uniqueRecipients = [...new Set(logs.map(log => log.recipient))];
+
+  const clearFilters = () => {
+    setFilters({ status: 'all', subject: 'all', recipient: 'all', dateRange: 'all' });
+  };
+
+  const hasActiveFilters = Object.values(filters).some(v => v !== 'all');
+
   if (loading) return <div className="h-64 flex items-center justify-center animate-pulse text-primary font-black italic">{t('logs.messages.loading')}</div>;
 
-  const pieData = stats ? [
-    { name: t('status.success'), value: stats.totalEmailsSent },
-    { name: t('status.failed'), value: stats.totalEmailsFailed }
-  ] : [];
-  const COLORS = ['#FF6B35', '#333333'];
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
-        <div>
-          <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('logs.headers.logs')}</h2>
-          <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('logs.subheaders.logs')}</p>
+    <div className="space-y-4">
+      <div className="pb-2">
+        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('logs.headers.logs')}</h2>
+        <p className="text-white/10 font-mono text-xs lg:text-sm mt-1">{t('logs.subheaders.logs')}</p>
+      </div>
+      
+      <div className="flex flex-wrap gap-3 items-center">
+        <FilterDropdown 
+          label="全部状态"
+          value={filters.status}
+          options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'success', label: '成功' },
+            { value: 'failed', label: '失败' }
+          ]}
+          onChange={(value: string) => setFilters({...filters, status: value})}
+        />
+        
+        <FilterDropdown 
+          label="全部主题"
+          value={filters.subject}
+          options={[
+            { value: 'all', label: '全部主题' },
+            ...uniqueSubjects.map(subject => ({ value: subject, label: subject }))
+          ]}
+          onChange={(value: string) => setFilters({...filters, subject: value})}
+        />
+        
+        <FilterDropdown 
+          label="全部收件人"
+          value={filters.recipient}
+          options={[
+            { value: 'all', label: '全部收件人' },
+            ...uniqueRecipients.map(recipient => ({ value: recipient, label: recipient }))
+          ]}
+          onChange={(value: string) => setFilters({...filters, recipient: value})}
+        />
+        
+        <FilterDropdown 
+          label="全部时间"
+          value={filters.dateRange}
+          options={[
+            { value: 'all', label: '全部时间' },
+            { value: '24h', label: '最近24小时' },
+            { value: '7d', label: '最近7天' },
+            { value: '30d', label: '最近30天' }
+          ]}
+          onChange={(value: string) => setFilters({...filters, dateRange: value})}
+        />
+        
+        {hasActiveFilters && (
+          <button 
+            onClick={clearFilters}
+            className="text-white/60 hover:text-white text-sm px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            清除筛选
+          </button>
+        )}
+        
+        <div className="ml-auto text-white/40 text-sm">
+          共 {filteredLogs.length} 条记录
         </div>
       </div>
-
-      {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <GlassCard className="lg:col-span-1 h-64 flex flex-col justify-center items-center relative">
-             <h4 className="absolute top-6 left-6 text-xs font-black uppercase text-white/30">{t('logs.messages.deliveryRate')}</h4>
-             <ResponsiveContainer width="100%" height="100%">
-               <PieChart>
-                 <Pie data={pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
-                   {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                 </Pie>
-                 <Tooltip contentStyle={{backgroundColor: '#000', borderColor: '#333'}} />
-               </PieChart>
-             </ResponsiveContainer>
-             <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-3xl font-black italic">{stats.successRate}%</span></div>
-          </GlassCard>
-          <GlassCard className="lg:col-span-2 h-64 flex items-center justify-around">
-             <div className="text-center">
-               <div className="text-xs font-black uppercase text-white/30 mb-2">{t('logs.messages.sent24h')}</div>
-               <div className="text-5xl font-black italic text-primary">{stats.last24Hours.sent}</div>
-             </div>
-             <div className="w-px h-24 bg-white/10"></div>
-             <div className="text-center">
-               <div className="text-xs font-black uppercase text-white/30 mb-2">{t('logs.messages.failed24h')}</div>
-               <div className="text-5xl font-black italic text-white/20">{stats.last24Hours.failed}</div>
-             </div>
-          </GlassCard>
-        </div>
-      )}
-
-      <GlassCard className="p-0 overflow-hidden">
-        <div className="max-h-[500px] overflow-y-auto">
-          <table className="w-full text-sm">
+      
+      <div className="max-h-[500px] overflow-y-auto">
+        <table className="w-full text-sm">
             <thead className="bg-white/5 text-white/40 text-xs font-black uppercase sticky top-0 backdrop-blur-md z-10">
               <tr>
                 <th className="p-4 text-left">{t('labels.time')}</th>
@@ -846,7 +968,7 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {logs.map((log: MailLog) => (
+              {filteredLogs.map((log: MailLog) => (
                 <tr key={log.id} className="hover:bg-white/[0.02] group">
                   <td className="p-4 font-mono text-white/50">{new Date(log.sentAt).toLocaleString()}</td>
                   <td className="hidden lg:table-cell p-4 font-bold">{log.recipient}</td>
@@ -879,8 +1001,7 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
               ))}
             </tbody>
           </table>
-        </div>
-      </GlassCard>
+      </div>
     </div>
   );
 };
