@@ -1880,10 +1880,10 @@ async function handleSetEmailLimit(request, env) {
     const dailyEmailLimit = body.dailyEmailLimit;
 
     // 3. 验证限制值
-    if (dailyEmailLimit < 0 || dailyEmailLimit > 100) {
+    if (dailyEmailLimit < 0 || dailyEmailLimit > 5) {
       return Response.json({
         success: false,
-        error: '邮件限制必须在 0-100 之间'
+        error: '邮件限制必须在 0-5 之间'
       }, { status: 400 });
     }
 

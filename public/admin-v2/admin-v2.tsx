@@ -432,7 +432,7 @@ const EditUserForm = ({ user, t, closeModal, handleAsyncAction }: any) => {
            <span>{t('labels.limit')}</span>
            <span className="text-white font-mono">{newLimit} {t('api.messages.perDay')}</span>
          </div>
-         <input type="range" min="0" max="100" step="1" value={newLimit} onChange={e => setNewLimit(Number(e.target.value))} className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary" />
+         <input type="range" min="0" max="5" step="1" value={newLimit} onChange={e => setNewLimit(Number(e.target.value))} className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary" />
          <div className="flex justify-between text-[10px] text-white/20 mt-2 font-mono">
             <span>0 ({t('api.messages.ban')})</span>
             <span>100 ({t('api.messages.vip')})</span>
