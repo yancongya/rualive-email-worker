@@ -539,9 +539,6 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                             <div className="font-bold text-white">{invite.created_by_name}</div>
                           </div>
                         )}
-                        <div className="flex justify-end pt-2">
-                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} />
-                        </div>
                       </div>
                     )
                   })}
