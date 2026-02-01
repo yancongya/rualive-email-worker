@@ -510,37 +510,37 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                     isOpen: true,
                     title: t('invites.messages.inviteDetails'),
                     content: (
-                      <div className="space-y-4 sm:space-y-6">
+                      <div className="transform scale-90 sm:scale-100 origin-top space-y-4 sm:space-y-6">
                         <div className="bg-primary/10 border border-primary/20 p-3 sm:p-4 rounded-xl text-center">
-                          <div className="text-[10px] sm:text-xs text-primary/60 mb-1">{t('labels.code')}</div>
+                          <div className="text-xs text-primary/60 mb-1">{t('labels.code')}</div>
                           <div className="text-2xl sm:text-3xl font-black text-primary tracking-widest font-mono break-all">{invite.code}</div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.maxUses')}</div>
-                            <div className="text-lg sm:text-xl font-bold text-white">{invite.maxUses}</div>
+                            <div className="text-xs text-white/40 mb-1">{t('labels.maxUses')}</div>
+                            <div className="text-xl font-bold text-white">{invite.maxUses}</div>
                           </div>
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.usage')}</div>
-                            <div className="text-lg sm:text-xl font-bold text-white">{invite.usedCount} / {invite.maxUses}</div>
+                            <div className="text-xs text-white/40 mb-1">{t('labels.usage')}</div>
+                            <div className="text-xl font-bold text-white">{invite.usedCount} / {invite.maxUses}</div>
                           </div>
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
-                          <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.expires')}</div>
-                          <div className="font-mono text-white text-xs sm:text-sm">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : '-'}</div>
+                          <div className="text-xs text-white/40 mb-1">{t('labels.expires')}</div>
+                          <div className="font-mono text-white text-sm">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : '-'}</div>
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
-                          <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
-                          <div className="font-mono text-white text-xs sm:text-sm">{invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '-'}</div>
+                          <div className="text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
+                          <div className="font-mono text-white text-sm">{invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '-'}</div>
                         </div>
                         {invite.created_by_name && (
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.createdBy')}</div>
-                            <div className="font-bold text-white text-sm sm:text-base">{invite.created_by_name}</div>
+                            <div className="text-xs text-white/40 mb-1">{t('labels.createdBy')}</div>
+                            <div className="font-bold text-white">{invite.created_by_name}</div>
                           </div>
                         )}
                         <div className="flex justify-end pt-2">
-                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} className="w-full sm:w-auto" />
+                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} />
                         </div>
                       </div>
                     )
