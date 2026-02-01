@@ -699,7 +699,10 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
                <ActionButton 
                  variant="secondary" label={t('actions.test')} 
                  onClick={() => handleAsyncAction(async () => {
-                   await apiClient('/admin/api-key/test', { method: 'POST' });
+                   await apiClient('/admin/api-key/test', { 
+                     method: 'POST',
+                     body: JSON.stringify({ apiKey: apiKey })
+                   });
                  }, t('api.messages.connectionValid'))} 
                />
                <ActionButton 
