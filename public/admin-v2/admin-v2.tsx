@@ -319,15 +319,15 @@ const ActionButton = ({
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-[pulse_0.5s_ease-out] border-t-primary/50 overflow-hidden">
+      <div className="relative bg-[#0A0A0A] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 max-w-[95vw] sm:max-w-md w-full shadow-2xl animate-[pulse_0.5s_ease-out] border-t-primary/50 overflow-hidden my-4">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
         <div className="relative z-10">
-          <div className="flex justify-between items-start mb-6">
-            <h3 className="text-3xl font-black italic uppercase text-primary tracking-tighter leading-none">{title}</h3>
+          <div className="flex justify-between items-start mb-4 sm:mb-6">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-black italic uppercase text-primary tracking-tighter leading-none">{title}</h3>
             <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/40 hover:text-white">
-              <X className="w-6 h-6"/>
+              <X className="w-5 h-5 sm:w-6 sm:h-6"/>
             </button>
           </div>
           {children}
