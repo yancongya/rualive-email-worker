@@ -1021,9 +1021,21 @@ async function handleGetInviteCodes(request, env) {
       'SELECT ic.*, u.username as created_by_name FROM invite_codes ic LEFT JOIN users u ON ic.created_by = u.id ORDER BY ic.created_at DESC'
     ).all();
     
+    // Convert snake_case to camelCase for frontend
+    const convertedCodes = codes.results.map(row => ({
+      id: row.id,
+      code: row.code,
+      maxUses: row.max_uses,
+      usedCount: row.used_count,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+      created_by_name: row.created_by_name,
+      isActive: row.is_active
+    }));
+    
     return Response.json({
       success: true,
-      codes: codes.results
+      codes: convertedCodes
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
