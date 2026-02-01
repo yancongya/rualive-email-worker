@@ -662,6 +662,7 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [newKey, setNewKey] = useState('');
+  const [testEmail, setTestEmail] = useState('');
 
   const fetchKey = async () => {
     try {
@@ -695,37 +696,49 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
             )}
           </div>
           {apiKey && (
-            <div className="flex gap-4 mt-6">
-               <ActionButton 
-                 variant="secondary" label={t('actions.test')} 
-                 onClick={() => handleAsyncAction(async () => {
-                   await apiClient('/admin/api-key/test', { 
-                     method: 'POST',
-                     body: JSON.stringify({ apiKey: apiKey })
-                   });
-                 }, t('api.messages.connectionValid'))} 
-               />
-               <ActionButton 
-                 variant="danger" label={t('actions.delete')} 
-                 onClick={() => setModalConfig({
-                   isOpen: true, title: t('api.messages.revokeKey'),
-                   content: (
-                    <div className="space-y-6">
-                      <p className="text-white/60">{t('api.messages.revokeKeyConfirm')}</p>
-                      <div className="flex gap-4 justify-end">
-                        <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
-                        <ActionButton 
-                          onClick={() => handleAsyncAction(async () => {
-                            await apiClient('/admin/api-key', { method: 'DELETE' });
-                            setApiKey(null);
-                          }, t('api.messages.keyRevoked'))} 
-                          variant="danger" label={t('api.messages.revokeKey')} 
+            <div className="space-y-4 mt-6">
+              <div>
+                <label className="text-xs text-white/40 mb-2 block">{t('api.messages.testEmail')}</label>
+                <input 
+                  type="email" 
+                  value={testEmail} 
+                  onChange={(e) => setTestEmail(e.target.value)} 
+                  placeholder={t('api.messages.testEmailPlaceholder')}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white font-mono text-sm focus:border-primary/50 focus:outline-none placeholder-white/20" 
+                />
+              </div>
+              <div className="flex gap-4">
+                <ActionButton 
+                  variant="secondary" label={t('actions.test')} 
+                  onClick={() => handleAsyncAction(async () => {
+                    await apiClient('/admin/api-key/test', { 
+                      method: 'POST',
+                      body: JSON.stringify({ apiKey: apiKey, testEmail: testEmail || undefined })
+                    });
+                  }, t('api.messages.connectionValid'))} 
+                />
+                <ActionButton 
+                  variant="danger" label={t('actions.delete')} 
+                  onClick={() => setModalConfig({
+                    isOpen: true, title: t('api.messages.revokeKey'),
+                    content: (
+                      <div className="space-y-6">
+                        <p className="text-white/60">{t('api.messages.revokeKeyConfirm')}</p>
+                        <div className="flex gap-4 justify-end">
+                          <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
+                          <ActionButton 
+                            onClick={() => handleAsyncAction(async () => {
+                              await apiClient('/admin/api-key', { method: 'DELETE' });
+                              setApiKey(null);
+                            }, t('api.messages.keyRevoked'))} 
+                            variant="danger" label={t('api.messages.revokeKey')} 
                         />
                       </div>
                     </div>
                    )
                  })} 
                />
+              </div>
             </div>
           )}
         </GlassCard>
