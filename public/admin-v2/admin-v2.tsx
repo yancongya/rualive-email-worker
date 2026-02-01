@@ -283,14 +283,14 @@ const GlassCard = ({ children, className = '', delay = 0 }: { children: React.Re
   const ref = useRef(null);
   useEffect(() => {
     if (ref.current) {
-      gsap.fromTo(ref.current, 
-        { opacity: 0, y: 20 }, 
+      gsap.fromTo(ref.current,
+        { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.6, delay: delay, ease: "power3.out" }
       );
     }
   }, [delay]);
   return (
-    <div ref={ref} className={`bg-glass backdrop-blur-xl border border-glass-border rounded-[2rem] p-6 shadow-xl ${className}`}>
+    <div ref={ref} className={`bg-glass backdrop-blur-xl border border-glass-border rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 shadow-xl ${className}`}>
       {children}
     </div>
   );
@@ -488,92 +488,93 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
     {invites?.length === 0 ? (
        <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center text-white/30 font-mono">{t('invites.messages.noKeys')}</div>
     ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {invites?.map((invite: InviteCode, i: number) => (
           <GlassCard key={invite.id} delay={i * 0.05} className="group hover:border-primary/50 transition-colors relative overflow-hidden">
              <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
-               <Ticket className="w-12 h-12 text-primary rotate-12" />
+               <Ticket className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-primary rotate-12" />
              </div>
-             <div className="text-xs text-white/40 uppercase mb-1 flex justify-between">
+             <div className="text-[10px] sm:text-xs text-white/40 uppercase mb-1 flex justify-between">
                <span>{t('labels.code')}</span>
                <span className={invite.expiresAt && new Date(invite.expiresAt) < new Date() ? 'text-red-500' : 'text-green-500'}>{invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : '-'}</span>
              </div>
-             <div className="text-2xl font-black text-primary tracking-widest font-mono mb-4">{invite.code}</div>
-             <div className="flex justify-between items-end text-sm">
+             <div className="text-xl sm:text-2xl lg:text-2xl font-black text-primary tracking-widest font-mono mb-3 sm:mb-4 break-all">{invite.code}</div>
+             <div className="flex justify-between items-end text-xs sm:text-sm">
                <div>
-                 <div className="text-white/40">{t('labels.usage')}</div>
-                 <div className="font-bold">{invite.maxUses - invite.usedCount} / {invite.maxUses}</div>
+                 <div className="text-white/40 text-[10px] sm:text-xs">{t('labels.usage')}</div>
+                 <div className="font-bold text-sm sm:text-base">{invite.maxUses - invite.usedCount} / {invite.maxUses}</div>
                </div>
-               <div className="flex gap-2">
+               <div className="flex gap-1.5 sm:gap-2">
                  <button 
                   onClick={() => setModalConfig({
                     isOpen: true,
                     title: t('invites.messages.inviteDetails'),
                     content: (
-                      <div className="space-y-6">
-                        <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl text-center">
-                          <div className="text-xs text-primary/60 mb-1">{t('labels.code')}</div>
-                          <div className="text-3xl font-black text-primary tracking-widest font-mono">{invite.code}</div>
+                      <div className="space-y-4 sm:space-y-6">
+                        <div className="bg-primary/10 border border-primary/20 p-3 sm:p-4 rounded-xl text-center">
+                          <div className="text-[10px] sm:text-xs text-primary/60 mb-1">{t('labels.code')}</div>
+                          <div className="text-2xl sm:text-3xl font-black text-primary tracking-widest font-mono break-all">{invite.code}</div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-xs text-white/40 mb-1">{t('labels.maxUses')}</div>
-                            <div className="text-xl font-bold text-white">{invite.maxUses}</div>
+                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.maxUses')}</div>
+                            <div className="text-lg sm:text-xl font-bold text-white">{invite.maxUses}</div>
                           </div>
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-xs text-white/40 mb-1">{t('labels.usage')}</div>
-                            <div className="text-xl font-bold text-white">{invite.usedCount} / {invite.maxUses}</div>
+                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.usage')}</div>
+                            <div className="text-lg sm:text-xl font-bold text-white">{invite.usedCount} / {invite.maxUses}</div>
                           </div>
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
-                          <div className="text-xs text-white/40 mb-1">{t('labels.expires')}</div>
-                          <div className="font-mono text-white">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : '-'}</div>
+                          <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.expires')}</div>
+                          <div className="font-mono text-white text-xs sm:text-sm">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : '-'}</div>
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
-                          <div className="text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
-                          <div className="font-mono text-white">{invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '-'}</div>
+                          <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
+                          <div className="font-mono text-white text-xs sm:text-sm">{invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '-'}</div>
                         </div>
                         {invite.created_by_name && (
                           <div className="bg-white/5 p-3 rounded-xl">
-                            <div className="text-xs text-white/40 mb-1">{t('labels.createdBy')}</div>
-                            <div className="font-bold text-white">{invite.created_by_name}</div>
+                            <div className="text-[10px] sm:text-xs text-white/40 mb-1">{t('labels.createdBy')}</div>
+                            <div className="font-bold text-white text-sm sm:text-base">{invite.created_by_name}</div>
                           </div>
                         )}
                         <div className="flex justify-end pt-2">
-                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} />
+                          <ActionButton onClick={closeModal} variant="secondary" label={t('actions.close')} className="w-full sm:w-auto" />
                         </div>
                       </div>
                     )
                   })}
-                  className="p-2 bg-white/5 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-white/40"
+                  className="p-1.5 sm:p-2 bg-white/5 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-white/40"
                   title={t('actions.view')}
                  >
-                   <Info className="w-4 h-4" />
+                   <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                  </button>
                  <button 
                   onClick={() => setModalConfig({
                     isOpen: true,
                     title: t('messages.confirmTitle'),
                     content: (
-                      <div className="space-y-6">
-                        <p className="text-white/60">{t('messages.confirmDesc')}</p>
-                        <div className="flex gap-4 justify-end">
-                          <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} />
+                      <div className="space-y-4 sm:space-y-6">
+                        <p className="text-white/60 text-sm sm:text-base">{t('messages.confirmDesc')}</p>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-end">
+                          <ActionButton onClick={closeModal} variant="ghost" label={t('actions.cancel')} className="w-full sm:w-auto" />
                           <ActionButton 
                             onClick={() => handleAsyncAction(async () => {
                               await apiClient(`/admin/invite-codes?id=${invite.id}`, { method: 'DELETE' });
                               reloadData();
                             }, t('messages.deleted'))} 
-                            variant="danger" label={t('actions.delete')} 
+                            variant="danger" label={t('actions.delete')}
+                            className="w-full sm:w-auto" 
                           />
                         </div>
                       </div>
                     )
                   })}
-                  className="p-2 bg-white/5 rounded-lg hover:bg-red-500 hover:text-white transition-colors text-white/40"
+                  className="p-1.5 sm:p-2 bg-white/5 rounded-lg hover:bg-red-500 hover:text-white transition-colors text-white/40"
                   title={t('actions.delete')}
                  >
-                   <Trash2 className="w-4 h-4" />
+                   <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                  </button>
                </div>
              </div>
