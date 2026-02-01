@@ -361,13 +361,14 @@ async function createInitialAdmin(env) {
     'INSERT INTO users (id, email, username, password_hash, role) VALUES (?, ?, ?, ?, ?)'
   ).bind(adminId, 'admin@rualive.com', '管理员', passwordHash, 'admin').run();
   
-  // 创建初始邀请码
+  // 创建初始邀请码（30天有效期）
   const codeId = generateUserId();
   const code = generateInviteCode();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   
   await DB.prepare(
-    'INSERT INTO invite_codes (id, code, created_by, max_uses) VALUES (?, ?, ?, ?)'
-  ).bind(codeId, code, adminId, 10).run();
+    'INSERT INTO invite_codes (id, code, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?)'
+  ).bind(codeId, code, adminId, 10, expiresAt).run();
   
   return {
     success: true,
