@@ -1741,7 +1741,7 @@ async function handleGetUserEmailStats(request, env) {
 
     // 7. 获取用户邮件限制配置
     const config = await DB.prepare(
-      'SELECT enabled, daily_report_time FROM user_configs WHERE user_id = ?'
+      'SELECT enabled, daily_email_limit FROM user_configs WHERE user_id = ?'
     ).bind(userId).first();
 
     // 计算今日发送数量
@@ -1761,9 +1761,9 @@ async function handleGetUserEmailStats(request, env) {
         totalEmailsFailed: totalFailed,
         lastEmailSentAt: lastSentAt,
         emailLimit: {
-          dailyLimit: config && config.enabled ? 100 : 0, // 简化处理，从配置中获取
+          dailyLimit: config && config.enabled && config.daily_email_limit ? config.daily_email_limit : 0,
           emailsSentToday: emailsSentToday,
-          remainingToday: config && config.enabled ? Math.max(0, 100 - emailsSentToday) : 0
+          remainingToday: config && config.enabled && config.daily_email_limit ? Math.max(0, config.daily_email_limit - emailsSentToday) : 0
         },
         dailyStats: dailyStatsArray,
         recentLogs: logs.results
