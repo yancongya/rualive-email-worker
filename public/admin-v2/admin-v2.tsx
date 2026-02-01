@@ -597,9 +597,9 @@ const UserView = ({ users, t, setModalConfig, reloadData, handleAsyncAction, clo
       <table className="w-full text-left">
         <thead className="bg-white/5 text-white/40 text-xs font-black uppercase tracking-wider">
           <tr>
-            <th className="p-6">{t('table.userIdentity')}</th>
+            <th className="p-6">{t('users.table.userIdentity')}</th>
             <th className="hidden lg:table-cell p-6">{t('labels.joined')}</th>
-            <th className="p-6 text-right">{t('table.control')}</th>
+            <th className="p-6 text-right">{t('users.table.control')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
@@ -615,7 +615,7 @@ const UserView = ({ users, t, setModalConfig, reloadData, handleAsyncAction, clo
                 </div>
               </td>
               <td className="hidden lg:table-cell p-6">
-                <span className="font-mono text-white/60 text-sm">{new Date(user.createdAt).toLocaleDateString()}</span>
+                <span className="font-mono text-white/60 text-sm">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</span>
               </td>
               <td className="p-6 text-right">
                 <div className="flex justify-end gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
