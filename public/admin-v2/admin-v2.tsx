@@ -611,7 +611,7 @@ const UserView = ({ users, t, setModalConfig, reloadData, handleAsyncAction, clo
                 <div className="mt-1">
                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border ${
                       user.role === 'admin' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-white/5 text-white/40 border-white/10'
-                    }`}>{user.role}</span>
+                    }`}>{t('users.roles.' + user.role)}</span>
                 </div>
               </td>
               <td className="hidden lg:table-cell p-6">

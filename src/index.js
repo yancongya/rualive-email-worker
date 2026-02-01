@@ -1084,9 +1084,22 @@ async function handleGetUsers(request, env) {
        ORDER BY u.created_at DESC`
     ).all();
 
+    // Convert snake_case to camelCase for frontend
+    const convertedUsers = users.results.map(row => ({
+      id: row.id,
+      email: row.email,
+      username: row.username,
+      role: row.role,
+      createdAt: row.created_at,
+      lastLogin: row.last_login,
+      dailyEmailLimit: row.daily_email_limit,
+      dailyEmailCount: row.daily_email_count,
+      lastEmailDate: row.last_email_date
+    }));
+
     return Response.json({
       success: true,
-      users: users.results
+      users: convertedUsers
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
