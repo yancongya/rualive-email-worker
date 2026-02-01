@@ -461,8 +461,8 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
   <div className="space-y-6">
     <div className="flex justify-between items-end">
       <div>
-        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('headers.invites')}</h2>
-        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('subheaders.invites')}</p>
+        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('invites.headers.invites')}</h2>
+        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('invites.subheaders.invites')}</p>
       </div>
       <ActionButton 
         icon={Plus} 
@@ -480,13 +480,13 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                 body: JSON.stringify({ maxUses: uses, expiresInDays: days })
               });
               reloadData();
-            }, t('messages.ticketPrinted'))}
+            }, t('invites.messages.ticketPrinted'))}
           />
         })} 
       />
     </div>
     {invites?.length === 0 ? (
-       <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center text-white/30 font-mono">{t('messages.noKeys')}</div>
+       <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center text-white/30 font-mono">{t('invites.messages.noKeys')}</div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {invites?.map((invite: InviteCode, i: number) => (
@@ -496,7 +496,7 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
              </div>
              <div className="text-xs text-white/40 uppercase mb-1 flex justify-between">
                <span>{t('labels.code')}</span>
-               <span className={new Date(invite.expiresAt) < new Date() ? 'text-red-500' : 'text-green-500'}>{new Date(invite.expiresAt).toLocaleDateString()}</span>
+               <span className={invite.expiresAt && new Date(invite.expiresAt) < new Date() ? 'text-red-500' : 'text-green-500'}>{invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : '-'}</span>
              </div>
              <div className="text-2xl font-black text-primary tracking-widest font-mono mb-4">{invite.code}</div>
              <div className="flex justify-between items-end text-sm">
@@ -527,11 +527,11 @@ const InviteView = ({ invites, t, setModalConfig, reloadData, handleAsyncAction,
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
                           <div className="text-xs text-white/40 mb-1">{t('labels.expires')}</div>
-                          <div className="font-mono text-white">{new Date(invite.expiresAt).toLocaleString()}</div>
+                          <div className="font-mono text-white">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : '-'}</div>
                         </div>
                         <div className="bg-white/5 p-3 rounded-xl">
                           <div className="text-xs text-white/40 mb-1">{t('labels.createdAt')}</div>
-                          <div className="font-mono text-white">{new Date(invite.createdAt).toLocaleString()}</div>
+                          <div className="font-mono text-white">{invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '-'}</div>
                         </div>
                         {invite.created_by_name && (
                           <div className="bg-white/5 p-3 rounded-xl">
@@ -591,8 +591,8 @@ const UserView = ({ users, t, setModalConfig, reloadData, handleAsyncAction, clo
   <div className="space-y-6">
      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
       <div>
-        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('headers.users')}</h2>
-        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('subheaders.users')}</p>
+        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('users.headers.users')}</h2>
+        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('users.subheaders.users')}</p>
       </div>
     </div>
     <GlassCard className="overflow-x-auto p-0">
@@ -679,8 +679,8 @@ const ApiView = ({ t, setModalConfig, handleAsyncAction, closeModal, isLoading }
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('headers.api')}</h2>
-        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('subheaders.api')}</p>
+        <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('api.headers.api')}</h2>
+        <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('api.subheaders.api')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -786,8 +786,8 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
         <div>
-          <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('headers.logs')}</h2>
-          <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('subheaders.logs')}</p>
+          <h2 className="text-2xl lg:text-4xl font-black italic text-white uppercase tracking-tighter">{t('logs.headers.logs')}</h2>
+          <p className="text-white/40 mt-1 font-mono text-xs lg:text-sm">{t('logs.subheaders.logs')}</p>
         </div>
       </div>
 
