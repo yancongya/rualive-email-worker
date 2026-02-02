@@ -545,6 +545,48 @@ async function verifyAuth(request, env) {
   return payload;
 }
 
+// 中间件：验证管理员权限
+async function verifyAdmin(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  const payload = await verifyAuth(request, env);
+  if (!payload) {
+    return null;
+  }
+  
+  // 检查用户角色
+  const user = await DB.prepare(
+    'SELECT id, email, role FROM users WHERE id = ?'
+  ).bind(payload.userId).first();
+  
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
+  
+  return user;
+}
+
+// 中间件：验证用户权限（排除管理员）
+async function verifyUserOnly(request, env) {
+  const DB = env.DB || env.rualive;
+  
+  const payload = await verifyAuth(request, env);
+  if (!payload) {
+    return null;
+  }
+  
+  // 检查用户角色（排除管理员）
+  const user = await DB.prepare(
+    'SELECT id, email, role FROM users WHERE id = ?'
+  ).bind(payload.userId).first();
+  
+  if (!user || user.role === 'admin') {
+    return null;
+  }
+  
+  return user;
+}
+
 // 初始化管理员
 async function handleInitAdmin(request, env) {
   const DB = env.DB || env.rualive;
@@ -980,9 +1022,9 @@ async function handleCreateInviteCode(request, env) {
   const DB = env.DB || env.rualive;
   
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
     
     const body = await request.json();
@@ -996,7 +1038,7 @@ async function handleCreateInviteCode(request, env) {
     
     await DB.prepare(
       'INSERT INTO invite_codes (id, code, created_by, max_uses, expires_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind(codeId, code, payload.userId, maxUses, expiresAt).run();
+    ).bind(codeId, code, adminUser.id, maxUses, expiresAt).run();
     
     return Response.json({
       success: true,
@@ -1013,9 +1055,9 @@ async function handleGetInviteCodes(request, env) {
   const DB = env.DB || env.rualive;
   
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
     
     const codes = await DB.prepare(
@@ -1048,9 +1090,9 @@ async function handleDeleteInviteCode(request, env) {
   const DB = env.DB || env.rualive;
   
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
     
     const url = new URL(request.url);
@@ -1071,9 +1113,9 @@ async function handleGetUsers(request, env) {
   const DB = env.DB || env.rualive;
 
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
 
     const users = await DB.prepare(
@@ -1139,9 +1181,9 @@ async function handleGetApiKey(request, env) {
 
 async function handleSetApiKey(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -1188,9 +1230,9 @@ async function handleSetApiKey(request, env) {
 
 async function handleDeleteApiKey(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
 
     // 注意：这里不能直接删除环境变量，需要用户手动删除
@@ -1205,9 +1247,9 @@ async function handleDeleteApiKey(request, env) {
 
 async function handleTestApiKey(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
-      return Response.json({ success: false, error: '权限不足' }, { status: 403 });
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
+      return Response.json({ success: false, error: '权限不足，需要管理员权限' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -1467,8 +1509,8 @@ async function handleDeleteUser(request, env) {
 
   try {
     // 1. 验证管理员权限
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
       return Response.json({
         success: false,
         error: '权限不足，仅管理员可删除用户'
@@ -1481,7 +1523,7 @@ async function handleDeleteUser(request, env) {
     const userIdToDelete = pathParts[pathParts.length - 1];
 
     // 3. 防止删除自己
-    if (userIdToDelete === payload.userId) {
+    if (userIdToDelete === adminUser.id) {
       return Response.json({
         success: false,
         error: '无法删除自己的账户'
@@ -1543,8 +1585,8 @@ async function handleResetPassword(request, env) {
 
   try {
     // 1. 验证管理员权限
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
       return Response.json({
         success: false,
         error: '权限不足，仅管理员可重置密码'
@@ -1677,8 +1719,8 @@ async function handleGetUserEmailStats(request, env) {
 
   try {
     // 1. 验证管理员权限
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
       return Response.json({
         success: false,
         error: '权限不足，仅管理员可查看统计'
@@ -1860,12 +1902,12 @@ async function handleGetEmailStats(request, env) {
 
 // 设置邮件限制
 async function handleSetEmailLimit(request, env) {
-  const DB = env.DB || env.rualive;
+  const DB = env || env.rualive;
 
   try {
     // 1. 验证管理员权限
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
       return Response.json({
         success: false,
         error: '权限不足，仅管理员可设置限制'
@@ -1932,8 +1974,8 @@ async function handleGetEmailLimitStatus(request, env) {
 
   try {
     // 1. 验证管理员权限
-    const payload = await verifyAuth(request, env);
-    if (!payload || payload.role !== 'admin') {
+    const adminUser = await verifyAdmin(request, env);
+    if (!adminUser) {
       return Response.json({
         success: false,
         error: '权限不足，仅管理员可查看状态'
@@ -1943,7 +1985,7 @@ async function handleGetEmailLimitStatus(request, env) {
     // 2. 获取用户ID
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/');
-    const userId = pathParts[pathParts.length - 2];
+    const userId = pathParts[pathParts - 2];
 
     // 3. 获取配置
     const config = await DB.prepare(
@@ -2121,6 +2163,19 @@ async function handleWorkData(request, env) {
       return Response.json({ error: 'Missing userId or workData' }, { status: 400 });
     }
 
+    // 验证用户权限（排除管理员）
+    const user = await verifyUserOnly(request, env);
+    if (!user) {
+      console.log('[handleWorkData] 权限不足：用户不存在或为管理员');
+      return Response.json({ error: '权限不足：此接口仅限普通用户使用' }, { status: 403 });
+    }
+
+    // 确保用户只能上传自己的数据
+    if (userId !== user.id) {
+      console.log('[handleWorkData] 用户ID不匹配: 请求userId=', userId, ', 用户ID=', user.id);
+      return Response.json({ error: '只能上传自己的工作数据' }, { status: 403 });
+    }
+
     // 使用传入的日期，如果没有则使用当天日期
     const date = workDate || new Date().toISOString().split('T')[0];
     console.log('[handleWorkData] 准备保存数据: userId=', userId, ', date=', date, ', workData=', workData);
@@ -2136,12 +2191,13 @@ async function handleWorkData(request, env) {
 
 async function handleHeartbeat(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+    // 验证用户权限（排除管理员）
+    const user = await verifyUserOnly(request, env);
+    if (!user) {
+      return Response.json({ error: '权限不足：此接口仅限普通用户使用' }, { status: 403 });
     }
 
-    const userId = payload.userId;
+    const userId = user.id;
     const DB = env.DB || env.rualive;
 
     // 更新用户最后在线时间
@@ -2166,12 +2222,13 @@ async function handleHeartbeat(request, env) {
 // 获取 AE 在线状态
 async function handleGetAEStatus(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+    // 验证用户权限（排除管理员）
+    const user = await verifyUserOnly(request, env);
+    if (!user) {
+      return Response.json({ error: '权限不足：此接口仅限普通用户使用' }, { status: 403 });
     }
 
-    const userId = payload.userId;
+    const userId = user.id;
     const DB = env.DB || env.rualive;
 
     // 获取用户的 AE 在线状态
@@ -2211,12 +2268,13 @@ async function handleGetAEStatus(request, env) {
 // 更新 AE 在线状态
 async function handleUpdateAEStatus(request, env) {
   try {
-    const payload = await verifyAuth(request, env);
-    if (!payload) {
-      return Response.json({ error: '未授权' }, { status: 401 });
+    // 验证用户权限（排除管理员）
+    const user = await verifyUserOnly(request, env);
+    if (!user) {
+      return Response.json({ error: '权限不足：此接口仅限普通用户使用' }, { status: 403 });
     }
 
-    const userId = payload.userId;
+    const userId = user.id;
     const body = await request.json();
     const {
       isOnline,
