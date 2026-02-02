@@ -2924,124 +2924,72 @@ async function saveWorkData(userId, workData, env, date) {
       const existingProjects = existingData.projects_json ? JSON.parse(existingData.projects_json) : [];
       const existingWorkHours = existingData.work_hours_json ? JSON.parse(existingData.work_hours_json) : [];
 
-      // 创建项目映射，用于更新现有项目
+      // 🔍 创建项目映射，用于更新现有项目
       const projectMap = new Map();
       existingProjects.forEach(function(p) {
         projectMap.set(p.name, p);
       });
 
-      // 处理新项目数据
+      // 🔍 处理新项目数据（使用新数据覆盖旧数据，而不是累加）
       allProjects.forEach(function(newProject) {
-        // 直接使用项目名称进行比较（不解码）
-        const existingProject = projectMap.get(newProject.name);
-        
         // 从 allWorkHours 中查找新项目的工时
         const newWorkHour = allWorkHours.find(function(w) { return w.project === newProject.name; });
         const newHours = newWorkHour ? newWorkHour.hours : null;
         
-        if (existingProject) {
-          // 更新现有项目
-          existingProject.compositions = newProject.compositions || existingProject.compositions;
-          existingProject.layers = newProject.layers || existingProject.layers;
-          existingProject.keyframes = newProject.keyframes || existingProject.keyframes;
-          existingProject.effects = newProject.effects || existingProject.effects;
-          // 更新 projectId（如果新项目有 projectId）
-          if (newProject.projectId) {
-            existingProject.projectId = newProject.projectId;
-          }
-          // 更新或添加工作时长
-          const existingWorkHour = existingWorkHours.find(function(w) { return w.project === newProject.name; });
-          if (existingWorkHour) {
-            // 如果新项目有工时，更新现有工时
-            if (newHours !== null) {
-              existingWorkHour.hours = newHours;
-            }
-          } else {
-            // 如果新项目有工时，添加新记录
-            if (newHours !== null) {
-              existingWorkHours.push({
-                project: newProject.name,
-                hours: newHours
-              });
-            }
-          }
-        } else {
-          // 添加新项目
-          projectMap.set(newProject.name, newProject);
-          // 只有当新项目有工时时才添加记录
-          if (newHours !== null) {
-            existingWorkHours.push({
-              project: newProject.name,
-              hours: newHours
-            });
-          }
-        }
+        // 🔍 使用新数据覆盖旧数据，而不是合并
+        projectMap.set(newProject.name, {
+          ...newProject,
+          accumulatedRuntime: newHours ? parseFloat(newHours) * 3600 : 0
+        });
+      });
+
+      // 🔍 使用新工作时长数据覆盖旧数据
+      const newWorkHours = [];
+      allWorkHours.forEach(function(w) {
+        newWorkHours.push({
+          project: w.project,
+          hours: w.hours
+        });
       });
 
       // 从映射中获取最终的项目列表
       const mergedProjects = Array.from(projectMap.values());
 
-      // 合并其他数据（需要去重）
+      // 🔍 合并其他数据（去重，使用新数据）
       // 🔍 过滤掉旧格式的合成数据（只有 count 没有 name 的数据）
       const filteredExistingCompositions = existingCompositions.filter(function(c) {
         return c && c.name && typeof c.name === 'string';
       });
       
-      // 🔍 合并合成数据并去重（按 project 和 name）
+      // 🔍 合成数据：使用新数据覆盖旧数据
       const compositionMap = new Map();
-      filteredExistingCompositions.forEach(function(c) {
-        var key = c.project + '|' + c.name;
-        compositionMap.set(key, c);
-      });
       allCompositions.forEach(function(c) {
         var key = c.project + '|' + c.name;
         compositionMap.set(key, c);
       });
       const mergedCompositions = Array.from(compositionMap.values());
       
-      // 🔍 合并特效数据并去重（按 project 和 name）
+      // 🔍 特效数据：使用新数据覆盖旧数据
       const effectMap = new Map();
-      existingEffects.forEach(function(e) {
-        var key = e.project + '|' + e.name;
-        effectMap.set(key, e);
-      });
       allEffects.forEach(function(e) {
         var key = e.project + '|' + e.name;
         effectMap.set(key, e);
       });
       const mergedEffects = Array.from(effectMap.values());
       
-      // 🔍 合并图层数据并去重（按 project 和 name）
+      // 🔍 图层数据：使用新数据覆盖旧数据
       const layerMap = new Map();
-      existingLayers.forEach(function(l) {
-        var key = l.project + '|' + l.name;
-        layerMap.set(key, l);
-      });
       allLayers.forEach(function(l) {
         var key = l.project + '|' + l.name;
         layerMap.set(key, l);
       });
       const mergedLayers = Array.from(layerMap.values());
       
-      // 🔍 合并关键帧数据并去重（按 project 和 layer）
+      // 🔍 关键帧数据：使用新数据覆盖旧数据（不累加！）
       const keyframeMap = new Map();
-      existingKeyframes.forEach(function(k) {
-        var key = k.project + '|' + k.layer;
-        var existing = keyframeMap.get(key);
-        if (existing) {
-          existing.count += k.count;
-        } else {
-          keyframeMap.set(key, {...k});
-        }
-      });
       allKeyframes.forEach(function(k) {
         var key = k.project + '|' + k.layer;
-        var existing = keyframeMap.get(key);
-        if (existing) {
-          existing.count += k.count;
-        } else {
-          keyframeMap.set(key, {...k});
-        }
+        keyframeMap.set(key, {...k});
       });
       const mergedKeyframes = Array.from(keyframeMap.values());
 
@@ -3051,20 +2999,20 @@ async function saveWorkData(userId, workData, env, date) {
       layersJson = mergedLayers.length > 0 ? JSON.stringify(mergedLayers) : null;
       keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
       projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
-      workHoursJson = existingWorkHours.length > 0 ? JSON.stringify(existingWorkHours) : null;
+      workHoursJson = newWorkHours.length > 0 ? JSON.stringify(newWorkHours) : null;
 
       console.log('[saveWorkData] ========== 合并后的项目数据 ==========');
       console.log('[saveWorkData] mergedProjects:', JSON.stringify(mergedProjects, null, 2));
       console.log('[saveWorkData] projects_json (将保存到数据库):', projectsJson);
       console.log('[saveWorkData] ========== 准备更新数据库 ==========');
 
-      // 重新计算总数
+      // 🔍 重新计算总数（使用新数据，不累加旧数据）
       const mergedStats = {
         compositions: mergedCompositions.length,  // 🔍 直接统计合成数量
         layers: mergedLayers.reduce(function(acc, l) { return acc + (l.count || 0); }, 0),
         keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + (k.count || 0); }, 0),
         effects: mergedEffects.reduce(function(acc, e) { return acc + (e.count || 0); }, 0),  // 🔍 计算总使用次数
-        work_hours: existingWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
+        work_hours: newWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
       };
 
       // 更新数据库
