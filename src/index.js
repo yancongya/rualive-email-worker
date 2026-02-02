@@ -2859,7 +2859,14 @@ async function saveWorkData(userId, workData, env, date) {
 
       // 关键帧列表 - 支持多种格式
       if (project.details && project.details.keyframes) {
+        console.log('[saveWorkData] ========== 处理关键帧数据 ==========');
+        console.log('[saveWorkData] 项目名称:', project.name);
+        console.log('[saveWorkData] keyframes 类型:', typeof project.details.keyframes);
+        console.log('[saveWorkData] keyframes 是否为数组:', Array.isArray(project.details.keyframes));
+        console.log('[saveWorkData] keyframes 数据:', JSON.stringify(project.details.keyframes, null, 2));
+        
         if (Array.isArray(project.details.keyframes)) {
+          console.log('[saveWorkData] 处理数组格式，元素数量:', project.details.keyframes.length);
           // 对象数组格式 - 可能是统计格式 [{layerName: "Layer1", keyframeCount: 5}, ...]
           project.details.keyframes.forEach(kf => {
             if (kf && kf.layerName) {
@@ -2870,6 +2877,7 @@ async function saveWorkData(userId, workData, env, date) {
                   layer: kf.layerName,
                   count: kf.keyframeCount
                 });
+                console.log('[saveWorkData] 添加关键帧（统计格式）: layer=', kf.layerName, ', count=', kf.keyframeCount);
               } 
               // 原始格式 [{id: 1, layerName: "Layer1", propertyName: "Position", ...}]
               else if (kf.layerName && kf.propertyName) {
@@ -2877,26 +2885,35 @@ async function saveWorkData(userId, workData, env, date) {
                 const existing = allKeyframes.find(item => item.project === project.name && item.layer === kf.layerName);
                 if (existing) {
                   existing.count++;
+                  console.log('[saveWorkData] 累加关键帧（原始格式）: layer=', kf.layerName, ', count=', existing.count);
                 } else {
                   allKeyframes.push({
                     project: project.name,
                     layer: kf.layerName,
                     count: 1
                   });
+                  console.log('[saveWorkData] 添加关键帧（原始格式）: layer=', kf.layerName, ', count=1');
                 }
               }
             }
           });
         } else if (typeof project.details.keyframes === 'object' && !Array.isArray(project.details.keyframes)) {
+          console.log('[saveWorkData] 处理对象格式，键数量:', Object.keys(project.details.keyframes).length);
           // 对象格式（兼容旧数据） - {"Layer1": 5, "Layer2": 3}
           Object.keys(project.details.keyframes).forEach(layerName => {
+            const count = project.details.keyframes[layerName];
             allKeyframes.push({
               project: project.name,
               layer: layerName,
-              count: project.details.keyframes[layerName]
+              count: count
             });
+            console.log('[saveWorkData] 添加关键帧（对象格式）: layer=', layerName, ', count=', count);
           });
         }
+        
+        console.log('[saveWorkData] 处理后的 allKeyframes 数量:', allKeyframes.length);
+        console.log('[saveWorkData] allKeyframes 数据:', JSON.stringify(allKeyframes, null, 2));
+        console.log('[saveWorkData] ========== 关键帧数据处理结束 ==========');
       }
     });
 

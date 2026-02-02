@@ -256,7 +256,7 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     const project = projectMap.get(decodedProjectName);
     if (project) {
       project.details.keyframes[k.layer] = (project.details.keyframes[k.layer] || 0) + k.count;
-      project.statistics.keyframes += k.count;
+      // 🔍 不再累加到 statistics.keyframes，因为初始化时已经设置了正确的值
       totalKeyframesFromJson += k.count;
     }
   });
