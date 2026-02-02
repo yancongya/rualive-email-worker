@@ -650,31 +650,31 @@ const IconMenu = () => (
 interface Popup { id: number; x: number; y: number; text: string; }
 
 const App = () => {
-  const [view, setView] = useState<'landing' | 'auth' | 'user'>(() => {
-    // 根据初始 URL 设置初始视图
+  const [view, setView] = useState<'landing' | 'auth' | 'user' | 'admin'>(() => {
+    // 根据初始 URL 设置初始视图 - Updated 2026-02-01 23:20
     const path = window.location.pathname;
-    console.log('[App] Initial path:', path, 'v3');
-    console.log('[App] Path length:', path.length);
-    console.log('[App] Path starts with /user:', path.startsWith('/user'));
-    // 使用 startsWith 处理路径末尾可能有斜杠的情况
+    console.log('[App] Initial path:', path);
+    // admin 路由优先检查 - Updated 2026-02-01 23:20
+    if (path.startsWith('/admin')) {
+      return 'admin';
+    }
     if (path.startsWith('/login') || path.startsWith('/register')) {
-      console.log('[App] Setting initial view to auth', 'v3');
       return 'auth';
     }
     if (path.startsWith('/user')) {
-      console.log('[App] Setting initial view to user', 'v3');
       return 'user';
     }
-    console.log('[App] Setting initial view to landing', 'v3');
     return 'landing';
   });
 
-  // 强制更新视图以确保路由正确 - v3
+  // 强制更新视图以确保路由正确 - v4 with admin support
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
       console.log('[App] PopState - Path:', path);
-      if (path.startsWith('/user')) {
+      if (path.startsWith('/admin')) {
+        setView('admin');
+      } else if (path.startsWith('/user')) {
         setView('user');
       } else if (path.startsWith('/login') || path.startsWith('/register')) {
         setView('auth');
@@ -691,6 +691,11 @@ const App = () => {
     const params = new URLSearchParams(window.location.search);
     const mode = params.get('mode');
     console.log('[App] Initial isLogin check - path:', path, 'mode:', mode);
+    // admin 和 user 路由不需要登录/注册模式
+    if (path.startsWith('/admin') || path.startsWith('/user')) {
+      console.log('[App] Setting initial isLogin to true (admin/user)');
+      return true;
+    }
     if (path === '/register' || (path === '/login' && mode === 'register')) {
       console.log('[App] Setting initial isLogin to false (register)');
       return false;

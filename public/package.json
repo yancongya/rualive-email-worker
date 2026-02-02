@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && copy admin.html dist\\ && if not exist dist\\local mkdir dist\\local && copy local\\*.json dist\\local\\",
+    "build": "vite build && copy admin.html dist\\ && if not exist dist\\local mkdir dist\\local && copy local\\*.json dist\\local\\ && copy admin-v2\\dist\\assets\\main-CPZDnsfH.js dist\\assets\\",
     "preview": "vite preview",
     "deploy": "npm run build && cd .. && npx wrangler deploy"
   },

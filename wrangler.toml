@@ -27,4 +27,4 @@ crons = ["0 * * * *"]
 [vars]
 ENVIRONMENT = "production"
 FROM_EMAIL = "RuAlive@itycon.cn"
-DEPLOY_TIMESTAMP = "2026-01-30-18-25"
+DEPLOY_TIMESTAMP = "2026-02-02-10-20"

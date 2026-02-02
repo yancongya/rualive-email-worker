@@ -145,7 +145,7 @@ const AuthPage = () => {
 
         // 跳转到管理后台或用户页面
         if (data.user && data.user.role === 'admin') {
-          window.location.href = '/admin-v2';
+          window.location.href = '/admin';
         } else {
           window.location.href = '/user';
         }
