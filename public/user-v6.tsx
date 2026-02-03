@@ -283,6 +283,7 @@ export const NumberTicker = ({ value }: { value: number }) => {
 export const Header = ({
     lang,
     setLang,
+    trans,
     dateDisplay,
     onCalendarClick,
     currentView,
@@ -294,6 +295,7 @@ export const Header = ({
 }: {
     lang: LangType,
     setLang: React.Dispatch<React.SetStateAction<LangType>>,
+    trans: any,
     dateDisplay?: string,
     onCalendarClick?: () => void,
     currentView: ViewType,
@@ -494,7 +496,7 @@ interface ProjectSelectorProps {
   onToggleAnonymize: () => void;
 }
 
-const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang, anonymizeMode, onToggleAnonymize }) => {
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, trans, anonymizeMode, onToggleAnonymize }) => {
   return (
     <div className="w-full mb-6 md:mb-8">
       <div className="flex w-full gap-1 h-16 md:h-24 overflow-x-auto">
@@ -548,7 +550,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
   );
 };
 
-export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
+export const LayerRadar = ({ data, trans }: { data: any, trans: any }) => {
   const chartData = useMemo(() => {
     // 过滤掉值为 0 的类别
     const filteredEntries = Object.entries(data).filter(([_, value]) => value > 0);
@@ -626,7 +628,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
   );
 };
 
-export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang: LangType }) => {
+export const EffectDonut = ({ data, trans }: { data: Record<string, number>, trans: any }) => {
 
 
 
@@ -862,7 +864,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
 };
 
-export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list', anonymizeMode?: boolean }) => {
+export const DataList = ({ data, trans, type = 'count', anonymizeMode = false }: { data: Record<string, number> | string[], trans: any, type?: 'count' | 'list', anonymizeMode?: boolean }) => {
   const [sortKey, setSortKey] = useState<'name' | 'value'>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -972,7 +974,7 @@ export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: 
   );
 };
 
-const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lang }: any) => {
+const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, trans }: any) => {
   if (!isOpen) return null;
 
   const SYSTEM_TODAY = new Date().toISOString().split('T')[0];
@@ -1073,7 +1075,7 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
       calendarCells.push({ type: 'day', day: i, dateStr, heat });
   }
 
-  const weekDays = lang === 'ZH' 
+  const weekDays = trans.months[0].includes('月') 
     ? ['日','一','二','三','四','五','六']
     : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 
@@ -2040,7 +2042,7 @@ export const AnalyticsView = ({
                     countLabel={trans.total}
                     className="h-[220px]"
                 >
-                    <DataList data={aggregatedDetails.keyframes} type="count" lang={lang} />
+                    <DataList data={aggregatedDetails.keyframes} type="count" trans={trans} />
                 </DashboardPanel>
 
                 <DashboardPanel 
@@ -2049,7 +2051,7 @@ export const AnalyticsView = ({
                     countLabel={trans.items}
                     className="h-[220px]"
                 >
-                    <DataList data={aggregatedDetails.compositions} type="list" lang={lang} />
+                    <DataList data={aggregatedDetails.compositions} type="list" trans={trans} />
                 </DashboardPanel>
                 
                 <DashboardPanel 
@@ -2057,7 +2059,7 @@ export const AnalyticsView = ({
                     count={Object.values(aggregatedDetails.layers).reduce((a: number,b: number)=>a+b, 0)} 
                     countLabel={trans.total}
                 >
-                <LayerRadar data={aggregatedDetails.layers} lang={lang} />
+                <LayerRadar data={aggregatedDetails.layers} trans={trans} />
                 </DashboardPanel>
 
                 <DashboardPanel 
@@ -2071,7 +2073,7 @@ export const AnalyticsView = ({
                     }
                     countLabel={trans.uniqueEffects}
                 >
-                <EffectDonut data={aggregatedDetails.effectCounts} lang={lang} />
+                <EffectDonut data={aggregatedDetails.effectCounts} trans={trans} />
                 </DashboardPanel>
             </div>
         </div>
@@ -2247,12 +2249,13 @@ const App = () => {
         onClose={() => setIsCalendarOpen(false)} 
         onSelectDate={setCurrentDate}
         currentSelectedDate={currentDate}
-        lang={lang}
+        trans={trans}
       />
 
       <Header
         lang={lang}
         setLang={setLang}
+        trans={trans}
         dateDisplay={currentDate}
         onCalendarClick={() => setIsCalendarOpen(true)}
         currentView={currentView}
@@ -2272,7 +2275,7 @@ const App = () => {
                   projects={filteredProjects}
                   selectedIndex={selectedProjectIndex}
                   onSelect={setSelectedProjectIndex}
-                  lang={lang}
+                  trans={trans}
                   anonymizeMode={anonymizeMode}
                   onToggleAnonymize={handleToggleAnonymize}
                 />
@@ -2292,7 +2295,7 @@ const App = () => {
                       countLabel={trans.total}
                       className="h-[220px]"
                   >
-                      <DataList data={project.details.keyframes} type="count" lang={lang} anonymizeMode={anonymizeMode} />
+                      <DataList data={project.details.keyframes} type="count" trans={trans} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
 
                   <DashboardPanel
@@ -2301,7 +2304,7 @@ const App = () => {
                       countLabel={trans.items}
                       className="h-[220px]"
                   >
-                      <DataList data={project.details.compositions} type="list" lang={lang} anonymizeMode={anonymizeMode} />
+                      <DataList data={project.details.compositions} type="list" trans={trans} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
                   
                   <DashboardPanel 
@@ -2309,7 +2312,7 @@ const App = () => {
                       count={Object.values(project.details.layers).reduce((a,b)=>a+b, 0)} 
                       countLabel={trans.total}
                   >
-                    <LayerRadar data={project.details.layers} lang={lang} />
+                    <LayerRadar data={project.details.layers} trans={trans} />
                   </DashboardPanel>
 
                   <DashboardPanel 
@@ -2323,7 +2326,7 @@ const App = () => {
                       }
                       countLabel={trans.uniqueEffects}
                   >
-                    <EffectDonut data={project.details.effectCounts} lang={lang} />
+                    <EffectDonut data={project.details.effectCounts} trans={trans} />
                   </DashboardPanel>
                 </div>
               </>
