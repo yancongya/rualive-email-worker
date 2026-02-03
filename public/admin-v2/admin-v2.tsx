@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { 
@@ -794,7 +794,7 @@ const FilterDropdown = ({ label, value, options, onChange }: any) => {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-glass backdrop-blur-xl border border-glass-border rounded-xl shadow-xl py-2 z-50 min-w-[140px] max-h-[300px] overflow-y-auto">
+        <div className="absolute top-full left-0 mt-2 bg-[#0a0a0a] border border-glass-border rounded-xl shadow-xl py-2 z-50 min-w-[140px] max-h-[300px] overflow-y-auto">
           {options.map((option: any) => (
             <button
               key={option.value}
@@ -823,7 +823,6 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: 'all',
-    subject: 'all',
     recipient: 'all',
     dateRange: 'all'
   });
@@ -850,9 +849,7 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
       result = result.filter(log => log.status === filters.status);
     }
     
-    if (filters.subject !== 'all') {
-      result = result.filter(log => log.subject === filters.subject);
-    }
+    
     
     if (filters.recipient !== 'all') {
       result = result.filter(log => log.recipient === filters.recipient);
@@ -879,12 +876,10 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
     
     setFilteredLogs(result);
   }, [filters, logs]);
-
-  const uniqueSubjects = [...new Set(logs.map(log => log.subject))];
   const uniqueRecipients = [...new Set(logs.map(log => log.recipient))];
 
   const clearFilters = () => {
-    setFilters({ status: 'all', subject: 'all', recipient: 'all', dateRange: 'all' });
+    setFilters({ status: 'all', recipient: 'all', dateRange: 'all' });
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v !== 'all');
@@ -1261,3 +1256,6 @@ const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error("Could not find root element to mount to");
 const root = ReactDOM.createRoot(rootElement);
 root.render(<React.StrictMode><App /></React.StrictMode>);
+
+
+
