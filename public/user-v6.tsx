@@ -363,6 +363,48 @@ export const Sidebar = ({
     );
 };
 
+// 移动端底部导航栏
+export const MobileBottomNav = ({
+    currentView,
+    trans,
+}: {
+    currentView: ViewType,
+    trans: any,
+}) => {
+    const navItems = [
+        { id: 'dashboard' as ViewType, label: trans.dashboard, icon: LayoutDashboard },
+        { id: 'analytics' as ViewType, label: trans.analytics, icon: BarChartIcon2 },
+        { id: 'settings' as ViewType, label: trans.settings, icon: Settings },
+    ];
+
+    const handleNavClick = (id: ViewType) => {
+        window.location.hash = id;
+    };
+
+    return (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-t border-white/10 md:hidden">
+            <div className="flex items-center justify-around h-16 px-2">
+                {navItems.map((item) => {
+                    const isActive = currentView === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => handleNavClick(item.id)}
+                            className={`
+                                flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-all duration-200
+                                ${isActive ? 'text-ru-primary' : 'text-ru-textDim'}
+                            `}
+                        >
+                            <item.icon size={20} className="flex-shrink-0" />
+                            <span className="text-[10px] font-bold whitespace-nowrap">{item.label}</span>
+                        </button>
+                    );
+                })}
+            </div>
+        </nav>
+    );
+};
+
 export const Header = ({
     lang,
     setLang,
@@ -2218,9 +2260,8 @@ const App = () => {
     window.location.hash = currentView;
   }, [currentView]);
 
-  // 侧边栏折叠状态
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
+  // 侧边栏折叠状态（默认折叠）
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [currentDate, setCurrentDate] = useState<string>(() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -2346,7 +2387,7 @@ const App = () => {
   }, [currentDate, searchQuery]);
 
   return (
-    <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20">
+    <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20 md:pb-0">
 
       <CalendarModal
         isOpen={isCalendarOpen}
@@ -2356,19 +2397,27 @@ const App = () => {
         trans={trans}
       />
 
-      {/* 侧边栏 */}
-      <Sidebar
+      {/* 桌面端侧边栏 */}
+      <div className="hidden md:block">
+        <Sidebar
+          currentView={currentView}
+          trans={trans}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      </div>
+
+      {/* 移动端底部导航 */}
+      <MobileBottomNav
         currentView={currentView}
         trans={trans}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       {/* 主内容区域 */}
       <div
         className={`
           transition-all duration-300 ease-in-out
-          ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}
+          ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}
         `}
       >
         <Header
