@@ -99,8 +99,40 @@
                     scrollbar-width: thin;
                     scrollbar-color: rgba(255, 107, 53, 0.3) rgba(255, 255, 255, 0.03);
                 }
+
+                /* BRICK LOADER ANIMATION */
+                @keyframes rua-brick-cycle {
+                    0% { 
+                        opacity: 0; 
+                        transform: translateY(-60px); 
+                    }
+                    15% { 
+                        opacity: 1; 
+                        transform: translateY(0); 
+                    }
+                    50% { 
+                        opacity: 1; 
+                        transform: translateY(0); 
+                    }
+                    65% { 
+                        opacity: 0; 
+                        transform: translateY(60px); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translateY(60px); 
+                    }
+                }
+                
+                .rua-brick-anim {
+                    opacity: 0; /* Hidden by default */
+                    transform-box: fill-box;
+                    transform-origin: center;
+                    animation: rua-brick-cycle 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+                    will-change: transform, opacity;
+                }
     </style>
-  <script type="module" crossorigin src="/assets/userV6-A5DSS07y.js"></script>
+  <script type="module" crossorigin src="/assets/userV6-Byo_SnRp.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/client-Crikcsvy.js">
   <link rel="modulepreload" crossorigin href="/assets/x-DJKuZ6ze.js">
   <link rel="modulepreload" crossorigin href="/assets/index-C8pce-KX.js">
