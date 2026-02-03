@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -80,158 +80,18 @@ export type ViewMode = 'week' | 'month' | 'quarter' | 'year' | 'all';
 
 // --- TRANSLATIONS ---
 
-export const TRANS = {
-  EN: {
-    subtitle: "SYSTEM ONLINE // MONITORED",
-    compositions: "COMPOSITIONS",
-    totalLayers: "TOTAL LAYERS",
-    keyframes: "KEYFRAMES",
-    effects: "EFFECTS APPLIED",
-    layerDist: "LAYER DISTRIBUTION",
-    effectFreq: "EFFECT FREQUENCY",
-    uniqueEffects: "UNIQUE EFFECTS",
-    top8: "TOP 8",
-    total: "TOTAL",
-    keyframeDensity: "KEYFRAME DENSITY",
-    activeComps: "ACTIVE COMPOSITIONS",
-    items: "ITEMS",
-    missionLog: "CALENDAR PANEL",
-    retrieveData: "Select a date to retrieve data.",
-    low: "Low",
-    mid: "Med",
-    high: "High",
-    noDataTitle: "NO VITAL SIGNS DETECTED",
-    noDataDesc: "Select a different date from the calendar.",
-    id: "ID",
-    jumpToday: "TODAY",
-    // Layer types mapping
-    video: "VIDEO",
-    image: "IMAGE",
-    sequence: "SEQUENCE",
-    designFile: "FILE LAYER",
-    sourceFile: "SOURCE FILE",
-    nullSolidLayer: "NULL/SOLID",
-    shapeLayer: "SHAPE LAYER",
-    textLayer: "TEXT LAYER",
-    adjustmentLayer: "ADJUSTMENT LAYER",
-    lightLayer: "LIGHT LAYER",
-    cameraLayer: "CAMERA LAYER",
-    other: "OTHER",
-    count: "COUNT",
-    // Sorting
-    sortName: "NAME",
-    sortValue: "VAL",
-    months: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
-    // Analytics
-    analytics: "ANALYTICS",
-    dashboard: "DASHBOARD",
-    runtime: "RUNTIME",
-    viewweek: "WEEK",
-    viewmonth: "MONTH",
-    viewquarter: "QUARTER",
-    viewyear: "YEAR",
-    viewall: "ALL TIME",
-    trendAnalysis: "TREND ANALYSIS",
-    distribution: "DISTRIBUTION MATRIX",
-    // Analytics Controls
-    dailyDetails: "DAILY DETAILS",
-    normalizeCurves: "NORMALIZE CURVES",
-    normalized: "NORMALIZED",
-    toggleSoloHint: "Left Click: Toggle / Right Click: Solo",
-    viewweek_short: "WK",
-    viewmonth_short: "MO",
-    viewquarter_short: "QT",
-    viewyear_short: "YR",
-    viewall_short: "ALL",
-    searchPlaceholder: "SEARCH PROJECT...",
-    searchAnalyticsPlaceholder: "FILTER DATA...",
-    viewChart: "CHART VIEW",
-    viewTable: "DATA TABLE",
-    chart: "CHART",
-    table: "TABLE",
-    page: "PAGE",
-    of: "OF",
-    projectCount: "PROJECT COUNT",
-    // Settings
-    settings: "SETTINGS",
-    refresh: "REFRESH",
-    refreshTooltip: "Refresh data from server"
-  },
-  ZH: {
-    subtitle: "系统在线 // 监控中",
-    compositions: "合成数量",
-    totalLayers: "图层总数",
-    keyframes: "关键帧数",
-    effects: "特效应用",
-    layerDist: "图层类型分布",
-    effectFreq: "特效使用频率",
-    uniqueEffects: "独立特效",
-    top8: "前8名",
-    total: "总计",
-    keyframeDensity: "关键帧密度",
-    activeComps: "活跃合成",
-    items: "项",
-    missionLog: "日历面板",
-    retrieveData: "选择日期以读取数据。",
-    low: "低",
-    mid: "中",
-    high: "高",
-    noDataTitle: "未检测到生命体征",
-    noDataDesc: "请从日历中选择其他日期。",
-    id: "编号",
-    jumpToday: "回到今日",
-    // Layer types mapping
-    video: "视频素材",
-    image: "图片素材",
-    sequence: "序列",
-    designFile: "文件图层",
-    sourceFile: "源文件",
-    nullSolidLayer: "纯色/空对象",
-    shapeLayer: "形状图层",
-    textLayer: "文字图层",
-    adjustmentLayer: "调整图层",
-    lightLayer: "灯光图层",
-    cameraLayer: "摄像机图层",
-    other: "其他",
-    count: "数量",
-    // Sorting
-    sortName: "名称",
-    sortValue: "数值",
-    months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-    // Analytics
-    analytics: "数据分析",
-    dashboard: "监控看板",
-    runtime: "运行时长",
-    viewweek: "周视图",
-    viewmonth: "月视图",
-    viewquarter: "季视图",
-    viewyear: "年视图",
-    viewall: "全部",
-    trendAnalysis: "趋势分析",
-    distribution: "分布矩阵",
-    // Analytics Controls
-    dailyDetails: "每日详情",
-    normalizeCurves: "归一化曲线",
-    normalized: "已归一化",
-    toggleSoloHint: "左键：切换 / 右键：独显",
-    viewweek_short: "周",
-    viewmonth_short: "月",
-    viewquarter_short: "季",
-    viewyear_short: "年",
-    viewall_short: "全",
-    searchPlaceholder: "搜索项目名称...",
-    searchAnalyticsPlaceholder: "筛选数据...",
-    viewChart: "图表视图",
-    viewTable: "数据列表",
-    chart: "图表",
-    table: "列表",
-    page: "页",
-    of: "/",
-    projectCount: "项目数量",
-    // Settings
-    settings: "系统设置",
-    refresh: "刷新",
-    refreshTooltip: "从服务器刷新数据"
+// 翻译加载函数
+export const loadUserTranslations = async (lang: 'EN' | 'ZH'): Promise<any> => {
+  try {
+    const response = await fetch(`/locals/user/${lang}.json`);
+    if (!response.ok) {
+      console.error(`Failed to load ${lang} translations`);
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error loading ${lang} translations:`, error);
+    return null;
   }
 };
 
@@ -328,7 +188,7 @@ export const Header = ({
                         RUALIVE
                     </h1>
                     <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
-                        {TRANS[lang].subtitle} {currentView !== 'dashboard' && ` // ${TRANS[lang][currentView]}`}
+                        {trans.subtitle} {currentView !== 'dashboard' && ` // ${trans[currentView]}`}
                     </p>
                   </div>
                 </div>
@@ -356,7 +216,7 @@ export const Header = ({
                     type="text" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={currentView === 'dashboard' ? TRANS[lang].searchPlaceholder : TRANS[lang].searchAnalyticsPlaceholder}
+                    placeholder={currentView === 'dashboard' ? trans.searchPlaceholder : trans.searchAnalyticsPlaceholder}
                     disabled={currentView === 'settings'}
                     className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-sm py-2 pl-9 pr-3 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50 disabled:opacity-30 disabled:cursor-not-allowed"
                 />
@@ -366,7 +226,7 @@ export const Header = ({
                 <button 
                     onClick={onCalendarClick}
                     className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-l-sm hover:border-ru-primary hover:bg-white/10 transition-all group"
-                    title={TRANS[lang].missionLog}
+                    title={trans.missionLog}
                 >
                     <CalendarIcon size={14} className="text-ru-textDim group-hover:text-ru-primary" />
                     <span className="font-mono font-bold text-xs text-white">{dateDisplay}</span>
@@ -374,15 +234,15 @@ export const Header = ({
                 <div className="bg-white/5 border-y border-r border-white/10 rounded-r-sm flex gap-0.5">
                     <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
                         <LayoutGrid size={14} />
-                        <span>{TRANS[lang].dashboard}</span>
+                        <span>{trans.dashboard}</span>
                     </button>
                     <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
                         <BarChart3 size={14} />
-                        <span>{TRANS[lang].analytics}</span>
+                        <span>{trans.analytics}</span>
                     </button>
                     <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
                         <Settings size={14} />
-                        <span>{TRANS[lang].settings}</span>
+                        <span>{trans.settings}</span>
                     </button>
                 </div>
             </div>
@@ -391,10 +251,10 @@ export const Header = ({
                 <button
                     onClick={onRefresh}
                     className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
-                    title={TRANS[lang].refreshTooltip}
+                    title={trans.refreshTooltip}
                 >
                     <RotateCcw size={14} />
-                    <span className="hidden md:inline">{TRANS[lang].refresh}</span>
+                    <span className="hidden md:inline">{trans.refresh}</span>
                 </button>
             )}
 
@@ -530,7 +390,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
 
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
                  <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact(proj.accumulatedRuntime)}</span>
-                 <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{TRANS[lang].id}: {proj.projectId}</span>
+                 <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
               </div>
 
               <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
@@ -574,7 +434,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
 
     return filteredEntries.map(([key, value]) => {
         const rawLabel = key.replace(/([A-Z])/g, ' $1').toUpperCase();
-        const mappedLabel = TRANS[lang][key as keyof typeof TRANS.EN] || rawLabel;
+        const mappedLabel = trans[key as keyof typeof TRANS.EN] || rawLabel;
 
         const tierValue = smoothValue(value as number);
 
@@ -596,7 +456,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
           <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
           <PolarRadiusAxis angle={30} domain={[0, 4]} tick={false} axisLine={false} />
           <Radar
-            name={TRANS[lang].totalLayers}
+            name={trans.totalLayers}
             dataKey="A"
             stroke="#FF6B35"
             strokeWidth={2}
@@ -611,7 +471,7 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
              itemStyle={{ color: '#FF6B35' }}
              formatter={(value: any, name: string, props: any) => {
                // 显示原始值而不是档位值
-               return [props.payload.rawValue, TRANS[lang].count];
+               return [props.payload.rawValue, trans.count];
              }}
           />
         </RadarChart>
@@ -674,7 +534,7 @@ export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang
 
   const activeItem = hoveredName ? chartData.find(d => d.name === hoveredName) : null;
 
-  const displayData = activeItem || { name: TRANS[lang].total, value: total };
+  const displayData = activeItem || { name: trans.total, value: total };
 
 
 
@@ -933,7 +793,7 @@ export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: 
              onClick={() => toggleSort('name')} 
              className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'name' ? 'text-white font-bold' : ''}`}
            >
-             {TRANS[lang].sortName} <SortIcon active={sortKey === 'name'} dir={sortDir} />
+             {trans.sortName} <SortIcon active={sortKey === 'name'} dir={sortDir} />
            </button>
            
            {type === 'count' && (
@@ -941,7 +801,7 @@ export const DataList = ({ data, lang, type = 'count', anonymizeMode = false }: 
                onClick={() => toggleSort('value')} 
                className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'value' ? 'text-white font-bold' : ''}`}
              >
-               {TRANS[lang].sortValue} <SortIcon active={sortKey === 'value'} dir={sortDir} />
+               {trans.sortValue} <SortIcon active={sortKey === 'value'} dir={sortDir} />
              </button>
            )}
        </div>
@@ -1080,7 +940,7 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
         </button>
 
         <div className="flex flex-col gap-1 mb-4 relative z-10">
-            <h2 className="text-lg font-black italic font-sans text-white uppercase">{TRANS[lang].missionLog}</h2>
+            <h2 className="text-lg font-black italic font-sans text-white uppercase">{trans.missionLog}</h2>
             <div className="flex items-center justify-between w-full mt-2">
                  <button onClick={handlePrev} className="p-1.5 border border-white/10 hover:border-ru-primary text-ru-textDim hover:text-white rounded transition-colors"><ChevronLeft size={16}/></button>
                  <button 
@@ -1088,7 +948,7 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
                     className="font-mono text-ru-primary font-bold text-sm hover:text-white hover:underline decoration-ru-primary underline-offset-4 transition-all"
                  >
                     {viewMode === 'month' 
-                        ? `${TRANS[lang].months[currentMonth]} ${currentYear}`
+                        ? `${trans.months[currentMonth]} ${currentYear}`
                         : `${currentYear}`
                     }
                  </button>
@@ -1151,7 +1011,7 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
                </div>
            ) : (
                <div className="grid grid-cols-3 gap-2 h-full content-start">
-                   {TRANS[lang].months.map((m: string, idx: number) => {
+                   {trans.months.map((m: string, idx: number) => {
                        const isActive = idx === currentMonth;
                        return (
                            <button
@@ -1181,13 +1041,13 @@ const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lan
              className="flex items-center gap-1.5 hover:text-white transition-colors group"
            >
               <RotateCcw size={10} className="group-hover:rotate-180 transition-transform duration-500"/>
-              {TRANS[lang].jumpToday}
+              {trans.jumpToday}
            </button>
 
            <div className="flex items-center gap-2">
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/20 rounded-full"></span> {TRANS[lang].low}</div>
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/60 rounded-full"></span> {TRANS[lang].mid}</div>
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary rounded-full"></span> {TRANS[lang].high}</div>
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/20 rounded-full"></span> {trans.low}</div>
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/60 rounded-full"></span> {trans.mid}</div>
+             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary rounded-full"></span> {trans.high}</div>
            </div>
         </div>
       </div>
@@ -1392,11 +1252,11 @@ const AnalyticsTable = ({
                         <tr className="border-b border-white/10 text-[10px] uppercase font-mono">
                             <SortableHeader label={lang === 'ZH' ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
                             <SortableHeader label={lang === 'ZH' ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
-                            <SortableHeader label={TRANS[lang].compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
-                            <SortableHeader label={TRANS[lang].totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
-                            <SortableHeader label={TRANS[lang].keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
-                            <SortableHeader label={TRANS[lang].effects} sortKey="effects" align="right" colorClass="text-emerald-400/80" />
-                            <SortableHeader label={TRANS[lang].runtime} sortKey="runtime" align="right" colorClass="text-amber-400/80" />
+                            <SortableHeader label={trans.compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
+                            <SortableHeader label={trans.totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
+                            <SortableHeader label={trans.keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
+                            <SortableHeader label={trans.effects} sortKey="effects" align="right" colorClass="text-emerald-400/80" />
+                            <SortableHeader label={trans.runtime} sortKey="runtime" align="right" colorClass="text-amber-400/80" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -1440,7 +1300,7 @@ const AnalyticsTable = ({
                     </button>
                     
                     <span className="text-[10px] font-mono text-ru-textMuted uppercase tracking-widest">
-                        {TRANS[lang].page} <span className="text-white font-bold">{currentPage}</span> {TRANS[lang].of} {totalPages}
+                        {trans.page} <span className="text-white font-bold">{currentPage}</span> {trans.of} {totalPages}
                     </span>
                     
                     <button 
@@ -1801,14 +1661,14 @@ export const AnalyticsView = ({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 text-ru-textMuted text-xs font-mono uppercase tracking-widest">
                         <Activity size={14} className="text-ru-primary" />
-                        <span className="font-bold">{TRANS[lang].trendAnalysis}</span>
+                        <span className="font-bold">{trans.trendAnalysis}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <OptionSwitch 
                             active={displayMode === 'table'} 
                             onClick={() => setAnalyticsMode(displayMode === 'chart' ? 'table' : 'chart')} 
-                            label={TRANS[lang].viewTable} 
+                            label={trans.viewTable} 
                             icon={TableIcon} 
                             hideLabelOnMobile={true}
                         />
@@ -1816,7 +1676,7 @@ export const AnalyticsView = ({
                         <OptionSwitch
                             active={showDaily}
                             onClick={() => setShowDaily(!showDaily)}
-                            label={TRANS[lang].dailyDetails}
+                            label={trans.dailyDetails}
                             icon={Calendar}
                             hideLabelOnMobile={true}
                         />
@@ -1829,7 +1689,7 @@ export const AnalyticsView = ({
                             <OptionSwitch 
                                                         active={normalizeData} 
                                                         onClick={() => setNormalizeData(!normalizeData)} 
-                                                        label={TRANS[lang].normalizeCurves} 
+                                                        label={trans.normalizeCurves} 
                                                         icon={AlignLeft} 
                                                         hideLabelOnMobile={true}
                                                     />
@@ -1855,11 +1715,11 @@ export const AnalyticsView = ({
                     </div>
 
                     <div className="flex bg-ru-glass border border-ru-glassBorder rounded-sm overflow-hidden w-full sm:w-auto">
-                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={TRANS[lang].viewweek} shortLabel={lang === 'ZH' ? '周' : 'WK'} />
-                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={TRANS[lang].viewmonth} shortLabel={lang === 'ZH' ? '月' : 'MO'} />
-                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={TRANS[lang].viewquarter} shortLabel={lang === 'ZH' ? '季' : 'QT'} />
-                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={TRANS[lang].viewyear} shortLabel={lang === 'ZH' ? '年' : 'YR'} />
-                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={TRANS[lang].viewall} shortLabel={lang === 'ZH' ? '全' : 'ALL'} />
+                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={trans.viewweek} shortLabel={lang === 'ZH' ? '周' : 'WK'} />
+                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={trans.viewmonth} shortLabel={lang === 'ZH' ? '月' : 'MO'} />
+                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={trans.viewquarter} shortLabel={lang === 'ZH' ? '季' : 'QT'} />
+                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={trans.viewyear} shortLabel={lang === 'ZH' ? '年' : 'YR'} />
+                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={trans.viewall} shortLabel={lang === 'ZH' ? '全' : 'ALL'} />
                     </div>
                 </div>
                 
@@ -1868,56 +1728,56 @@ export const AnalyticsView = ({
                         active={visibleMetrics.compositions} 
                         onClick={() => toggleMetric('compositions')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('compositions'); }}
-                        label={TRANS[lang].compositions} 
+                        label={trans.compositions} 
                         value={totals.compositions}
                         color="#3b82f6" icon={LayoutGrid} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                     <MetricToggle 
                         active={visibleMetrics.layers} 
                         onClick={() => toggleMetric('layers')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('layers'); }}
-                        label={TRANS[lang].totalLayers} 
+                        label={trans.totalLayers} 
                         value={totals.layers}
                         color="#a855f7" icon={Layers} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                      <MetricToggle 
                         active={visibleMetrics.keyframes} 
                         onClick={() => toggleMetric('keyframes')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('keyframes'); }}
-                        label={TRANS[lang].keyframes} 
+                        label={trans.keyframes} 
                         value={totals.keyframes}
                         color="#FF6B35" icon={Activity} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                      <MetricToggle 
                         active={visibleMetrics.effects} 
                         onClick={() => toggleMetric('effects')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('effects'); }}
-                        label={TRANS[lang].effects} 
+                        label={trans.effects} 
                         value={totals.effects}
                         color="#10b981" icon={Hexagon} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                     <MetricToggle 
                         active={visibleMetrics.runtime} 
                         onClick={() => toggleMetric('runtime')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('runtime'); }}
-                        label={TRANS[lang].runtime} 
+                        label={trans.runtime} 
                         value={totals.runtime}
                         formatValue={formatRuntime}
                         color="#f59e0b" icon={Clock} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                     <MetricToggle 
                         active={visibleMetrics.projectCount} 
                         onClick={() => toggleMetric('projectCount')} 
                         onContextMenu={(e) => { e.preventDefault(); soloMetric('projectCount'); }}
-                        label={TRANS[lang].projectCount} 
+                        label={trans.projectCount} 
                         value={totals.projectCount}
                         color="#22d3ee" icon={Folder} 
-                        hint={TRANS[lang].toggleSoloHint}
+                        hint={trans.toggleSoloHint}
                     />
                 </div>
 
@@ -1986,9 +1846,9 @@ export const AnalyticsView = ({
                                     }}
                                     formatter={(value: number, name: string, item: any) => {
                                         const raw = normalizeData ? item.payload._raw[name] : value;
-                                        if (name === 'runtime') return [formatRuntime(raw), TRANS[lang].runtime];
+                                        if (name === 'runtime') return [formatRuntime(raw), trans.runtime];
                                         const transKey = name as keyof typeof TRANS.EN;
-                                        const label = TRANS[lang][transKey] || name.toUpperCase();
+                                        const label = trans[transKey] || name.toUpperCase();
                                         return [raw.toLocaleString(), label];
                                     }}
                                 />
@@ -2029,33 +1889,33 @@ export const AnalyticsView = ({
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <DashboardPanel 
-                    title={TRANS[lang].keyframeDensity} 
+                    title={trans.keyframeDensity} 
                     count={Object.values(aggregatedDetails.keyframes).reduce((a, b) => a + b, 0)} 
-                    countLabel={TRANS[lang].total}
+                    countLabel={trans.total}
                     className="h-[220px]"
                 >
                     <DataList data={aggregatedDetails.keyframes} type="count" lang={lang} />
                 </DashboardPanel>
 
                 <DashboardPanel 
-                    title={TRANS[lang].activeComps} 
+                    title={trans.activeComps} 
                     count={aggregatedDetails.compositions.length} 
-                    countLabel={TRANS[lang].items}
+                    countLabel={trans.items}
                     className="h-[220px]"
                 >
                     <DataList data={aggregatedDetails.compositions} type="list" lang={lang} />
                 </DashboardPanel>
                 
                 <DashboardPanel 
-                    title={TRANS[lang].layerDist} 
+                    title={trans.layerDist} 
                     count={Object.values(aggregatedDetails.layers).reduce((a: number,b: number)=>a+b, 0)} 
-                    countLabel={TRANS[lang].total}
+                    countLabel={trans.total}
                 >
                 <LayerRadar data={aggregatedDetails.layers} lang={lang} />
                 </DashboardPanel>
 
                 <DashboardPanel 
-                    title={TRANS[lang].effectFreq} 
+                    title={trans.effectFreq} 
                     count={
                       <div className="flex items-baseline gap-1">
                         <NumberTicker value={totals.effects} />
@@ -2063,7 +1923,7 @@ export const AnalyticsView = ({
                         <span className="text-white/60 text-base">{Object.keys(aggregatedDetails.effectCounts).length}</span>
                       </div>
                     }
-                    countLabel={TRANS[lang].uniqueEffects}
+                    countLabel={trans.uniqueEffects}
                 >
                 <EffectDonut data={aggregatedDetails.effectCounts} lang={lang} />
                 </DashboardPanel>
@@ -2129,6 +1989,18 @@ const App = () => {
     }
     return 'ZH';
   });
+
+  // Load translations from external JSON
+  const [trans, setTrans] = useState<any>(null);
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const data = await loadUserTranslations(lang);
+      if (data) {
+        setTrans(data);
+      }
+    };
+    loadTranslations();
+  }, [lang]);
 
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [anonymizeMode, setAnonymizeMode] = useState<boolean>(false);
@@ -2260,42 +2132,42 @@ const App = () => {
                 />
 
                 <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-                  <VitalCard label={TRANS[lang].compositions} value={project.statistics.compositions} icon={LayoutGrid} delay={0} />
-                  <VitalCard label={TRANS[lang].totalLayers} value={project.statistics.layers} icon={Layers} delay={100} />
-                  <VitalCard label={TRANS[lang].keyframes} value={project.statistics.keyframes} icon={Activity} delay={200} />
-                  <VitalCard label={TRANS[lang].effects} value={project.statistics.effects} icon={Hexagon} delay={300} />
+                  <VitalCard label={trans.compositions} value={project.statistics.compositions} icon={LayoutGrid} delay={0} />
+                  <VitalCard label={trans.totalLayers} value={project.statistics.layers} icon={Layers} delay={100} />
+                  <VitalCard label={trans.keyframes} value={project.statistics.keyframes} icon={Activity} delay={200} />
+                  <VitalCard label={trans.effects} value={project.statistics.effects} icon={Hexagon} delay={300} />
                 </section>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
                   
                   <DashboardPanel
-                      title={TRANS[lang].keyframeDensity}
+                      title={trans.keyframeDensity}
                       count={Object.values(project.details.keyframes).reduce((a, b) => a + b, 0)}
-                      countLabel={TRANS[lang].total}
+                      countLabel={trans.total}
                       className="h-[220px]"
                   >
                       <DataList data={project.details.keyframes} type="count" lang={lang} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
 
                   <DashboardPanel
-                      title={TRANS[lang].activeComps}
+                      title={trans.activeComps}
                       count={project.details.compositions.length}
-                      countLabel={TRANS[lang].items}
+                      countLabel={trans.items}
                       className="h-[220px]"
                   >
                       <DataList data={project.details.compositions} type="list" lang={lang} anonymizeMode={anonymizeMode} />
                   </DashboardPanel>
                   
                   <DashboardPanel 
-                      title={TRANS[lang].layerDist} 
+                      title={trans.layerDist} 
                       count={Object.values(project.details.layers).reduce((a,b)=>a+b, 0)} 
-                      countLabel={TRANS[lang].total}
+                      countLabel={trans.total}
                   >
                     <LayerRadar data={project.details.layers} lang={lang} />
                   </DashboardPanel>
 
                   <DashboardPanel 
-                      title={TRANS[lang].effectFreq} 
+                      title={trans.effectFreq} 
                       count={
                         <div className="flex items-baseline gap-1">
                           <NumberTicker value={project.statistics.effects} />
@@ -2303,7 +2175,7 @@ const App = () => {
                           <span className="text-white/60 text-base">{Object.keys(project.details.effectCounts).length}</span>
                         </div>
                       }
-                      countLabel={TRANS[lang].uniqueEffects}
+                      countLabel={trans.uniqueEffects}
                   >
                     <EffectDonut data={project.details.effectCounts} lang={lang} />
                   </DashboardPanel>
@@ -2332,8 +2204,8 @@ const App = () => {
                            <div className="mb-4">
                                <Activity size={48} className="text-ru-primary animate-pulse" />
                            </div>
-                           <h2 className="text-xl font-black italic tracking-widest mb-2">{TRANS[lang].noDataTitle}</h2>
-                           <p className="font-mono text-xs">{TRANS[lang].noDataDesc}</p>
+                           <h2 className="text-xl font-black italic tracking-widest mb-2">{trans.noDataTitle}</h2>
+                           <p className="font-mono text-xs">{trans.noDataDesc}</p>
                        </>
                    )}
                 </div>
