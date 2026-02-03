@@ -596,14 +596,17 @@ export const LayerRadar = ({ data, trans }: { data: any, trans: any }) => {
             labelName: mappedLabel,  // 保留原始标签名
         };
     });
-  }, [data, lang]);
+  }, [data, trans]);
+
+  // 检测语言：通过trans.months是否包含中文"月"来判断
+  const isChinese = trans.months && trans.months[0] && trans.months[0].includes('月');
 
   return (
     <div className="w-full h-full relative" onClick={(e) => e.stopPropagation()}>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: isChinese ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
           <PolarRadiusAxis angle={30} domain={[0, 4]} tick={false} axisLine={false} />
           <Radar
             name={trans.totalLayers}
@@ -902,6 +905,9 @@ export const DataList = ({ data, trans, type = 'count', anonymizeMode = false }:
       }
   }, [type, data]);
 
+  // 检测语言：通过trans.compositions是否包含中文字符来判断
+  const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
+
   const sortedItems = useMemo(() => {
       const items = [...rawItems];
       items.sort((a, b) => {
@@ -912,14 +918,14 @@ export const DataList = ({ data, trans, type = 'count', anonymizeMode = false }:
               // 确保是字符串类型
               const stringA = String(nameA);
               const stringB = String(nameB);
-              res = stringA.localeCompare(stringB, lang === 'ZH' ? 'zh' : 'en');
+              res = stringA.localeCompare(stringB, isChinese ? 'zh' : 'en');
           } else {
               res = (a.value || 0) - (b.value || 0);
           }
           return sortDir === 'asc' ? res : -res;
       });
       return items;
-  }, [rawItems, sortKey, sortDir, lang]);
+  }, [rawItems, sortKey, sortDir, trans]);
 
   const toggleSort = (key: 'name' | 'value') => {
       if (sortKey === key) {
@@ -1291,18 +1297,21 @@ const OptionSwitch = ({ active, onClick, label, icon: Icon, hideLabelOnMobile = 
     </button>
 );
 
-const AnalyticsTable = ({ 
-    data, 
-    lang, 
+const AnalyticsTable = ({
+    data,
+    trans,
     formatRuntime,
-    onNavigate 
-}: { 
-    data: any[], 
-    lang: LangType, 
+    onNavigate
+}: {
+    data: any[],
+    trans: any,
     formatRuntime: (s: number) => string,
     onNavigate: (date: string, projectName?: string) => void
 }) => {
-    
+
+    // 检测语言：通过trans.compositions是否包含中文字符来判断
+    const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
+
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     const flatRows = useMemo(() => {
@@ -1400,8 +1409,8 @@ const AnalyticsTable = ({
                 <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead className="sticky top-0 bg-[#050505] z-10 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]">
                         <tr className="border-b border-white/10 text-[10px] uppercase font-mono">
-                            <SortableHeader label={lang === 'ZH' ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
-                            <SortableHeader label={lang === 'ZH' ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
+                            <SortableHeader label={isChinese ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
+                            <SortableHeader label={isChinese ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
                             <SortableHeader label={trans.compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
                             <SortableHeader label={trans.totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
                             <SortableHeader label={trans.keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
@@ -1468,22 +1477,25 @@ const AnalyticsTable = ({
 };
 
 export const AnalyticsView = ({
-    lang, 
-    displayMode = 'chart', 
+    trans,
+    displayMode = 'chart',
     setAnalyticsMode,
     searchQuery = '',
     onNavigate
-}: { 
-    lang: LangType, 
-    displayMode?: AnalyticsMode, 
+}: {
+    trans: any,
+    displayMode?: AnalyticsMode,
     setAnalyticsMode: (mode: AnalyticsMode) => void,
     searchQuery?: string,
     onNavigate: (date: string, projectName?: string) => void
 }) => {
     const [cursorDate, setCursorDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('week');
-    
+
     const [showDaily, setShowDaily] = useState(false);
+
+    // 检测语言：通过trans.compositions是否包含中文字符来判断
+    const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
     const [normalizeData, setNormalizeData] = useState(true);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -1587,7 +1599,7 @@ export const AnalyticsView = ({
     useEffect(() => {
         if (showDaily && filteredWorkLogs.length > 90) {
             setShowDaily(false);
-            setDataWarning(lang === 'ZH'
+            setDataWarning(isChinese
                 ? `数据量较大（${filteredWorkLogs.length} 天），已自动切换到周视图以提升性能`
                 : `Large dataset (${filteredWorkLogs.length} days), switched to weekly view for better performance`
             );
@@ -1595,12 +1607,12 @@ export const AnalyticsView = ({
         } else if (filteredWorkLogs.length <= 90) {
             setDataWarning(null);
         }
-    }, [filteredWorkLogs.length, showDaily, lang]);
+    }, [filteredWorkLogs.length, showDaily, trans]);
 
     const { data: rawData, label: timeLabel } = useMemo(() => {
-        const result = getAnalyticsData(viewMode, cursorDate, showDaily, lang, filteredWorkLogs);
+        const result = getAnalyticsData(viewMode, cursorDate, showDaily, trans, filteredWorkLogs);
         return result;
-    }, [viewMode, cursorDate, showDaily, lang, filteredWorkLogs]);
+    }, [viewMode, cursorDate, showDaily, trans, filteredWorkLogs]);
 
     // 后台静默更新缓存
     useEffect(() => {
@@ -1845,13 +1857,13 @@ export const AnalyticsView = ({
                                                     />
                                                     )}
                             
-                                                    <button 
+                                                    <button
                                                         onClick={handleManualRefresh}
                                                         className={`flex items-center gap-2 px-3 py-2 text-xs font-bold text-ru-textMuted hover:text-white transition-colors border border-transparent hover:border-white/20 rounded ${isLoading ? 'animate-pulse' : ''}`}
-                                                        title={lang === 'ZH' ? '刷新数据' : 'Refresh Data'}
+                                                        title={isChinese ? '刷新数据' : 'Refresh Data'}
                                                     >
                                                         <RotateCcw size={14} className={isLoading ? 'animate-spin' : ''} />
-                                                        <span className="hidden sm:inline">{lang === 'ZH' ? '刷新' : 'Refresh'}</span>
+                                                        <span className="hidden sm:inline">{isChinese ? '刷新' : 'Refresh'}</span>
                                                     </button>
                                                 </div>                </div>
 
@@ -1865,11 +1877,11 @@ export const AnalyticsView = ({
                     </div>
 
                     <div className="flex bg-ru-glass border border-ru-glassBorder rounded-sm overflow-hidden w-full sm:w-auto">
-                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={trans.viewweek} shortLabel={lang === 'ZH' ? '周' : 'WK'} />
-                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={trans.viewmonth} shortLabel={lang === 'ZH' ? '月' : 'MO'} />
-                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={trans.viewquarter} shortLabel={lang === 'ZH' ? '季' : 'QT'} />
-                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={trans.viewyear} shortLabel={lang === 'ZH' ? '年' : 'YR'} />
-                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={trans.viewall} shortLabel={lang === 'ZH' ? '全' : 'ALL'} />
+                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={trans.viewweek} shortLabel={isChinese ? '周' : 'WK'} />
+                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={trans.viewmonth} shortLabel={isChinese ? '月' : 'MO'} />
+                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={trans.viewquarter} shortLabel={isChinese ? '季' : 'QT'} />
+                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={trans.viewyear} shortLabel={isChinese ? '年' : 'YR'} />
+                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={trans.viewall} shortLabel={isChinese ? '全' : 'ALL'} />
                     </div>
                 </div>
                 
@@ -2028,11 +2040,11 @@ export const AnalyticsView = ({
                         </ResponsiveContainer>
                     </>
                 ) : (
-                    <AnalyticsTable 
-                        data={finalDisplayData} 
-                        lang={lang} 
+                    <AnalyticsTable
+                        data={finalDisplayData}
+                        trans={trans}
                         formatRuntime={formatRuntime}
-                        onNavigate={onNavigate} 
+                        onNavigate={onNavigate}
                     />
                 )}
             </div>
@@ -2362,8 +2374,8 @@ const App = () => {
                 </div>
             )
         ) : currentView === 'analytics' ? (
-            <AnalyticsView 
-                lang={lang} 
+            <AnalyticsView
+                trans={trans}
                 displayMode={analyticsMode}
                 setAnalyticsMode={setAnalyticsMode}
                 searchQuery={searchQuery}

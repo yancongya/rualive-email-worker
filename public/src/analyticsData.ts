@@ -122,13 +122,16 @@ export function generatePeriodLabel(viewMode: ViewMode, date: Date, index?: numb
  * 聚合工作日志数据
  * @param workLogs 工作日志数组
  * @param viewMode 视图模式
- * @param lang 语言
+ * @param trans 翻译对象
  * @returns 聚合数据数组
  */
-export function aggregateWorkLogs(workLogs: WorkLog[], viewMode: ViewMode, lang: 'EN' | 'ZH'): AggregatedData[] {
+export function aggregateWorkLogs(workLogs: WorkLog[], viewMode: ViewMode, trans: any): AggregatedData[] {
   if (workLogs.length === 0) {
     return [];
   }
+
+  // 检测语言：通过trans.compositions是否包含中文字符来判断
+  const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
 
   // 按日期分组
   const dailyDataMap = aggregateWorkLogsByDate(workLogs);
@@ -157,7 +160,7 @@ export function aggregateWorkLogs(workLogs: WorkLog[], viewMode: ViewMode, lang:
         periodKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
         const monthsEn = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const monthsZh = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-        periodLabel = lang === 'ZH' ? monthsZh[dateObj.getMonth()] : monthsEn[dateObj.getMonth()];
+        periodLabel = isChinese ? monthsZh[dateObj.getMonth()] : monthsEn[dateObj.getMonth()];
         displayX = dateObj.getMonth() + 1;
         break;
 
@@ -231,7 +234,7 @@ export function aggregateWorkLogs(workLogs: WorkLog[], viewMode: ViewMode, lang:
  * @param viewMode 视图模式
  * @param cursorDate 当前日期
  * @param showDaily 是否显示每日详情
- * @param lang 语言
+ * @param trans 翻译对象
  * @param workLogs 工作日志数组
  * @returns 聚合数据和标签
  */
@@ -239,16 +242,16 @@ export function getAnalyticsData(
   viewMode: ViewMode,
   cursorDate: Date,
   showDaily: boolean,
-  lang: 'EN' | 'ZH',
+  trans: any,
   workLogs: WorkLog[]
 ): { data: AggregatedData[]; label: string } {
   // 生成时间标签
   const timeLabel = generatePeriodLabel(viewMode, cursorDate);
 
   // 聚合数据
-  const aggregatedData = showDaily 
-    ? aggregateWorkLogsDaily(workLogs, lang)
-    : aggregateWorkLogs(workLogs, viewMode, lang);
+  const aggregatedData = showDaily
+    ? aggregateWorkLogsDaily(workLogs, trans)
+    : aggregateWorkLogs(workLogs, viewMode, trans);
 
   return {
     data: aggregatedData,
@@ -259,11 +262,14 @@ export function getAnalyticsData(
 /**
  * 按日聚合工作日志（用于 showDaily 模式）
  * @param workLogs 工作日志数组
- * @param lang 语言
+ * @param trans 翻译对象
  * @returns 聚合数据数组
  */
-function aggregateWorkLogsDaily(workLogs: WorkLog[], lang: 'EN' | 'ZH'): AggregatedData[] {
+function aggregateWorkLogsDaily(workLogs: WorkLog[], trans: any): AggregatedData[] {
   const dailyDataMap = aggregateWorkLogsByDate(workLogs);
+
+  // 检测语言：通过trans.compositions是否包含中文字符来判断
+  const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
 
   return Array.from(dailyDataMap.entries()).map(([date, dailyData]) => {
     const dateObj = new Date(date);
@@ -272,7 +278,7 @@ function aggregateWorkLogsDaily(workLogs: WorkLog[], lang: 'EN' | 'ZH'): Aggrega
 
     return {
       isoDate: date,
-      periodLabel: `${dateObj.getDate()} ${lang === 'ZH' ? monthsZh[dateObj.getMonth()] : monthsEn[dateObj.getMonth()]}`,
+      periodLabel: `${dateObj.getDate()} ${isChinese ? monthsZh[dateObj.getMonth()] : monthsEn[dateObj.getMonth()]}`,
       displayX: dateObj.getDate(),
       fullLabel: date,
       compositions: dailyData.projects.reduce((sum, p) => sum + p.statistics.compositions, 0),
