@@ -80,18 +80,164 @@ export type ViewMode = 'week' | 'month' | 'quarter' | 'year' | 'all';
 
 // --- TRANSLATIONS ---
 
+// 默认翻译（作为备用，防止异步加载时出现 null 错误）
+const DEFAULT_USER_TRANS: any = {
+  EN: {
+    subtitle: "SYSTEM ONLINE // MONITORED",
+    compositions: "COMPOSITIONS",
+    totalLayers: "TOTAL LAYERS",
+    keyframes: "KEYFRAMES",
+    effects: "EFFECTS APPLIED",
+    layerDist: "LAYER DISTRIBUTION",
+    effectFreq: "EFFECT FREQUENCY",
+    uniqueEffects: "UNIQUE EFFECTS",
+    top8: "TOP 8",
+    total: "TOTAL",
+    keyframeDensity: "KEYFRAME DENSITY",
+    activeComps: "ACTIVE COMPOSITIONS",
+    items: "ITEMS",
+    missionLog: "CALENDAR PANEL",
+    retrieveData: "Select a date to retrieve data.",
+    low: "Low",
+    mid: "Med",
+    high: "High",
+    noDataTitle: "NO VITAL SIGNS DETECTED",
+    noDataDesc: "Select a different date from the calendar.",
+    id: "ID",
+    jumpToday: "TODAY",
+    video: "VIDEO",
+    image: "IMAGE",
+    sequence: "SEQUENCE",
+    designFile: "FILE LAYER",
+    sourceFile: "SOURCE FILE",
+    nullSolidLayer: "NULL/SOLID",
+    shapeLayer: "SHAPE LAYER",
+    textLayer: "TEXT LAYER",
+    adjustmentLayer: "ADJUSTMENT LAYER",
+    lightLayer: "LIGHT LAYER",
+    cameraLayer: "CAMERA LAYER",
+    other: "OTHER",
+    count: "COUNT",
+    sortName: "NAME",
+    sortValue: "VAL",
+    months: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+    analytics: "ANALYTICS",
+    dashboard: "DASHBOARD",
+    runtime: "RUNTIME",
+    viewweek: "WEEK",
+    viewmonth: "MONTH",
+    viewquarter: "QUARTER",
+    viewyear: "YEAR",
+    viewall: "ALL TIME",
+    trendAnalysis: "TREND ANALYSIS",
+    distribution: "DISTRIBUTION MATRIX",
+    dailyDetails: "DAILY DETAILS",
+    normalizeCurves: "NORMALIZE CURVES",
+    normalized: "NORMALIZED",
+    toggleSoloHint: "Left Click: Toggle / Right Click: Solo",
+    viewweek_short: "WK",
+    viewmonth_short: "MO",
+    viewquarter_short: "QT",
+    viewyear_short: "YR",
+    viewall_short: "ALL",
+    searchPlaceholder: "SEARCH PROJECT...",
+    searchAnalyticsPlaceholder: "FILTER DATA...",
+    viewChart: "CHART VIEW",
+    viewTable: "DATA TABLE",
+    chart: "CHART",
+    table: "TABLE",
+    page: "PAGE",
+    of: "OF",
+    projectCount: "PROJECT COUNT",
+    settings: "SETTINGS",
+    refresh: "REFRESH",
+    refreshTooltip: "Refresh data from server"
+  },
+  ZH: {
+    subtitle: "系统在线 // 监控中",
+    compositions: "合成数量",
+    totalLayers: "图层总数",
+    keyframes: "关键帧数",
+    effects: "特效应用",
+    layerDist: "图层类型分布",
+    effectFreq: "特效使用频率",
+    uniqueEffects: "独立特效",
+    top8: "前8名",
+    total: "总计",
+    keyframeDensity: "关键帧密度",
+    activeComps: "活跃合成",
+    items: "项",
+    missionLog: "日历面板",
+    retrieveData: "选择日期以读取数据。",
+    low: "低",
+    mid: "中",
+    high: "高",
+    noDataTitle: "未检测到生命体征",
+    noDataDesc: "请从日历中选择其他日期。",
+    id: "编号",
+    jumpToday: "回到今日",
+    video: "视频素材",
+    image: "图片素材",
+    sequence: "序列",
+    designFile: "文件图层",
+    sourceFile: "源文件",
+    nullSolidLayer: "纯色/空对象",
+    shapeLayer: "形状图层",
+    textLayer: "文字图层",
+    adjustmentLayer: "调整图层",
+    lightLayer: "灯光图层",
+    cameraLayer: "摄像机图层",
+    other: "其他",
+    count: "数量",
+    sortName: "名称",
+    sortValue: "数值",
+    months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+    analytics: "数据分析",
+    dashboard: "监控看板",
+    runtime: "运行时长",
+    viewweek: "周视图",
+    viewmonth: "月视图",
+    viewquarter: "季视图",
+    viewyear: "年视图",
+    viewall: "全部",
+    trendAnalysis: "趋势分析",
+    distribution: "分布矩阵",
+    dailyDetails: "每日详情",
+    normalizeCurves: "归一化曲线",
+    normalized: "已归一化",
+    toggleSoloHint: "左键：切换 / 右键：独显",
+    viewweek_short: "周",
+    viewmonth_short: "月",
+    viewquarter_short: "季",
+    viewyear_short: "年",
+    viewall_short: "全",
+    searchPlaceholder: "搜索项目名称...",
+    searchAnalyticsPlaceholder: "筛选数据...",
+    viewChart: "图表视图",
+    viewTable: "数据列表",
+    chart: "图表",
+    table: "列表",
+    page: "页",
+    of: "/",
+    projectCount: "项目数量",
+    settings: "系统设置",
+    refresh: "刷新",
+    refreshTooltip: "从服务器刷新数据"
+  }
+};
+
 // 翻译加载函数
 export const loadUserTranslations = async (lang: 'EN' | 'ZH'): Promise<any> => {
   try {
     const response = await fetch(`/locals/user/${lang}.json`);
     if (!response.ok) {
       console.error(`Failed to load ${lang} translations`);
-      return null;
+      return DEFAULT_USER_TRANS[lang];
     }
     return await response.json();
   } catch (error) {
     console.error(`Error loading ${lang} translations:`, error);
-    return null;
+    return DEFAULT_USER_TRANS[lang];
   }
 };
 
@@ -1991,7 +2137,7 @@ const App = () => {
   });
 
   // Load translations from external JSON
-  const [trans, setTrans] = useState<any>(null);
+  const [trans, setTrans] = useState<any>(DEFAULT_USER_TRANS[lang]);
   useEffect(() => {
     const loadTranslations = async () => {
       const data = await loadUserTranslations(lang);
