@@ -499,11 +499,41 @@ interface ProjectSelectorProps {
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, trans, anonymizeMode, onToggleAnonymize }) => {
+  // 脱敏函数：保留首尾字符，中间用星号替代
+  const anonymizeName = (name: string) => {
+    if (!name || name.length <= 2) return name;
+    return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
+  };
+
   return (
     <div className="w-full mb-6 md:mb-8">
+      {/* 标题区域 */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-white/60 uppercase tracking-wider">
+            {trans.projects || 'PROJECTS'}
+          </span>
+          <span className="text-xs font-mono text-white/30">
+            ({projects.length})
+          </span>
+        </div>
+        <button
+          onClick={onToggleAnonymize}
+          className={`flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 text-xs font-bold ${anonymizeMode ? 'text-ru-primary bg-ru-primary/20' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          title={anonymizeMode ? '关闭脱敏' : '开启脱敏'}
+        >
+          {anonymizeMode ? <EyeOff size={14} /> : <Eye size={14} />}
+          <span className="hidden sm:inline ml-1">
+            {anonymizeMode ? '脱敏开启' : '脱敏关闭'}
+          </span>
+        </button>
+      </div>
+
+      {/* 项目卡片列表 */}
       <div className="flex w-full gap-1 h-16 md:h-24 overflow-x-auto">
         {projects.map((proj, idx) => {
           const isActive = idx === selectedIndex;
+          const displayName = anonymizeMode ? anonymizeName(proj.name) : proj.name;
 
           return (
             <button
@@ -521,21 +551,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
             >
               <div className="flex justify-between items-start w-full">
                  <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
-                   {proj.name}
+                   {displayName}
                  </span>
-                 <div className="flex items-center gap-1 flex-shrink-0">
-                   {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
-                   <button
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       onToggleAnonymize();
-                     }}
-                     className={`p-1.5 rounded transition-all duration-200 ${anonymizeMode ? 'text-ru-primary bg-ru-primary/20' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-                     title={anonymizeMode ? '关闭脱敏' : '开启脱敏'}
-                   >
-                     {anonymizeMode ? <EyeOff size={16} /> : <Eye size={16} />}
-                   </button>
-                 </div>
+                 {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
               </div>
 
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
