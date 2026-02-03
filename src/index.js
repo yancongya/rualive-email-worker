@@ -2210,27 +2210,45 @@ async function saveSystemInfo(userId, systemInfo, env) {
     const aeInfo = systemInfo.ae || {};
     const sysInfo = systemInfo.system || {};
 
-    // 更新 ae_status 表
-    await DB.prepare(`
-      UPDATE ae_status 
-      SET ae_version = ?,
-          ae_language = ?,
-          ae_theme = ?,
-          os_name = ?,
-          os_platform = ?,
-          system_info_json = ?,
-          updated_at = ?
-      WHERE user_id = ?
-    `).bind(
-      aeInfo.version || null,
-      aeInfo.language || null,
-      aeInfo.theme || null,
-      sysInfo.os || null,
-      sysInfo.platform || null,
-      JSON.stringify(systemInfo),
-      now,
-      userId
-    ).run();
+    console.log('[saveSystemInfo] 收到系统信息:', JSON.stringify(systemInfo));
+    console.log('[saveSystemInfo] aeInfo:', JSON.stringify(aeInfo));
+    console.log('[saveSystemInfo] sysInfo:', JSON.stringify(sysInfo));
+
+    // 检查记录是否存在
+    const existingRecord = await DB.prepare(`
+      SELECT user_id FROM ae_status WHERE user_id = ?
+    `).bind(userId).first();
+
+    if (existingRecord) {
+      console.log('[saveSystemInfo] 更新现有记录');
+      // 更新现有记录 - 只保存必要字段：ae_version、os_name、updated_at
+      await DB.prepare(`
+        UPDATE ae_status 
+        SET ae_version = ?,
+            os_name = ?,
+            updated_at = ?
+        WHERE user_id = ?
+      `).bind(
+        aeInfo.version || null,
+        sysInfo.os || null,
+        now,
+        userId
+      ).run();
+    } else {
+      console.log('[saveSystemInfo] 插入新记录');
+      // 插入新记录 - 只保存必要字段
+      await DB.prepare(`
+        INSERT INTO ae_status 
+        (user_id, ae_version, os_name, is_online, last_heartbeat, updated_at)
+        VALUES (?, ?, ?, 1, ?, ?)
+      `).bind(
+        userId,
+        aeInfo.version || null,
+        sysInfo.os || null,
+        now,
+        now
+      ).run();
+    }
 
     console.log('[saveSystemInfo] 系统信息保存成功');
   } catch (error) {
@@ -2256,11 +2274,12 @@ async function handleHeartbeat(request, env) {
       UPDATE users SET last_online = ? WHERE id = ?
     `).bind(now, userId).run();
 
-    // 同时更新 AE 在线状态
+    // 同时更新 AE 在线状态 - 使用 UPDATE 而不是 INSERT OR REPLACE，避免覆盖系统信息
     await DB.prepare(`
-      INSERT OR REPLACE INTO ae_status (user_id, is_online, last_heartbeat, updated_at)
-      VALUES (?, 1, ?, ?)
-    `).bind(userId, now, now).run();
+      UPDATE ae_status 
+      SET is_online = 1, last_heartbeat = ?, updated_at = ?
+      WHERE user_id = ?
+    `).bind(now, now, userId).run();
 
     return Response.json({ success: true, timestamp: now });
   } catch (error) {
@@ -2301,13 +2320,17 @@ async function handleGetAEStatus(request, env) {
     // 如果没有状态记录，返回默认离线状态
     return Response.json({
       success: true,
-      isOnline: isOnline,
-      lastHeartbeat: lastHeartbeatTime,
-      projectName: status?.project_name || null,
-      compositionName: status?.composition_name || null,
-      projectId: status?.project_id || null,
-      lastWorkData: status?.last_work_data ? JSON.parse(status.last_work_data) : null,
-      hasStatusRecord: !!status
+      data: {
+        isOnline: isOnline,
+        lastHeartbeat: lastHeartbeatTime,
+        projectName: status?.project_name || null,
+        compositionName: status?.composition_name || null,
+        projectId: status?.project_id || null,
+        lastWorkData: status?.last_work_data ? JSON.parse(status.last_work_data) : null,
+        ae_version: status?.ae_version || null,
+        os_name: status?.os_name || null,
+        updated_at: status?.updated_at || null
+      }
     });
   } catch (error) {
     console.error('Get AE status error:', error);
@@ -2337,20 +2360,20 @@ async function handleUpdateAEStatus(request, env) {
     const DB = env.DB || env.rualive;
     const now = new Date().toISOString();
 
-    // 更新 AE 在线状态
+    // 更新 AE 在线状态 - 使用 UPDATE 而不是 INSERT OR REPLACE，避免覆盖系统信息
     await DB.prepare(`
-      INSERT OR REPLACE INTO ae_status 
-      (user_id, is_online, last_heartbeat, project_name, composition_name, last_work_data, project_id, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      UPDATE ae_status 
+      SET is_online = ?, last_heartbeat = ?, project_name = ?, composition_name = ?, last_work_data = ?, project_id = ?, updated_at = ?
+      WHERE user_id = ?
     `).bind(
-      userId,
       isOnline ? 1 : 0,
       now,
       projectName || null,
       compositionName || null,
       workData ? JSON.stringify(workData) : null,
       projectId || null,
-      now
+      now,
+      userId
     ).run();
 
     return Response.json({

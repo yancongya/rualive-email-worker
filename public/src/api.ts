@@ -13,6 +13,11 @@ import { WorkLog } from './types/database';
 const API_BASE = window.location.origin;
 
 /**
+ * 短缓存时间：1 分钟
+ */
+const shortTTL = 60 * 1000;
+
+/**
  * 获取认证头
  * @returns 包含 Authorization 头的对象
  */
@@ -173,7 +178,6 @@ export async function sendHeartbeat(): Promise<ApiResponse<{ timestamp: string }
  */
 export async function getAEStatus(useCache: boolean = true): Promise<ApiResponse<AEStatus>> {
   const cacheKey = 'ae-status';
-  const shortTTL = 60 * 1000; // 1 分钟
   
   if (useCache && dataCache.has(cacheKey)) {
     return dataCache.get(cacheKey);

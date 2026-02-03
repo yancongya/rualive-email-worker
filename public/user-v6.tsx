@@ -180,7 +180,7 @@ const DEFAULT_USER_TRANS: any = {
     refreshTooltip: "Refresh data from server"
   },
   ZH: {
-    subtitle: "系统在线 // 监控中",
+    subtitle: "",
     compositions: "合成数量",
     totalLayers: "图层总数",
     keyframes: "关键帧数",
@@ -496,21 +496,30 @@ export const Header = ({
                     <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
                         RUALIVE
                     </h1>
-                    <div className="flex items-center gap-2">
-                        <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
-                            {trans.subtitle}
-                        </p>
-                        {aeStatus?.ae_version && (
-                            <p className="text-[9px] md:text-[10px] text-ru-primary tracking-widest font-mono hidden lg:flex items-center gap-1">
-                                <span className="opacity-60">AE</span>
-                                <span className="font-bold">{aeStatus.ae_version}</span>
-                                {aeStatus.os_name && (
-                                    <>
-                                        <span className="opacity-60">|</span>
-                                        <span>{aeStatus.os_name}</span>
-                                    </>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {aeStatus && (
+                            <div className="flex items-center gap-2">
+                                {/* AE 版本徽章 */}
+                                {aeStatus.ae_version && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary">
+                                        <span className="opacity-70">AE</span>
+                                        {aeStatus.ae_version}
+                                    </span>
                                 )}
-                            </p>
+                                {/* 操作系统徽章 */}
+                                {aeStatus.os_name && (
+                                    <span className="inline-flex items-center px-2 py-0.5 text-[9px] md:text-[10px] font-mono rounded bg-white/5 border border-white/10 text-white/80">
+                                        {aeStatus.os_name}
+                                    </span>
+                                )}
+                                {/* 更新时间 */}
+                                {aeStatus.updated_at && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[8px] md:text-[9px] font-mono rounded text-ru-textMuted">
+                                        <span className="opacity-60">更新</span>
+                                        {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                )}
+                            </div>
                         )}
                     </div>
                   </div>
