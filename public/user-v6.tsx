@@ -1,16 +1,18 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { 
+import { HashRouter } from 'react-router-dom';
+import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   PieChart, Pie, Cell, Tooltip,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip
 } from 'recharts';
-import { 
-  LayoutGrid, Layers, Hexagon, Activity, Calendar as CalendarIcon, 
+import {
+  LayoutGrid, Layers, Hexagon, Activity, Calendar as CalendarIcon,
   Globe, ChevronRight, X, ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw,
   LineChart as LucideLineChart, BarChart3, Search, Table, TrendingUp,
   Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
-  Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff
+  Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff,
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, BarChart2 as BarChartIcon2
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { RuaLogo } from './LogoAnimation';
@@ -277,9 +279,88 @@ export const NumberTicker = ({ value }: { value: number }) => {
     };
     
     window.requestAnimationFrame(step);
-  }, [value]); 
+  }, [value]);
 
   return <>{displayValue.toLocaleString()}</>;
+};
+
+// 侧边栏导航组件
+export const Sidebar = ({
+    currentView,
+    trans,
+    isCollapsed,
+    onToggleCollapse,
+}: {
+    currentView: ViewType,
+    trans: any,
+    isCollapsed: boolean,
+    onToggleCollapse: () => void,
+}) => {
+    const navItems = [
+        { id: 'dashboard' as ViewType, label: trans.dashboard, icon: LayoutDashboard },
+        { id: 'analytics' as ViewType, label: trans.analytics, icon: BarChartIcon2 },
+        { id: 'settings' as ViewType, label: trans.settings, icon: Settings },
+    ];
+
+    const handleNavClick = (id: ViewType) => {
+        window.location.hash = id;
+    };
+
+    return (
+        <aside className={`
+            fixed left-0 top-0 h-full z-50 border-r border-white/10 bg-black/40 backdrop-blur-xl
+            flex flex-col transition-all duration-300 ease-in-out
+            ${isCollapsed ? 'w-16' : 'w-64'}
+        `}>
+            {/* Logo 区域 */}
+            <div className="h-16 flex items-center justify-center border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <RuaLogo className="w-8 h-6 text-ru-primary" />
+                    {!isCollapsed && (
+                        <span className="text-lg font-black italic tracking-tighter">RuAlive</span>
+                    )}
+                </div>
+            </div>
+
+            {/* 导航菜单 */}
+            <nav className="flex-1 py-6 px-2 space-y-1">
+                {navItems.map((item) => {
+                    const isActive = currentView === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => handleNavClick(item.id)}
+                            className={`
+                                w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200
+                                ${isActive
+                                    ? 'bg-ru-primary text-black'
+                                    : 'text-ru-textDim hover:text-white hover:bg-white/5'
+                                }
+                            `}
+                            title={item.label}
+                        >
+                            <item.icon size={20} className="flex-shrink-0" />
+                            {!isCollapsed && (
+                                <span className="font-bold text-sm whitespace-nowrap">{item.label}</span>
+                            )}
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {/* 折叠按钮 */}
+            <div className="p-2 border-t border-white/5">
+                <button
+                    onClick={onToggleCollapse}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-ru-textDim hover:text-white hover:bg-white/5 transition-all"
+                    title={isCollapsed ? '展开侧边栏' : '折叠侧边栏'}
+                >
+                    {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+                    {!isCollapsed && <span className="font-bold text-sm">折叠</span>}
+                </button>
+            </div>
+        </aside>
+    );
 };
 
 export const Header = ({
@@ -288,8 +369,6 @@ export const Header = ({
     trans,
     dateDisplay,
     onCalendarClick,
-    currentView,
-    onChangeView,
     searchQuery,
     setSearchQuery,
     onRefresh,
@@ -300,32 +379,17 @@ export const Header = ({
     trans: any,
     dateDisplay?: string,
     onCalendarClick?: () => void,
-    currentView: ViewType,
-    onChangeView: (view: ViewType) => void,
     searchQuery: string,
     setSearchQuery: (s: string) => void,
     onRefresh?: () => void,
     currentUser?: any,
-}) => {    
-    const isDashboard = currentView === 'dashboard';
-    const isAnalytics = currentView === 'analytics';
-    const isSettings = currentView === 'settings';
-
-    const getBtnClass = (active: boolean) => `
-        relative px-3 py-1.5 md:px-4 md:py-2 rounded text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2
-        ${active 
-            ? 'bg-ru-primary text-black shadow-[0_0_15px_-5px_#FF6B35]' 
-            : 'text-ru-textDim hover:text-white hover:bg-white/5'
-        }
-    `;
-
+}) => {
     return (
         <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 md:px-8 md:py-6 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-4 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2 md:gap-4">
-                <div 
+                <div
                     className="relative w-9 h-9 md:w-12 md:h-12 flex items-center justify-center border border-white/20 rounded-full group cursor-pointer"
-                    onClick={() => onChangeView('dashboard')}
                 >
                 <div className="absolute inset-0 rounded-full border-t border-ru-primary animate-spin"></div>
                 <span className="font-bold text-base md:text-lg">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
@@ -338,23 +402,13 @@ export const Header = ({
                         RUALIVE
                     </h1>
                     <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
-                        {trans.subtitle} {currentView !== 'dashboard' && ` // ${trans[currentView]}`}
+                        {trans.subtitle}
                     </p>
                   </div>
                 </div>
             </div>
-            
-            <div className="flex md:hidden bg-white/5 rounded p-0.5 border border-white/10 gap-0.5">
-                <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
-                    <LayoutGrid size={16} />
-                </button>
-                <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
-                    <BarChart3 size={16} />
-                </button>
-                <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
-                    <Settings size={16} />
-                </button>
-            </div>
+
+            {/* 移动端菜单按钮 - 后续实现 */}
         </div>
 
         <div className="flex items-center gap-3 md:gap-6 w-full md:w-auto justify-end">
@@ -362,39 +416,24 @@ export const Header = ({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ru-textMuted group-focus-within:text-ru-primary transition-colors">
                     <Search size={14} />
                 </div>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={currentView === 'dashboard' ? trans.searchPlaceholder : trans.searchAnalyticsPlaceholder}
-                    disabled={currentView === 'settings'}
-                    className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-sm py-2 pl-9 pr-3 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50 disabled:opacity-30 disabled:cursor-not-allowed"
+                    placeholder={trans.searchPlaceholder}
+                    className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-sm py-2 pl-9 pr-3 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50"
                 />
             </div>
 
             <div className="hidden md:flex items-center gap-0.5">
-                <button 
+                <button
                     onClick={onCalendarClick}
-                    className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-l-sm hover:border-ru-primary hover:bg-white/10 transition-all group"
+                    className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-sm hover:border-ru-primary hover:bg-white/10 transition-all group"
                     title={trans.missionLog}
                 >
                     <CalendarIcon size={14} className="text-ru-textDim group-hover:text-ru-primary" />
                     <span className="font-mono font-bold text-xs text-white">{dateDisplay}</span>
                 </button>
-                <div className="bg-white/5 border-y border-r border-white/10 rounded-r-sm flex gap-0.5">
-                    <button onClick={() => onChangeView('dashboard')} className={getBtnClass(isDashboard)}>
-                        <LayoutGrid size={14} />
-                        <span>{trans.dashboard}</span>
-                    </button>
-                    <button onClick={() => onChangeView('analytics')} className={getBtnClass(isAnalytics)}>
-                        <BarChart3 size={14} />
-                        <span>{trans.analytics}</span>
-                    </button>
-                    <button onClick={() => onChangeView('settings')} className={getBtnClass(isSettings)}>
-                        <Settings size={14} />
-                        <span>{trans.settings}</span>
-                    </button>
-                </div>
             </div>
 
             {onRefresh && (
@@ -2148,6 +2187,40 @@ const App = () => {
     fetchUser();
   }, []);
 
+  // 从 URL hash 初始化和同步 view 状态
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    const hash = window.location.hash.slice(1); // 去掉 #
+    if (['dashboard', 'analytics', 'settings'].includes(hash)) {
+      return hash as ViewType;
+    }
+    return 'dashboard';
+  });
+
+  // 监听 hash 变化
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // 去掉 #
+      if (['dashboard', 'analytics', 'settings'].includes(hash)) {
+        setCurrentView(hash as ViewType);
+      }
+    };
+
+    // 初始化时读取 hash
+    handleHashChange();
+
+    // 监听 hash 变化
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // 当 view 变化时更新 URL hash
+  useEffect(() => {
+    window.location.hash = currentView;
+  }, [currentView]);
+
+  // 侧边栏折叠状态
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const [currentDate, setCurrentDate] = useState<string>(() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -2159,7 +2232,7 @@ const App = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>('chart');
-  
+
   const [lang, setLang] = useState<LangType>(() => {
     if (typeof navigator !== 'undefined') {
         const browserLang = navigator.language.toLowerCase();
@@ -2182,7 +2255,6 @@ const App = () => {
     loadTranslations();
   }, [lang]);
 
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [anonymizeMode, setAnonymizeMode] = useState<boolean>(false);
 
   const handleNavigate = (date: string, projectName?: string) => {
@@ -2198,7 +2270,7 @@ const App = () => {
   const handleRefresh = async () => {
     // 清除所有缓存
     clearAllCache();
-    
+
     // 强制重新加载数据
     if (currentView === 'dashboard') {
       setIsLoading(true);
@@ -2275,28 +2347,41 @@ const App = () => {
 
   return (
     <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20">
-      
-      <CalendarModal 
-        isOpen={isCalendarOpen} 
-        onClose={() => setIsCalendarOpen(false)} 
+
+      <CalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
         onSelectDate={setCurrentDate}
         currentSelectedDate={currentDate}
         trans={trans}
       />
 
-      <Header
-        lang={lang}
-        setLang={setLang}
-        trans={trans}
-        dateDisplay={currentDate}
-        onCalendarClick={() => setIsCalendarOpen(true)}
+      {/* 侧边栏 */}
+      <Sidebar
         currentView={currentView}
-        onChangeView={setCurrentView}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onRefresh={handleRefresh}
-        currentUser={currentUser}
+        trans={trans}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
+
+      {/* 主内容区域 */}
+      <div
+        className={`
+          transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}
+        `}
+      >
+        <Header
+          lang={lang}
+          setLang={setLang}
+          trans={trans}
+          dateDisplay={currentDate}
+          onCalendarClick={() => setIsCalendarOpen(true)}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onRefresh={handleRefresh}
+          currentUser={currentUser}
+        />
 
       <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
         
@@ -2403,6 +2488,7 @@ const App = () => {
             <SettingsView lang={lang} />
         )}
       </main>
+      </div>
     </div>
   );
 };
