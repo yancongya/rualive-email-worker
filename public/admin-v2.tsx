@@ -1185,7 +1185,13 @@ const MobileNavItem = ({ id, icon: Icon, label, activeTab, setActiveTab }: any) 
 // --- MAIN DASHBOARD ---
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<TabType>('invites');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const hash = window.location.hash.slice(1);
+    if (['invites', 'users', 'api', 'logs'].includes(hash)) {
+      return hash as TabType;
+    }
+    return 'invites';
+  });
   const [lang, setLang] = useState<Lang>('zh');
   const [translations, setTranslations] = useState<any>({});
   const [isLangLoading, setIsLangLoading] = useState(true);
