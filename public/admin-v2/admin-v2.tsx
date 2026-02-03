@@ -1057,7 +1057,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     setIsLangLoading(true);
-    fetch(`./local/${lang}.json`)
+    fetch(`./locals/${lang}.json`)
       .then(res => res.json())
       .then(data => { setTranslations(data); setIsLangLoading(false); })
       .catch(err => { console.error('Failed to load translations:', err); setIsLangLoading(false); });
