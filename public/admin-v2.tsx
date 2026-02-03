@@ -1221,7 +1221,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     setIsLangLoading(true);
-    fetch(`./admin-v2-locals/${lang}.json`)
+    fetch(`./locals/admin/${lang}.json`)
       .then(res => res.json())
       .then(data => {
         setTranslations(data);
