@@ -63,7 +63,6 @@ export interface ProjectStatistics {
 export interface ProjectData {
   projectId: string;
   name: string;
-  dailyRuntime: string;
   accumulatedRuntime: number;
   statistics: ProjectStatistics;
   details: ProjectDetails;
@@ -129,7 +128,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     projectMap.set(defaultProjectName, {
       projectId: defaultProjectId,
       name: defaultProjectName,
-      dailyRuntime: formatRuntime(workLog.work_hours),
       accumulatedRuntime: workLog.work_hours * 3600,
       statistics: {
         compositions: workLog.composition_count || 0,
@@ -178,7 +176,6 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
     projectMap.set(decodedName, {
       projectId,
       name: decodedName,
-      dailyRuntime: formatRuntime(projectHours),
       accumulatedRuntime: projectHours * 3600,
       statistics: {
         compositions: projectComps,
@@ -365,14 +362,37 @@ function generateId(name: string): string {
 }
 
 /**
- * 格式化运行时长
- * @param hours 小时数
+ * 格式化运行时间
+ * @param seconds 秒数
  * @returns 格式化后的字符串
  */
-function formatRuntime(hours: number): string {
-  const h = Math.floor(hours);
-  const m = Math.floor((hours - h) * 60);
-  return `${h}h ${m}m`;
+function formatRuntime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${secs}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
+/**
+ * 紧凑格式化运行时间
+ * @param seconds 秒数
+ * @returns 格式化后的字符串
+ */
+function formatRuntimeCompact(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  } else if (seconds < 3600) {
+    return `${(seconds / 60).toFixed(1)}m`;
+  } else {
+    return `${(seconds / 3600).toFixed(1)}h`;
+  }
 }
 
 /**

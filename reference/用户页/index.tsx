@@ -50,7 +50,6 @@ export interface ProjectDetails {
 export interface ProjectData {
   projectId: string;
   name: string;
-  dailyRuntime: string;
   accumulatedRuntime: number; // in seconds
   statistics: ProjectStats;
   details: ProjectDetails;
@@ -261,13 +260,10 @@ const generateProject = (id: string, name: string): ProjectData => {
   const comps = Array.from({length: randomInt(5, 20)}, (_, i) => `${COMP_NAMES[randomInt(0, COMP_NAMES.length-1)]}_${i}`);
 
   const runtimeSeconds = randomInt(7200, 43200); // Between 2h and 12h
-  const h = Math.floor(runtimeSeconds / 3600);
-  const m = Math.floor((runtimeSeconds % 3600) / 60);
 
   return {
     projectId: id,
     name: name,
-    dailyRuntime: `${h}h ${m}m`,
     accumulatedRuntime: runtimeSeconds, 
     statistics: {
       compositions: comps.length,
@@ -732,6 +728,17 @@ interface ProjectSelectorProps {
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedIndex, onSelect, lang }) => {
+  // Helper function to format runtime compactly
+  const formatRuntimeCompact = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      return `${(seconds / 60).toFixed(1)}m`;
+    } else {
+      return `${(seconds / 3600).toFixed(1)}h`;
+    }
+  };
+
   return (
     <div className="w-full mb-6 md:mb-8">
       <div className="flex w-full gap-1 h-16 md:h-24">
@@ -757,7 +764,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
               </div>
               
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto min-w-0">
-                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{proj.dailyRuntime}</span>
+                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact(proj.accumulatedRuntime)}</span>
                  <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{TRANS[lang].id}: {proj.projectId}</span>
               </div>
 
@@ -789,22 +796,24 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: lang === 'ZH' ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
-          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
-          <Radar
-            name={TRANS[lang].totalLayers}
-            dataKey="A"
-            stroke="#FF6B35"
-            strokeWidth={2}
-            fill="#FF6B35"
-            fillOpacity={0.3}
-            activeDot={<BouncyDot />}
-            isAnimationActive={true}
+          <PolarAngleAxis 
+            dataKey="subject" 
+            tick={{ fill: '#fff', fontSize: 10, fontWeight: 'bold' }}
           />
-          <Tooltip 
-             cursor={false}
-             contentStyle={{ backgroundColor: '#050505', border: '1px solid #333' }}
-             itemStyle={{ color: '#FF6B35' }}
+          <PolarRadiusAxis 
+            angle={45} 
+            domain={[0, 150]} 
+            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 8 }}
+            axisLine={false}
+          />
+          <Radar 
+            name={TRANS[lang].layerDist} 
+            dataKey="A" 
+            stroke="#FF6B35" 
+            strokeWidth={2}
+            fill="#FF6B35" 
+            fillOpacity={0.3}
+            dot={BouncyDot}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -812,1261 +821,358 @@ export const LayerRadar = ({ data, lang }: { data: any, lang: LangType }) => {
   );
 };
 
-export const EffectDonut = ({ data, lang }: { data: Record<string, number>, lang: LangType }) => {
-  const [hoveredName, setHoveredName] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
+export const EffectDonut = ({ data, lang }: { data: any, lang: LangType }) => {
   const chartData = useMemo(() => {
-    const entries = Object.entries(data);
-    entries.sort((a, b) => b[1] - a[1]);
-    const top8 = entries.slice(0, 8);
-    return top8.map(([name, value]) => ({ name, value }));
+    return Object.entries(data)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 8)
+      .map(([key, value]) => ({
+        name: key,
+        value: value,
+      }));
   }, [data]);
 
-  const total = Object.values(data).reduce((a, b) => a + b, 0);
-  
-  // Find data for center display based on hovered name
-  const activeItem = hoveredName ? chartData.find(d => d.name === hoveredName) : null;
-  const displayData = activeItem || { name: TRANS[lang].total, value: total };
-
-  const COLORS = ['#FF6B35', '#E85A2D', '#D14925', '#BA381D', '#A32715', '#8C160D', '#750505', '#5E0000'];
-  const percentage = total > 0 ? ((displayData.value / total) * 100).toFixed(1) : '0.0';
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      el.scrollLeft += e.deltaY;
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+  const COLORS = ['#FF6B35', '#FF8559', '#FF9F7D', '#FFB9A1', '#FFD3C5', '#FFEDD9', '#FFD700', '#FFA500'];
 
   return (
-    <div className="w-full h-full relative flex flex-col items-center justify-center">
-      <div className="relative w-full flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={2}
-              dataKey="value"
-              stroke="none"
-              onMouseEnter={(_, index) => setHoveredName(chartData[index].name)}
-              onMouseLeave={() => setHoveredName(null)}
-            >
-              {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={COLORS[index % COLORS.length]} 
-                  className="transition-all duration-300 outline-none"
-                  style={{ 
-                      opacity: hoveredName && hoveredName !== entry.name ? 0.3 : 1,
-                      filter: hoveredName === entry.name ? 'drop-shadow(0 0 4px rgba(255,107,53,0.5))' : 'none'
-                  }}
-                  stroke={hoveredName === entry.name ? '#FFF' : 'none'}
-                  strokeWidth={2}
-                />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-ru-textMuted text-xs uppercase tracking-wider mb-1 max-w-[80%] truncate">
-            {displayData.name}
-          </span>
-          <span className="text-2xl font-mono font-black text-white">
-            <NumberTicker value={displayData.value} />
-          </span>
-          <span className="text-[10px] text-ru-primary font-mono mt-1 bg-ru-primary/10 px-1 rounded">
-             {percentage}%
-          </span>
-        </div>
-      </div>
-      
-      <div 
-         ref={scrollRef}
-         className="w-full overflow-x-auto whitespace-nowrap pb-2 px-4 mt-2 h-8 scrollbar-none"
-         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-          {chartData.map((entry, idx) => (
-            <span 
-                key={idx} 
-                className={`inline-block mr-4 text-[10px] uppercase cursor-pointer transition-all duration-200 ${hoveredName === entry.name ? 'text-white font-bold scale-110' : 'text-ru-textDim hover:text-white'}`}
-                onMouseEnter={() => setHoveredName(entry.name)}
-                onMouseLeave={() => setHoveredName(null)}
-            >
-              <span className="inline-block w-2 h-2 mr-1 rounded-full" style={{backgroundColor: COLORS[idx]}}></span>
-              {entry.name}
-            </span>
-          ))}
-          <style>{`
-             .scrollbar-none::-webkit-scrollbar {
-               display: none;
-             }
-          `}</style>
-      </div>
+    <div className="w-full h-full relative">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={(entry) => `${entry.name}: ${entry.value}`}
+            outerRadius={60}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(0,0,0,0.9)', 
+              border: '1px solid rgba(255,107,53,0.3)',
+              borderRadius: '4px',
+              color: '#fff'
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 };
 
-export const DataList = ({ data, lang, type = 'count' }: { data: Record<string, number> | string[], lang: LangType, type?: 'count' | 'list' }) => {
-  const [sortKey, setSortKey] = useState<'name' | 'value'>('value');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-
-  const rawItems = useMemo(() => {
-    if (Array.isArray(data)) {
-        return data.map(item => ({ name: item, value: 0 }));
-    }
-    const entries = Object.entries(data);
-    return entries.map(([name, value]) => ({ name, value }));
+export const KeyframeTable = ({ data, lang }: { data: any, lang: LangType }) => {
+  const sortedData = useMemo(() => {
+    return Object.entries(data)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 10)
+      .map(([key, value]) => ({ layer: key, count: value }));
   }, [data]);
 
-  useEffect(() => {
-      if (type === 'list') {
-          setSortKey('name');
-          setSortDir('asc');
-      } else {
-          setSortKey('value');
-          setSortDir('desc');
-      }
-  }, [type, data]);
-
-  const sortedItems = useMemo(() => {
-      const items = [...rawItems];
-      items.sort((a, b) => {
-          let res = 0;
-          if (sortKey === 'name') {
-              res = a.name.localeCompare(b.name, lang === 'ZH' ? 'zh' : 'en');
-          } else {
-              res = a.value - b.value;
-          }
-          return sortDir === 'asc' ? res : -res;
-      });
-      return items;
-  }, [rawItems, sortKey, sortDir, lang]);
-
-  const toggleSort = (key: 'name' | 'value') => {
-      if (sortKey === key) {
-          setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
-      } else {
-          setSortKey(key);
-          setSortDir(key === 'value' ? 'desc' : 'asc'); 
-      }
-  };
-
-  const maxVal = Math.max(...rawItems.map(i => i.value));
-  const SortIcon = ({ active, dir }: { active: boolean, dir: 'asc' | 'desc' }) => {
-      if (!active) return <ArrowUpDown size={10} className="opacity-30" />;
-      return dir === 'asc' ? <ArrowUp size={10} className="text-ru-primary" /> : <ArrowDown size={10} className="text-ru-primary" />;
-  };
-
   return (
-    <div className="w-full h-full flex flex-col">
-       <div className="flex justify-between items-center text-[10px] text-ru-textMuted uppercase tracking-wider mb-2 px-2 select-none">
-           <button 
-             onClick={() => toggleSort('name')} 
-             className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'name' ? 'text-white font-bold' : ''}`}
-           >
-             {TRANS[lang].sortName} <SortIcon active={sortKey === 'name'} dir={sortDir} />
-           </button>
-           
-           {type === 'count' && (
-             <button 
-               onClick={() => toggleSort('value')} 
-               className={`flex items-center gap-1 hover:text-white transition-colors ${sortKey === 'value' ? 'text-white font-bold' : ''}`}
-             >
-               {TRANS[lang].sortValue} <SortIcon active={sortKey === 'value'} dir={sortDir} />
-             </button>
-           )}
-       </div>
-
-       <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar min-h-0">
-          {sortedItems.map((item, idx) => (
-            <div key={idx} className="group relative flex items-center justify-between text-xs font-mono hover:bg-white/5 p-2 rounded transition-colors">
-               <span className="z-10 truncate text-ru-textDim group-hover:text-white w-2/3">{item.name}</span>
-               {type === 'count' && (
-                 <>
-                  <span className="z-10 text-ru-primary font-bold">{item.value}</span>
-                  <div 
-                    className="absolute left-0 top-0 bottom-0 bg-ru-primary/10 rounded" 
-                    style={{ width: `${(item.value / maxVal) * 100}%` }} 
-                  />
-                 </>
-               )}
-            </div>
+    <div className="w-full h-full overflow-auto">
+      <table className="w-full text-xs">
+        <thead className="sticky top-0 bg-black/90 backdrop-blur-sm">
+          <tr className="text-left text-ru-textMuted border-b border-white/10">
+            <th className="p-2 font-mono">{TRANS[lang].sortName}</th>
+            <th className="p-2 font-mono text-right">{TRANS[lang].sortValue}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedData.map((item, idx) => (
+            <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <td className="p-2 truncate max-w-[150px]">{item.layer}</td>
+              <td className="p-2 text-right font-mono text-ru-primary">{item.count}</td>
+            </tr>
           ))}
-       </div>
+        </tbody>
+      </table>
     </div>
   );
 };
 
-const CalendarModal = ({ isOpen, onClose, onSelectDate, currentSelectedDate, lang }: any) => {
-  if (!isOpen) return null;
+export const CompositionList = ({ data }: { data: string[] }) => (
+  <div className="w-full h-full overflow-auto">
+    <ul className="space-y-1">
+      {data.map((comp, idx) => (
+        <li key={idx} className="text-xs p-2 rounded hover:bg-white/5 transition-colors truncate border-l-2 border-transparent hover:border-ru-primary">
+          {comp}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
-  const SYSTEM_TODAY = '2026-01-26';
-  const [viewDate, setViewDate] = useState(new Date(currentSelectedDate || SYSTEM_TODAY));
-  const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
+// --- CALENDAR COMPONENT ---
 
-  useEffect(() => {
-    if (isOpen) {
-        setViewDate(new Date(currentSelectedDate || SYSTEM_TODAY));
-        setViewMode('month');
-    }
-  }, [isOpen, currentSelectedDate]);
-
-  const currentYear = viewDate.getFullYear();
-  const currentMonth = viewDate.getMonth(); 
-
-  const handlePrev = () => {
-    const d = new Date(viewDate);
-    if (viewMode === 'month') {
-        d.setMonth(d.getMonth() - 1);
-    } else {
-        d.setFullYear(d.getFullYear() - 1);
-    }
-    setViewDate(d);
-  };
-
-  const handleNext = () => {
-    const d = new Date(viewDate);
-    if (viewMode === 'month') {
-        d.setMonth(d.getMonth() + 1);
-    } else {
-        d.setFullYear(d.getFullYear() + 1);
-    }
-    setViewDate(d);
-  };
-
-  const jumpToToday = () => {
-      setViewDate(new Date(SYSTEM_TODAY));
-      setViewMode('month');
-      onSelectDate(SYSTEM_TODAY); 
-  };
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); 
-  
-  const calendarCells = [];
-  for (let i = 0; i < firstDayOfMonth; i++) {
-    calendarCells.push({ type: 'pad', id: `pad-${i}` });
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-      const monthStr = (currentMonth + 1).toString().padStart(2, '0');
-      const dayStr = i.toString().padStart(2, '0');
-      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
-      
-      const hasData = !!MOCK_DATA[dateStr];
-      let heat = 0;
-      if (hasData) {
-         heat = MOCK_DATA[dateStr].projects.reduce((acc, p) => acc + p.accumulatedRuntime, 0);
-      } else {
-         const r = seededRandom(dateStr + '_comps'); 
-         if (r > 0.3) { 
-             heat = 20000 + (r * 20000); 
-         }
-      }
-      calendarCells.push({ type: 'day', day: i, dateStr, heat });
-  }
-
-  const weekDays = lang === 'ZH' 
-    ? ['日','一','二','三','四','五','六']
-    : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
-      <div className="w-[95%] max-w-[420px] bg-[#0A0A0A] border border-ru-primary/30 p-5 shadow-[0_0_50px_rgba(255,107,53,0.1)] relative overflow-hidden rounded-lg flex flex-col">
-        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(0deg,transparent_24%,rgba(255,107,53,.3)_25%,rgba(255,107,53,.3)_26%,transparent_27%,transparent_74%,rgba(255,107,53,.3)_75%,rgba(255,107,53,.3)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(255,107,53,.3)_25%,rgba(255,107,53,.3)_26%,transparent_27%,transparent_74%,rgba(255,107,53,.3)_75%,rgba(255,107,53,.3)_76%,transparent_77%,transparent)] bg-[length:30px_30px]"></div>
-        <button onClick={onClose} className="absolute top-3 right-3 text-white hover:text-ru-primary z-20 transition-colors">
-          <X size={18} />
-        </button>
-
-        <div className="flex flex-col gap-1 mb-4 relative z-10">
-            <h2 className="text-lg font-black italic font-sans text-white uppercase">{TRANS[lang].missionLog}</h2>
-            <div className="flex items-center justify-between w-full mt-2">
-                 <button onClick={handlePrev} className="p-1.5 border border-white/10 hover:border-ru-primary text-ru-textDim hover:text-white rounded transition-colors"><ChevronLeft size={16}/></button>
-                 <button 
-                    onClick={() => setViewMode(viewMode === 'month' ? 'year' : 'month')}
-                    className="font-mono text-ru-primary font-bold text-sm hover:text-white hover:underline decoration-ru-primary underline-offset-4 transition-all"
-                 >
-                    {viewMode === 'month' 
-                        ? `${TRANS[lang].months[currentMonth]} ${currentYear}`
-                        : `${currentYear}`
-                    }
-                 </button>
-                 <button onClick={handleNext} className="p-1.5 border border-white/10 hover:border-ru-primary text-ru-textDim hover:text-white rounded transition-colors"><ChevronRight size={16}/></button>
-            </div>
-        </div>
-
-        <div className="relative z-10 min-h-[280px]">
-           {viewMode === 'month' ? (
-               <div className="grid grid-cols-7 gap-1">
-                 {weekDays.map(d => (
-                   <div key={d} className="text-center text-[10px] text-ru-textMuted font-bold mb-1 select-none">{d}</div>
-                 ))}
-                 {calendarCells.map((cell: any) => {
-                     if (cell.type === 'pad') return <div key={cell.id}></div>;
-                     
-                     let bgClass = "bg-white/5";
-                     let borderClass = "border-transparent";
-                     let textClass = "text-ru-textDim";
-
-                     if (cell.heat > 0) {
-                         textClass = "text-white";
-                         if (cell.heat < 25000) { 
-                             bgClass = "bg-ru-primary/20"; 
-                         } else if (cell.heat < 60000) { 
-                             bgClass = "bg-ru-primary/60"; 
-                         } else {
-                             bgClass = "bg-ru-primary"; 
-                             textClass = "text-black";
-                         }
-                     }
-
-                     if (cell.dateStr === currentSelectedDate) {
-                         borderClass = "border-white";
-                         if(cell.heat === 0) textClass = "text-white";
-                     }
-
-                     return (
-                         <button 
-                            key={cell.dateStr}
-                            onClick={() => {
-                                if (cell.heat > 0) {
-                                    onSelectDate(cell.dateStr);
-                                    onClose();
-                                }
-                            }}
-                            disabled={cell.heat === 0}
-                            className={`
-                                aspect-square relative flex items-center justify-center rounded-sm border ${borderClass}
-                                ${bgClass}
-                                transition-all duration-200 
-                                ${cell.heat > 0 ? 'hover:scale-110 hover:z-10 cursor-pointer' : 'cursor-default opacity-50'}
-                            `}
-                         >
-                            <span className={`text-[10px] font-bold font-mono ${textClass}`}>{cell.day}</span>
-                            {cell.heat > 0 && <div className={`absolute bottom-1 right-1 w-1 h-1 rounded-full ${cell.heat > 55000 ? 'bg-black' : 'bg-white'}`}></div>}
-                         </button>
-                     )
-                 })}
-               </div>
-           ) : (
-               <div className="grid grid-cols-3 gap-2 h-full content-start">
-                   {TRANS[lang].months.map((m: string, idx: number) => {
-                       const isActive = idx === currentMonth;
-                       return (
-                           <button
-                             key={m}
-                             onClick={() => {
-                                 const d = new Date(viewDate);
-                                 d.setMonth(idx);
-                                 setViewDate(d);
-                                 setViewMode('month');
-                             }}
-                             className={`
-                                h-16 rounded border flex items-center justify-center text-sm font-bold font-mono transition-all
-                                ${isActive ? 'bg-ru-primary text-black border-ru-primary' : 'bg-white/5 border-white/10 text-ru-textDim hover:border-white/50 hover:text-white'}
-                             `}
-                           >
-                               {m}
-                           </button>
-                       )
-                   })}
-               </div>
-           )}
-        </div>
-        
-        <div className="mt-auto pt-4 border-t border-white/10 flex justify-between items-center text-[9px] text-ru-textMuted font-mono uppercase relative z-10">
-           <button 
-             onClick={jumpToToday}
-             className="flex items-center gap-1.5 hover:text-white transition-colors group"
-           >
-              <RotateCcw size={10} className="group-hover:rotate-180 transition-transform duration-500"/>
-              {TRANS[lang].jumpToday}
-           </button>
-
-           <div className="flex items-center gap-2">
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/20 rounded-full"></span> {TRANS[lang].low}</div>
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary/60 rounded-full"></span> {TRANS[lang].mid}</div>
-             <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-ru-primary rounded-full"></span> {TRANS[lang].high}</div>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- ANALYTICS VIEW COMPONENTS ---
-
-const MetricToggle = ({ 
-    active, 
-    onClick, 
-    onContextMenu,
-    label, 
-    value,
-    formatValue,
-    color, 
-    icon: Icon, 
-    hint 
+export const CalendarPanel = ({ 
+  isOpen, 
+  onClose, 
+  selectedDate, 
+  onSelectDate,
+  availableDates,
+  lang 
 }: { 
-    active: boolean, 
-    onClick: () => void, 
-    onContextMenu: (e: React.MouseEvent) => void,
-    label: string, 
-    value: number,
-    formatValue?: (v: number) => string,
-    color: string, 
-    icon: any,
-    hint: string
-}) => (
-    <button 
-        onClick={onClick}
-        onContextMenu={onContextMenu}
-        className={`
-            relative flex items-center justify-center gap-2 px-2 py-3 rounded-sm border transition-all duration-300 group
-            flex-1 min-w-0
-            ${active 
-                ? `bg-[${color}]/10 border-[${color}] text-white shadow-[0_0_15px_-5px_${color}]` 
-                : 'bg-white/5 border-white/10 text-ru-textDim hover:bg-white/10 hover:border-white/20'
-            }
-        `}
-        style={{ 
-            borderColor: active ? color : undefined, 
-        }}
-        title={hint}
-    >
-        <Icon size={16} style={{ color: active ? color : undefined }} className={active ? "" : "opacity-60"} />
-        
-        <div className="flex flex-col items-start leading-none min-w-0 flex-1">
-            <span className={`font-mono font-bold text-xs sm:text-sm ${active ? 'text-white' : 'text-ru-textDim'} truncate w-full text-left`}>
-                {formatValue ? formatValue(value) : value.toLocaleString()}
-            </span>
-            <span className="text-[9px] uppercase tracking-wider opacity-60 hidden sm:block mt-0.5 truncate w-full text-left">
-                {label}
-            </span>
-        </div>
-    </button>
-);
-
-const ViewModeButton = ({ active, onClick, label, shortLabel }: { active: boolean, onClick: () => void, label: string, shortLabel: string }) => (
-    <button 
-        onClick={onClick}
-        className={`
-            flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] md:text-xs font-bold font-mono transition-all border-b-2 whitespace-nowrap
-            ${active 
-                ? 'text-ru-primary border-ru-primary bg-ru-primary/5' 
-                : 'text-ru-textMuted border-transparent hover:text-white hover:bg-white/5'
-            }
-        `}
-    >
-        <span className="sm:hidden">{shortLabel}</span>
-        <span className="hidden sm:inline">{label}</span>
-    </button>
-);
-
-const OptionSwitch = ({ active, onClick, label, icon: Icon, hideLabelOnMobile = false }: any) => (
-    <button 
-        onClick={onClick}
-        className={`
-            flex items-center gap-1.5 px-2 py-1 rounded transition-all duration-300 text-xs font-bold font-mono uppercase tracking-wider
-            ${active 
-                ? 'text-ru-primary bg-ru-primary/10 border border-ru-primary/30' 
-                : 'text-ru-textMuted hover:text-white border border-transparent hover:bg-white/5'
-            }
-        `}
-        title={hideLabelOnMobile ? label : undefined}
-    >
-        <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-ru-primary shadow-[0_0_5px_#FF6B35]' : 'bg-white/20'}`} />
-        <span className={hideLabelOnMobile ? "hidden sm:inline" : ""}>{label}</span>
-        {hideLabelOnMobile && <Icon size={14} className="sm:hidden" />}
-    </button>
-);
-
-const AnalyticsTable = ({ 
-    data, 
-    lang, 
-    formatRuntime,
-    onNavigate 
-}: { 
-    data: any[], 
-    lang: LangType, 
-    formatRuntime: (s: number) => string,
-    onNavigate: (date: string, projectName?: string) => void
+  isOpen: boolean,
+  onClose: () => void,
+  selectedDate: string,
+  onSelectDate: (date: string) => void,
+  availableDates: string[],
+  lang: LangType
 }) => {
-    
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
 
-    const flatRows = useMemo(() => {
-        return data.flatMap(period => period.projects.map((proj: any) => ({
-            periodLabel: period.fullLabel,
-            displayX: period.displayX,
-            isoDate: period.isoDate,
-            ...proj
-        })));
-    }, [data]);
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
 
-    const sortedRows = useMemo(() => {
-        let items = [...flatRows];
-        if (sortConfig !== null) {
-            items.sort((a, b) => {
-                let aValue = a[sortConfig.key];
-                let bValue = b[sortConfig.key];
-                if (sortConfig.key === 'periodLabel') {
-                    aValue = a.isoDate;
-                    bValue = b.isoDate;
-                }
-                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return items;
-    }, [flatRows, sortConfig]);
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
-    const totalPages = Math.ceil(sortedRows.length / ITEMS_PER_PAGE);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [data]);
-
-    const visibleRows = useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return sortedRows.slice(start, start + ITEMS_PER_PAGE);
-    }, [sortedRows, currentPage]);
-
-    const handlePageChange = (dir: -1 | 1) => {
-        setCurrentPage(p => Math.max(1, Math.min(totalPages, p + dir)));
-    };
-
-    const handleSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const SortableHeader = ({ label, sortKey, align = 'left', colorClass = 'text-ru-textMuted', width }: any) => {
-        const isActive = sortConfig?.key === sortKey;
-        return (
-            <th 
-                className={`p-3 font-bold cursor-pointer transition-colors select-none group ${colorClass}`}
-                style={{ width }}
-                onClick={() => handleSort(sortKey)}
-            >
-                <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                    <span className="group-hover:text-white transition-colors">{label}</span>
-                    <div className="w-3 flex justify-center text-ru-primary">
-                        {isActive ? (
-                            sortConfig?.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-                        ) : (
-                            <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-30 text-white" />
-                        )}
-                    </div>
-                </div>
-            </th>
-        );
-    };
-
-    return (
-        <div className="w-full h-full flex flex-col">
-            <div className="flex-1 overflow-auto custom-scrollbar relative">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                    <thead className="sticky top-0 bg-[#050505] z-10 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]">
-                        <tr className="border-b border-white/10 text-[10px] uppercase font-mono">
-                            <SortableHeader label={lang === 'ZH' ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
-                            <SortableHeader label={lang === 'ZH' ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
-                            <SortableHeader label={TRANS[lang].compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
-                            <SortableHeader label={TRANS[lang].totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
-                            <SortableHeader label={TRANS[lang].keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
-                            <SortableHeader label={TRANS[lang].effects} sortKey="effects" align="right" colorClass="text-emerald-400/80" />
-                            <SortableHeader label={TRANS[lang].runtime} sortKey="runtime" align="right" colorClass="text-amber-400/80" />
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {visibleRows.map((row: any, idx: number) => (
-                            <tr key={`${row.periodLabel}-${row.id}-${idx}`} className="hover:bg-white/5 transition-colors group cursor-pointer select-none">
-                                <td 
-                                    className="p-3 text-xs font-bold text-ru-textDim group-hover:text-white align-top hover:underline decoration-white/30 underline-offset-4"
-                                    onDoubleClick={() => onNavigate(row.isoDate)}
-                                    title="Double click to jump to this date on Dashboard"
-                                >
-                                    {row.periodLabel}
-                                    {row.displayX && <span className="ml-2 opacity-50 text-[9px]">({row.displayX})</span>}
-                                </td>
-                                <td 
-                                    className="p-3 text-xs font-mono text-white group-hover:text-ru-primary transition-colors hover:underline decoration-ru-primary/30 underline-offset-4"
-                                    onDoubleClick={() => onNavigate(row.isoDate, row.name)}
-                                    title="Double click to filter this project on Dashboard"
-                                >
-                                    {row.name}
-                                </td>
-                                <td className="p-3 text-xs font-mono text-right text-blue-100/70">{row.compositions.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-purple-100/70">{row.layers.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-white font-bold">{row.keyframes.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-emerald-100/70">{row.effects.toLocaleString()}</td>
-                                <td className="p-3 text-xs font-mono text-right text-amber-100/70">{formatRuntime(row.runtime)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-auto bg-[#050505] flex-shrink-0">
-                    <button 
-                        onClick={() => handlePageChange(-1)} 
-                        disabled={currentPage === 1}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-bold text-ru-textDim hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all uppercase tracking-wider"
-                    >
-                        <ChevronLeft size={14} />
-                        Prev
-                    </button>
-                    
-                    <span className="text-[10px] font-mono text-ru-textMuted uppercase tracking-widest">
-                        {TRANS[lang].page} <span className="text-white font-bold">{currentPage}</span> {TRANS[lang].of} {totalPages}
-                    </span>
-                    
-                    <button 
-                        onClick={() => handlePageChange(1)} 
-                        disabled={currentPage === totalPages}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-bold text-ru-textDim hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all uppercase tracking-wider"
-                    >
-                        Next
-                        <ChevronRight size={14} />
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-};
-
-export const AnalyticsView = ({ 
-    lang, 
-    displayMode = 'chart', 
-    setAnalyticsMode,
-    searchQuery = '',
-    onNavigate
-}: { 
-    lang: LangType, 
-    displayMode?: AnalyticsMode, 
-    setAnalyticsMode: (mode: AnalyticsMode) => void,
-    searchQuery?: string,
-    onNavigate: (date: string, projectName?: string) => void
-}) => {
-    const [cursorDate, setCursorDate] = useState<Date>(new Date('2026-01-26'));
-    const [viewMode, setViewMode] = useState<ViewMode>('week');
-    
-    const [showDaily, setShowDaily] = useState(false);
-    const [normalizeData, setNormalizeData] = useState(true);
-
-    const [visibleMetrics, setVisibleMetrics] = useState({
-        compositions: true,
-        layers: false, 
-        keyframes: true,
-        effects: false,
-        runtime: true,
-        projectCount: false
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
     });
-
-    const handleNav = (dir: -1 | 1) => {
-        const newDate = new Date(cursorDate);
-        if (viewMode === 'week') {
-            newDate.setDate(newDate.getDate() + (dir * 7));
-        } else if (viewMode === 'month') {
-            newDate.setMonth(newDate.getMonth() + dir);
-        } else if (viewMode === 'quarter') {
-            newDate.setMonth(newDate.getMonth() + (dir * 3));
-        } else if (viewMode === 'year') {
-            newDate.setFullYear(newDate.getFullYear() + dir);
-        } else if (viewMode === 'all') {
-            newDate.setFullYear(newDate.getFullYear() + (dir * 5));
-        }
-        setCursorDate(newDate);
-    };
-
-    const { data: rawData, label: timeLabel } = useMemo(() => 
-        getAnalyticsData(viewMode, cursorDate, showDaily)
-    , [viewMode, cursorDate, showDaily]);
-
-
-    const filteredRawData = useMemo(() => {
-        if (!searchQuery.trim()) return rawData;
-        const lowerQ = searchQuery.toLowerCase();
-
-        return rawData.map(period => {
-            // Check if period matches directly (e.g. searching for "Jan")
-            const periodMatches = period.fullLabel.toLowerCase().includes(lowerQ) || 
-                                 (period.displayX && period.displayX.toString().toLowerCase().includes(lowerQ));
-
-            if (periodMatches) return period;
-
-            // Otherwise, filter inner projects
-            if (!period.projects) return null;
-
-            const matchingProjects = period.projects.filter((p: any) => p.name.toLowerCase().includes(lowerQ));
-            
-            if (matchingProjects.length === 0) return null;
-
-            // Re-aggregate stats for this subset
-            const newStats = matchingProjects.reduce((acc: any, p: any) => ({
-                compositions: acc.compositions + p.compositions,
-                layers: acc.layers + p.layers,
-                keyframes: acc.keyframes + p.keyframes,
-                effects: acc.effects + p.effects,
-                runtime: acc.runtime + p.runtime,
-            }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0 });
-
-            return {
-                ...period,
-                ...newStats,
-                projects: matchingProjects,
-            };
-        }).filter(Boolean);
-    }, [rawData, searchQuery]);
-
-
-    const processedData = useMemo(() => {
-        // First calculate projectCount for all raw entries
-        const withCounts = filteredRawData.map((d: any) => ({
-            ...d,
-            projectCount: d.projects ? d.projects.length : 0
-        }));
-
-        if (!normalizeData) return withCounts;
-        
-        const maxVals = {
-            compositions: Math.max(...withCounts.map((d: any) => d.compositions), 1),
-            layers: Math.max(...withCounts.map((d: any) => d.layers), 1),
-            keyframes: Math.max(...withCounts.map((d: any) => d.keyframes), 1),
-            effects: Math.max(...withCounts.map((d: any) => d.effects), 1),
-            runtime: Math.max(...withCounts.map((d: any) => d.runtime), 1),
-            projectCount: Math.max(...withCounts.map((d: any) => d.projectCount), 1),
-        };
-
-        return withCounts.map((d: any) => ({
-            ...d,
-            _raw: { ...d },
-            compositions: (d.compositions / maxVals.compositions) * 100,
-            layers: (d.layers / maxVals.layers) * 100,
-            keyframes: (d.keyframes / maxVals.keyframes) * 100,
-            effects: (d.effects / maxVals.effects) * 100,
-            runtime: (d.runtime / maxVals.runtime) * 100,
-            projectCount: (d.projectCount / maxVals.projectCount) * 100,
-        }));
-
-    }, [filteredRawData, normalizeData]);
-
-    const finalDisplayData = useMemo(() => {
-        // Filtering is now done upstream in filteredRawData to support re-aggregation for charts
-        return processedData;
-    }, [processedData]);
-
-    const totals = useMemo(() => {
-        // Use filteredRawData so totals reflect the search
-        return filteredRawData.reduce((acc: any, curr: any) => ({
-            compositions: acc.compositions + curr.compositions,
-            layers: acc.layers + curr.layers,
-            keyframes: acc.keyframes + curr.keyframes,
-            effects: acc.effects + curr.effects,
-            runtime: acc.runtime + curr.runtime,
-            projectCount: acc.projectCount + (curr.projects ? curr.projects.length : 0),
-        }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0, projectCount: 0 });
-    }, [filteredRawData]);
-
-    const aggregatedDetails = useMemo(() => {
-        const acc = {
-            keyframes: {} as Record<string, number>,
-            compositions: [] as string[],
-            layers: { video: 0, image: 0, designFile: 0, sourceFile: 0, nullSolidLayer: 0 } as Record<string, number>,
-            effectCounts: {} as Record<string, number>
-        };
-
-        finalDisplayData.forEach((period: any) => {
-             if(period.projects) {
-                 period.projects.forEach((p: any) => {
-                     if(!p.details) return;
-                     if (p.details.layers) {
-                        Object.keys(p.details.layers).forEach(k => {
-                            acc.layers[k] = (acc.layers[k] || 0) + (p.details.layers[k] as number);
-                        });
-                     }
-                     if (p.details.effectCounts) {
-                        Object.entries(p.details.effectCounts).forEach(([k, v]) => {
-                            acc.effectCounts[k] = (acc.effectCounts[k] || 0) + (v as number);
-                        });
-                     }
-                     if (p.details.keyframes) {
-                        Object.entries(p.details.keyframes).forEach(([k, v]) => {
-                            acc.keyframes[k] = (acc.keyframes[k] || 0) + (v as number);
-                        });
-                     }
-                     if (p.details.compositions) {
-                        acc.compositions.push(...p.details.compositions);
-                     }
-                 });
-             }
-        });
-        return acc;
-    }, [finalDisplayData]);
-
-
-    const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
-
-    const toggleMetric = (key: keyof typeof visibleMetrics) => {
-        setVisibleMetrics(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    const soloMetric = (key: keyof typeof visibleMetrics) => {
-        const reset = {
-            compositions: false, layers: false, keyframes: false, effects: false, runtime: false, projectCount: false
-        };
-        setVisibleMetrics({ ...reset, [key]: true });
-    };
-
-    return (
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 pb-20 animate-[fadeIn_0.5s_ease-out]">
-            
-            <div className="mb-6 border-b border-white/10 pb-4 flex flex-col gap-4">
-                
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 text-ru-textMuted text-xs font-mono uppercase tracking-widest">
-                        <Activity size={14} className="text-ru-primary" />
-                        <span className="font-bold">{TRANS[lang].trendAnalysis}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <OptionSwitch 
-                            active={displayMode === 'table'} 
-                            onClick={() => setAnalyticsMode(displayMode === 'chart' ? 'table' : 'chart')} 
-                            label={TRANS[lang].viewTable} 
-                            icon={TableIcon} 
-                            hideLabelOnMobile={true}
-                        />
-
-                        <OptionSwitch 
-                            active={showDaily} 
-                            onClick={() => setShowDaily(!showDaily)} 
-                            label={TRANS[lang].dailyDetails} 
-                            icon={Calendar} 
-                            hideLabelOnMobile={true}
-                        />
-                        {displayMode === 'chart' && (
-                            <OptionSwitch 
-                                active={normalizeData} 
-                                onClick={() => setNormalizeData(!normalizeData)} 
-                                label={TRANS[lang].normalizeCurves} 
-                                icon={AlignLeft} 
-                                hideLabelOnMobile={true}
-                            />
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
-                    <div className="flex items-center gap-1 bg-ru-glass border border-ru-glassBorder p-0.5 rounded-sm w-full sm:w-auto">
-                        <button onClick={() => handleNav(-1)} className="p-2 sm:p-1.5 hover:bg-white/10 rounded text-white transition-colors flex-none"><ChevronLeft size={16} /></button>
-                        <div className="flex-1 sm:w-40 text-center font-bold font-mono text-xs sm:text-sm text-white tabular-nums truncate">
-                            {timeLabel}
-                        </div>
-                        <button onClick={() => handleNav(1)} className="p-2 sm:p-1.5 hover:bg-white/10 rounded text-white transition-colors flex-none"><ChevronRight size={16} /></button>
-                    </div>
-
-                    <div className="flex bg-ru-glass border border-ru-glassBorder rounded-sm overflow-hidden w-full sm:w-auto">
-                        <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} label={TRANS[lang].viewweek} shortLabel={lang === 'ZH' ? '周' : 'WK'} />
-                        <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} label={TRANS[lang].viewmonth} shortLabel={lang === 'ZH' ? '月' : 'MO'} />
-                        <ViewModeButton active={viewMode === 'quarter'} onClick={() => setViewMode('quarter')} label={TRANS[lang].viewquarter} shortLabel={lang === 'ZH' ? '季' : 'QT'} />
-                        <ViewModeButton active={viewMode === 'year'} onClick={() => setViewMode('year')} label={TRANS[lang].viewyear} shortLabel={lang === 'ZH' ? '年' : 'YR'} />
-                        <ViewModeButton active={viewMode === 'all'} onClick={() => setViewMode('all')} label={TRANS[lang].viewall} shortLabel={lang === 'ZH' ? '全' : 'ALL'} />
-                    </div>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 w-full mt-1">
-                     <MetricToggle 
-                        active={visibleMetrics.compositions} 
-                        onClick={() => toggleMetric('compositions')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('compositions'); }}
-                        label={TRANS[lang].compositions} 
-                        value={totals.compositions}
-                        color="#3b82f6" icon={LayoutGrid} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                    <MetricToggle 
-                        active={visibleMetrics.layers} 
-                        onClick={() => toggleMetric('layers')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('layers'); }}
-                        label={TRANS[lang].totalLayers} 
-                        value={totals.layers}
-                        color="#a855f7" icon={Layers} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                     <MetricToggle 
-                        active={visibleMetrics.keyframes} 
-                        onClick={() => toggleMetric('keyframes')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('keyframes'); }}
-                        label={TRANS[lang].keyframes} 
-                        value={totals.keyframes}
-                        color="#FF6B35" icon={Activity} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                     <MetricToggle 
-                        active={visibleMetrics.effects} 
-                        onClick={() => toggleMetric('effects')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('effects'); }}
-                        label={TRANS[lang].effects} 
-                        value={totals.effects}
-                        color="#10b981" icon={Hexagon} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                    <MetricToggle 
-                        active={visibleMetrics.runtime} 
-                        onClick={() => toggleMetric('runtime')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('runtime'); }}
-                        label={TRANS[lang].runtime} 
-                        value={totals.runtime}
-                        formatValue={formatRuntime}
-                        color="#f59e0b" icon={Clock} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                    <MetricToggle 
-                        active={visibleMetrics.projectCount} 
-                        onClick={() => toggleMetric('projectCount')} 
-                        onContextMenu={(e) => { e.preventDefault(); soloMetric('projectCount'); }}
-                        label={TRANS[lang].projectCount} 
-                        value={totals.projectCount}
-                        color="#22d3ee" icon={Folder} 
-                        hint={TRANS[lang].toggleSoloHint}
-                    />
-                </div>
-
-            </div>
-
-            <div className="bg-ru-glass border border-ru-glassBorder p-2 md:p-6 rounded-sm h-[250px] md:h-[500px] mb-8 relative group flex flex-col">
-                
-                {displayMode === 'chart' ? (
-                    <>
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:40px_40px] pointer-events-none"></div>
-
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={finalDisplayData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="gradKeyframes" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2}/>
-                                        <stop offset="95%" stopColor="#FF6B35" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="gradRuntime" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                <XAxis 
-                                    dataKey="displayX" 
-                                    type="category" 
-                                    stroke="#666" 
-                                    tick={{ fill: '#666', fontSize: 10, fontFamily: 'monospace' }} 
-                                    tickMargin={12}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    scale="point"
-                                    padding={{ left: 0, right: 0 }}
-                                    interval={showDaily && (viewMode === 'year' || viewMode === 'quarter') ? 14 : 'preserveStartEnd'} 
-                                />
-                                <YAxis 
-                                    yAxisId="left" 
-                                    stroke="#666" 
-                                    tick={false}
-                                    width={0}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    domain={normalizeData ? [0, 100] : ['auto', 'auto']}
-                                />
-                                <YAxis 
-                                    yAxisId="right" 
-                                    orientation="right" 
-                                    stroke="#f59e0b" 
-                                    tick={false}
-                                    width={0}
-                                    hide={!visibleMetrics.runtime && !normalizeData} 
-                                    axisLine={false}
-                                    tickLine={false}
-                                    domain={normalizeData ? [0, 100] : ['auto', 'auto']}
-                                />
-                                
-                                <RechartsTooltip 
-                                    contentStyle={{ backgroundColor: 'rgba(5,5,5,0.95)', borderColor: '#333', color: '#fff', borderRadius: '4px', backdropFilter: 'blur(8px)' }}
-                                    itemStyle={{ fontSize: 12, fontFamily: 'monospace', paddingTop: '2px', paddingBottom: '2px' }}
-                                    labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}
-                                    labelFormatter={(label, payload) => {
-                                        if (payload && payload.length > 0) return payload[0].payload.fullLabel;
-                                        return label;
-                                    }}
-                                    formatter={(value: number, name: string, item: any) => {
-                                        const raw = normalizeData ? item.payload._raw[name] : value;
-                                        if (name === 'runtime') return [formatRuntime(raw), TRANS[lang].runtime];
-                                        const transKey = name as keyof typeof TRANS.EN;
-                                        const label = TRANS[lang][transKey] || name.toUpperCase();
-                                        return [raw.toLocaleString(), label];
-                                    }}
-                                />
-
-                                {visibleMetrics.layers && <Area yAxisId="left" type="monotone" dataKey="layers" stroke="#a855f7" fill="none" strokeWidth={2} />}
-                                {visibleMetrics.compositions && <Area yAxisId="left" type="monotone" dataKey="compositions" stroke="#3b82f6" fill="none" strokeWidth={2} />}
-                                {visibleMetrics.effects && <Area yAxisId="left" type="monotone" dataKey="effects" stroke="#10b981" fill="none" strokeWidth={2} />}
-                                {visibleMetrics.projectCount && <Area yAxisId="left" type="monotone" dataKey="projectCount" stroke="#22d3ee" fill="none" strokeWidth={2} />}
-                                
-                                {visibleMetrics.keyframes && (
-                                    <Area 
-                                        yAxisId="left" type="monotone" dataKey="keyframes" 
-                                        stroke="#FF6B35" fill="url(#gradKeyframes)" strokeWidth={3} 
-                                        activeDot={{ r: 6, strokeWidth: 0, fill: '#FF6B35' }}
-                                    />
-                                )}
-
-                                {visibleMetrics.runtime && (
-                                    <Area 
-                                        yAxisId={normalizeData ? "left" : "right"} 
-                                        type="monotone" dataKey="runtime" 
-                                        stroke="#f59e0b" fill="url(#gradRuntime)" strokeWidth={2} 
-                                        strokeDasharray={normalizeData ? "" : "5 5"} 
-                                    />
-                                )}
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </>
-                ) : (
-                    <AnalyticsTable 
-                        data={finalDisplayData} 
-                        lang={lang} 
-                        formatRuntime={formatRuntime}
-                        onNavigate={onNavigate} 
-                    />
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                <DashboardPanel 
-                    title={TRANS[lang].keyframeDensity} 
-                    count={Object.values(aggregatedDetails.keyframes).reduce((a, b) => a + b, 0)} 
-                    countLabel={TRANS[lang].total}
-                    className="h-[220px]"
-                >
-                    <DataList data={aggregatedDetails.keyframes} type="count" lang={lang} />
-                </DashboardPanel>
-
-                <DashboardPanel 
-                    title={TRANS[lang].activeComps} 
-                    count={aggregatedDetails.compositions.length} 
-                    countLabel={TRANS[lang].items}
-                    className="h-[220px]"
-                >
-                    <DataList data={aggregatedDetails.compositions} type="list" lang={lang} />
-                </DashboardPanel>
-                
-                <DashboardPanel 
-                    title={TRANS[lang].layerDist} 
-                    count={Object.values(aggregatedDetails.layers).reduce((a: number,b: number)=>a+b, 0)} 
-                    countLabel={TRANS[lang].total}
-                >
-                <LayerRadar data={aggregatedDetails.layers} lang={lang} />
-                </DashboardPanel>
-
-                <DashboardPanel 
-                    title={TRANS[lang].effectFreq} 
-                    count={
-                      <div className="flex items-baseline gap-1">
-                        <NumberTicker value={totals.effects} />
-                        <span className="text-white/40 text-sm">/</span>
-                        <span className="text-white/60 text-base">{Object.keys(aggregatedDetails.effectCounts).length}</span>
-                      </div>
-                    }
-                    countLabel={TRANS[lang].uniqueEffects}
-                >
-                <EffectDonut data={aggregatedDetails.effectCounts} lang={lang} />
-                </DashboardPanel>
-            </div>
-        </div>
-    );
-};
-
-// --- MAIN APP ---
-
-const App = () => {
-  const [currentDate, setCurrentDate] = useState<string>('2026-01-26');
-  const [selectedProjectIndex, setSelectedProjectIndex] = useState<number>(0);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>('chart');
-  
-  const [lang, setLang] = useState<LangType>(() => {
-    if (typeof navigator !== 'undefined') {
-        const browserLang = navigator.language.toLowerCase();
-        if (browserLang.startsWith('en')) {
-            return 'EN';
-        }
-    }
-    return 'ZH';
-  });
-
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-
-  const handleNavigate = (date: string, projectName?: string) => {
-     setCurrentDate(date);
-     if (projectName) setSearchQuery(projectName); 
-     setCurrentView('dashboard');
   };
 
-  const dailyData: DailyData = useMemo(() => {
-    if (MOCK_DATA[currentDate]) return MOCK_DATA[currentDate];
-    
-    // Logic updated: Always generate data for dynamic dates to match Analytics view consistency
-    // Removed the 'if (r > 0.3)' check that simulated random empty days
-    
-    const projects = [];
-    // Ensure the count generation seed matches analytics logic roughly
-    const count = Math.floor(seededRandom(currentDate + 'count') * 3) + 2; 
-    for(let i=0; i<count; i++) {
-            projects.push(generateDynamicProject(currentDate, i));
-    }
-    return { date: currentDate, projects };
+  const selectDate = (day: number) => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    onSelectDate(dateStr);
+    onClose();
+  };
 
-  }, [currentDate]);
-  
-  const filteredProjects = useMemo(() => {
-    if (!dailyData?.projects) return [];
-    if (!searchQuery.trim()) return dailyData.projects;
-    return dailyData.projects.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentMonth(today);
+    const dateStr = today.toISOString().split('T')[0];
+    onSelectDate(dateStr);
+    onClose();
+  };
+
+  const days = [];
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const firstDay = getFirstDayOfMonth(currentMonth);
+
+  for (let i = 0; i < firstDay; i++) {
+    days.push(<div key={`empty-${i}`} className="p-2 md:p-3"></div>);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const hasData = availableDates.includes(dateStr);
+    const isSelected = dateStr === selectedDate;
+
+    days.push(
+      <button
+        key={day}
+        onClick={() => selectDate(day)}
+        disabled={!hasData}
+        className={`
+          p-2 md:p-3 text-center text-xs font-bold rounded transition-all
+          ${!hasData 
+            ? 'text-ru-textDim/30 cursor-not-allowed' 
+            : isSelected
+              ? 'bg-ru-primary text-black shadow-[0_0_15px_-5px_#FF6B35]'
+              : 'bg-white/5 text-white hover:bg-white/10 hover:border-ru-primary/50'
+          }
+        `}
+      >
+        {day}
+      </button>
     );
-  }, [dailyData, searchQuery]);
+  }
 
-  const project: ProjectData | null = filteredProjects[selectedProjectIndex] 
-    ? filteredProjects[selectedProjectIndex] 
-    : null;
-
-  useEffect(() => {
-    setSelectedProjectIndex(0);
-  }, [currentDate, searchQuery]);
+  const monthLabel = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20">
-      
-      <CalendarModal 
-        isOpen={isCalendarOpen} 
-        onClose={() => setIsCalendarOpen(false)} 
-        onSelectDate={setCurrentDate}
-        currentSelectedDate={currentDate}
-        lang={lang}
-      />
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+          <div className="bg-ru-glass border border-ru-glassBorder rounded-lg p-4 md:p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => navigateMonth('prev')} className="p-2 hover:bg-white/10 rounded transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              <h3 className="text-lg font-bold text-white">{monthLabel}</h3>
+              <button onClick={() => navigateMonth('next')} className="p-2 hover:bg-white/10 rounded transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-[10px] font-bold text-ru-textMuted p-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {days}
+            </div>
+            <button 
+              onClick={goToToday}
+              className="mt-4 w-full py-2 bg-ru-primary/10 border border-ru-primary/30 text-ru-primary text-xs font-bold rounded hover:bg-ru-primary/20 transition-colors"
+            >
+              {TRANS[lang].jumpToday}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
-      <Header 
-        lang={lang} 
-        setLang={setLang} 
-        dateDisplay={currentDate}
-        onCalendarClick={() => setIsCalendarOpen(true)}
+// --- MAIN COMPONENT ---
+
+export default function App() {
+  const [lang, setLang] = useState<LangType>('ZH');
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [selectedDate, setSelectedDate] = useState('2026-01-26');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const selectedData = useMemo(() => MOCK_DATA[selectedDate] || { date: selectedDate, projects: [] }, [selectedDate]);
+  const availableDates = Object.keys(MOCK_DATA).sort();
+
+  return (
+    <div className="min-h-screen bg-black text-white font-sans">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body {
+          margin: 0;
+          font-family: 'Inter', system-ui, sans-serif;
+          background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .font-italic { font-style: italic; }
+        
+        @keyframes popup {
+          0% { transform: scale(0); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .animate-popup { animation: popup 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        
+        :root {
+          --ru-primary: #FF6B35;
+          --ru-glass: rgba(20, 20, 20, 0.6);
+          --ru-glassBorder: rgba(255, 255, 255, 0.1);
+          --ru-textDim: rgba(255, 255, 255, 0.5);
+          --ru-textMuted: rgba(255, 255, 255, 0.6);
+        }
+        
+        .bg-ru-glass { background: var(--ru-glass); }
+        .border-ru-glassBorder { border-color: var(--ru-glassBorder); }
+        .text-ru-primary { color: var(--ru-primary); }
+        .bg-ru-primary { background: var(--ru-primary); }
+        .border-ru-primary { border-color: var(--ru-primary); }
+        .text-ru-textDim { color: var(--ru-textDim); }
+        .text-ru-textMuted { color: var(--ru-textMuted); }
+      `}</style>
+      
+      <Header
+        lang={lang}
+        setLang={setLang}
+        dateDisplay={selectedDate}
+        onCalendarClick={() => setCalendarOpen(true)}
         currentView={currentView}
         onChangeView={setCurrentView}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
 
-      <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
-        
-        {currentView === 'dashboard' ? (
-            filteredProjects.length > 0 && project ? (
+      <main className="px-4 py-6 md:px-8 md:py-8 max-w-[1600px] mx-auto">
+        {currentView === 'dashboard' && (
+          <>
+            {selectedData.projects.length > 0 ? (
               <>
-                <ProjectSelector 
-                  projects={filteredProjects}
-                  selectedIndex={selectedProjectIndex}
-                  onSelect={setSelectedProjectIndex}
+                <ProjectSelector
+                  projects={selectedData.projects}
+                  selectedIndex={0}
+                  onSelect={() => {}}
                   lang={lang}
                 />
 
-                <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-                  <VitalCard label={TRANS[lang].compositions} value={project.statistics.compositions} icon={LayoutGrid} delay={0} />
-                  <VitalCard label={TRANS[lang].totalLayers} value={project.statistics.layers} icon={Layers} delay={100} />
-                  <VitalCard label={TRANS[lang].keyframes} value={project.statistics.keyframes} icon={Activity} delay={200} />
-                  <VitalCard label={TRANS[lang].effects} value={project.statistics.effects} icon={Hexagon} delay={300} />
-                </section>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                  
-                  <DashboardPanel 
-                      title={TRANS[lang].keyframeDensity} 
-                      count={Object.values(project.details.keyframes).reduce((a, b) => a + b, 0)} 
-                      countLabel={TRANS[lang].total}
-                      className="h-[220px]"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  <DashboardPanel
+                    title={TRANS[lang].layerDist}
+                    count={Object.values(selectedData.projects[0].details.layers).reduce((a, b) => a + b, 0)}
+                    countLabel={TRANS[lang].items}
                   >
-                      <DataList data={project.details.keyframes} type="count" lang={lang} />
+                    <LayerRadar data={selectedData.projects[0].details.layers} lang={lang} />
                   </DashboardPanel>
 
-                  <DashboardPanel 
-                      title={TRANS[lang].activeComps} 
-                      count={project.details.compositions.length} 
-                      countLabel={TRANS[lang].items}
-                      className="h-[220px]"
+                  <DashboardPanel
+                    title={TRANS[lang].effectFreq}
+                    count={Object.keys(selectedData.projects[0].details.effectCounts).length}
+                    countLabel={TRANS[lang].uniqueEffects}
                   >
-                      <DataList data={project.details.compositions} type="list" lang={lang} />
-                  </DashboardPanel>
-                  
-                  <DashboardPanel 
-                      title={TRANS[lang].layerDist} 
-                      count={Object.values(project.details.layers).reduce((a,b)=>a+b, 0)} 
-                      countLabel={TRANS[lang].total}
-                  >
-                    <LayerRadar data={project.details.layers} lang={lang} />
+                    <EffectDonut data={selectedData.projects[0].details.effectCounts} lang={lang} />
                   </DashboardPanel>
 
-                  <DashboardPanel 
-                      title={TRANS[lang].effectFreq} 
-                      count={
-                        <div className="flex items-baseline gap-1">
-                          <NumberTicker value={project.statistics.effects} />
-                          <span className="text-white/40 text-sm">/</span>
-                          <span className="text-white/60 text-base">{Object.keys(project.details.effectCounts).length}</span>
-                        </div>
-                      }
-                      countLabel={TRANS[lang].uniqueEffects}
+                  <DashboardPanel
+                    title={TRANS[lang].keyframes}
+                    count={Object.values(selectedData.projects[0].details.keyframes).reduce((a, b) => a + b, 0)}
+                    countLabel={TRANS[lang].keyframeDensity}
                   >
-                    <EffectDonut data={project.details.effectCounts} lang={lang} />
+                    <KeyframeTable data={selectedData.projects[0].details.keyframes} lang={lang} />
                   </DashboardPanel>
                 </div>
               </>
             ) : (
-                <div className="flex flex-col items-center justify-center h-[50vh] text-ru-textDim opacity-50">
-                   <div className="mb-4">
-                       <Activity size={48} className="text-ru-primary animate-pulse" />
-                   </div>
-                   <h2 className="text-xl font-black italic tracking-widest mb-2">{TRANS[lang].noDataTitle}</h2>
-                   <p className="font-mono text-xs">{TRANS[lang].noDataDesc}</p>
-                </div>
-            )
-        ) : currentView === 'analytics' ? (
-            <AnalyticsView 
-                lang={lang} 
-                displayMode={analyticsMode}
-                setAnalyticsMode={setAnalyticsMode}
-                searchQuery={searchQuery}
-                onNavigate={handleNavigate}
-            />
-        ) : (
-            <SettingsView lang={lang} />
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">📭</div>
+                <h2 className="text-xl font-bold text-white mb-2">{TRANS[lang].noDataTitle}</h2>
+                <p className="text-sm text-ru-textMuted">{TRANS[lang].noDataDesc}</p>
+              </div>
+            )}
+          </>
+        )}
+        
+        {currentView === 'analytics' && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">📊</div>
+            <h2 className="text-xl font-bold text-white mb-2">{TRANS[lang].analytics}</h2>
+            <p className="text-sm text-ru-textMuted">Analytics view coming soon...</p>
+          </div>
+        )}
+
+        {currentView === 'settings' && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">⚙️</div>
+            <h2 className="text-xl font-bold text-white mb-2">{TRANS[lang].settings}</h2>
+            <p className="text-sm text-ru-textMuted">Settings view coming soon...</p>
+          </div>
         )}
       </main>
+
+      <CalendarPanel
+        isOpen={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        availableDates={availableDates}
+        lang={lang}
+      />
     </div>
   );
-};
+}
 
-const root = createRoot(document.getElementById('root') as HTMLElement);
-root.render(<App />);
+// Initialize the app
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(<App />);
+}

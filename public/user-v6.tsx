@@ -517,7 +517,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
               </div>
 
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
-                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{proj.dailyRuntime}</span>
+                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact(proj.accumulatedRuntime)}</span>
                  <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{TRANS[lang].id}: {proj.projectId}</span>
               </div>
 
@@ -1748,6 +1748,16 @@ export const AnalyticsView = ({
 
 
     const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
+
+    const formatRuntimeCompact = (seconds: number): string => {
+      if (seconds < 60) {
+        return `${seconds}s`;
+      } else if (seconds < 3600) {
+        return `${(seconds / 60).toFixed(1)}m`;
+      } else {
+        return `${(seconds / 3600).toFixed(1)}h`;
+      }
+    };
 
     const toggleMetric = (key: keyof typeof visibleMetrics) => {
         setVisibleMetrics(prev => ({ ...prev, [key]: !prev[key] }));
