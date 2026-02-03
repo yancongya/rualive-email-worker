@@ -17,6 +17,14 @@ import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType } from
 import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
 import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
 
+// --- UTILITY FUNCTIONS ---
+
+const formatRuntimeCompact = (seconds: number): string => {
+  if (seconds < 60) return `${seconds}s`;
+  else if (seconds < 3600) return `${(seconds / 60).toFixed(1)}m`;
+  else return `${(seconds / 3600).toFixed(1)}h`;
+};
+
 // --- TYPES ---
 
 export interface ProjectStats {
@@ -1748,16 +1756,6 @@ export const AnalyticsView = ({
 
 
     const formatRuntime = (sec: number) => `${(sec / 3600).toFixed(0)}h`;
-
-    const formatRuntimeCompact = (seconds: number): string => {
-      if (seconds < 60) {
-        return `${seconds}s`;
-      } else if (seconds < 3600) {
-        return `${(seconds / 60).toFixed(1)}m`;
-      } else {
-        return `${(seconds / 3600).toFixed(1)}h`;
-      }
-    };
 
     const toggleMetric = (key: keyof typeof visibleMetrics) => {
         setVisibleMetrics(prev => ({ ...prev, [key]: !prev[key] }));
