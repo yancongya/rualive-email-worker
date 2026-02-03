@@ -1,4 +1,4 @@
-import{r as ne}from"./client-t3J8IrLp.js";/**
+import{r as ne}from"./client-Crikcsvy.js";/**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
