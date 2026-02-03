@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { RuaLogo } from './LogoAnimation';
-import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType } from './src/api';
+import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType, getSystemInfo } from './src/api';
 import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
 import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
+import { AEStatus } from './src/types/api';
 
 // --- UTILITY FUNCTIONS ---
 
@@ -465,6 +466,19 @@ export const Header = ({
     onRefresh?: () => void,
     currentUser?: any,
 }) => {
+    const [aeStatus, setAeStatus] = useState<AEStatus | null>(null);
+
+    useEffect(() => {
+        // 获取系统信息
+        getSystemInfo().then(response => {
+            if (response.success && response.data) {
+                setAeStatus(response.data);
+            }
+        }).catch(error => {
+            console.error('Failed to load system info:', error);
+        });
+    }, []);
+
     return (
         <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 md:px-8 md:py-6 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-4 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
@@ -482,9 +496,23 @@ export const Header = ({
                     <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
                         RUALIVE
                     </h1>
-                    <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
-                        {trans.subtitle}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
+                            {trans.subtitle}
+                        </p>
+                        {aeStatus?.ae_version && (
+                            <p className="text-[9px] md:text-[10px] text-ru-primary tracking-widest font-mono hidden lg:flex items-center gap-1">
+                                <span className="opacity-60">AE</span>
+                                <span className="font-bold">{aeStatus.ae_version}</span>
+                                {aeStatus.os_name && (
+                                    <>
+                                        <span className="opacity-60">|</span>
+                                        <span>{aeStatus.os_name}</span>
+                                    </>
+                                )}
+                            </p>
+                        )}
+                    </div>
                   </div>
                 </div>
             </div>

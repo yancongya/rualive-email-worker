@@ -206,6 +206,27 @@ export async function updateAEStatus(status: Partial<AEStatus>): Promise<ApiResp
 }
 
 /**
+ * 获取系统信息摘要
+ * @param useCache 是否使用缓存
+ * @returns AE 状态响应（包含系统信息）
+ */
+export async function getSystemInfo(useCache: boolean = true): Promise<ApiResponse<AEStatus>> {
+  const cacheKey = 'ae-status';
+  
+  if (useCache && dataCache.has(cacheKey)) {
+    return dataCache.get(cacheKey);
+  }
+
+  const response = await apiRequest<ApiResponse<AEStatus>>('/api/ae-status');
+  
+  if (useCache) {
+    dataCache.set(cacheKey, response, shortTTL);
+  }
+  
+  return response;
+}
+
+/**
  * 清除所有缓存
  */
 export function clearAllCache(): void {

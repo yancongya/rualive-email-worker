@@ -48,6 +48,47 @@ export interface AEStatus {
   last_heartbeat?: string;
   project_name?: string;
   composition_name?: string;
+  project_id?: string;
+  ae_version?: string;
+  ae_language?: string;
+  ae_theme?: string;
+  os_name?: string;
+  os_platform?: string;
+  system_info?: SystemInfo;
+}
+
+/**
+ * 系统信息
+ */
+export interface SystemInfo {
+  ae: {
+    version?: string;
+    appVersion?: string;
+    buildName?: string;
+    language?: string;
+    theme?: string;
+    projectOpen?: boolean;
+    projectName?: string;
+    projectPath?: string;
+  };
+  system: {
+    os?: string;
+    platform?: string;
+    browser?: {
+      userAgent?: string;
+      platform?: string;
+      language?: string;
+    };
+    screen?: {
+      width?: number;
+      height?: number;
+    };
+    window?: {
+      innerWidth?: number;
+      innerHeight?: number;
+    };
+  };
+  timestamp?: string;
 }
 
 /**

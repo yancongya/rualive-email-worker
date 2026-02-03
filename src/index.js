@@ -2156,7 +2156,7 @@ async function handleWorkData(request, env) {
     console.log('[handleWorkData] 开始处理工作数据上传请求');
     const body = await request.json();
     console.log('[handleWorkData] 请求体:', body);
-    const { userId, workData, workDate } = body;
+    const { userId, workData, workDate, systemInfo } = body;
 
     if (!userId || !workData) {
       console.log('[handleWorkData] 缺少参数: userId=', userId, ', workData=', workData);
@@ -2180,12 +2180,62 @@ async function handleWorkData(request, env) {
     const date = workDate || new Date().toISOString().split('T')[0];
     console.log('[handleWorkData] 准备保存数据: userId=', userId, ', date=', date, ', workData=', workData);
     
+    // 如果有系统信息，提取并保存
+    if (systemInfo) {
+      console.log('[handleWorkData] 包含系统信息:', JSON.stringify(systemInfo.ae));
+      await saveSystemInfo(userId, systemInfo, env);
+    }
+    
     await saveWorkData(userId, workData, env, date);
     console.log('[handleWorkData] 数据保存成功');
     return Response.json({ success: true });
   } catch (error) {
     console.log('[handleWorkData] 发生错误:', error);
     return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * 保存系统信息到数据库
+ * @param {string} userId - 用户ID
+ * @param {Object} systemInfo - 系统信息对象
+ * @param {Object} env - 环境变量
+ */
+async function saveSystemInfo(userId, systemInfo, env) {
+  const DB = env.DB || env.rualive;
+  const now = new Date().toISOString();
+
+  try {
+    // 提取系统信息
+    const aeInfo = systemInfo.ae || {};
+    const sysInfo = systemInfo.system || {};
+
+    // 更新 ae_status 表
+    await DB.prepare(`
+      UPDATE ae_status 
+      SET ae_version = ?,
+          ae_language = ?,
+          ae_theme = ?,
+          os_name = ?,
+          os_platform = ?,
+          system_info_json = ?,
+          updated_at = ?
+      WHERE user_id = ?
+    `).bind(
+      aeInfo.version || null,
+      aeInfo.language || null,
+      aeInfo.theme || null,
+      sysInfo.os || null,
+      sysInfo.platform || null,
+      JSON.stringify(systemInfo),
+      now,
+      userId
+    ).run();
+
+    console.log('[saveSystemInfo] 系统信息保存成功');
+  } catch (error) {
+    console.error('[saveSystemInfo] 保存系统信息失败:', error);
+    // 不抛出错误，因为系统信息是可选的
   }
 }
 
