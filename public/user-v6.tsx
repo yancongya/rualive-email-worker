@@ -229,7 +229,9 @@ const DEFAULT_USER_TRANS: any = {
 // 翻译加载函数
 export const loadUserTranslations = async (lang: 'EN' | 'ZH'): Promise<any> => {
   try {
-    const response = await fetch(`/locals/user/${lang}.json`);
+    // 将语言代码转换为小写以匹配文件名
+    const langCode = lang.toLowerCase();
+    const response = await fetch(`/locals/user/${langCode}.json`);
     if (!response.ok) {
       console.error(`Failed to load ${lang} translations`);
       return DEFAULT_USER_TRANS[lang];
