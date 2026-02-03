@@ -248,7 +248,7 @@ const useTranslation = (lang: 'zh' | 'en') => {
   useEffect(() => {
     const loadTranslations = async () => {
       try {
-        const response = await fetch(`/local/${lang}.json`);
+        const response = await fetch(`/locals/landing/${lang}.json`);
         if (!response.ok) {
           // 文件不存在，使用内嵌的 TRANSLATIONS
           return;

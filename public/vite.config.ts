@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 
 /**
  * Vite Configuration for RuAlive Frontend
@@ -27,11 +28,13 @@ import react from '@vitejs/plugin-react';
  * - index.html: Main landing page with React app
  * - auth.html: Authentication page (login/register)
  * - user-v6.html: User dashboard page (full-featured dashboard with charts, stats, etc.)
+ * - admin.html: Admin dashboard page (user management, invite codes, system settings)
  *
  * 路由映射 (src/index.js):
  * - / → index.html
  * - /login → auth.html
  * - /user → user-v6.html (新用户界面)
+ * - /admin → admin.html (管理后台)
  *
  * 注意：user.html 已删除，不再构建
  * =========================================================
@@ -44,7 +47,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       root: '.',
-      publicDir: 'local', // 只复制 local 目录中的文件
+      publicDir: 'locals', // 复制 locals 目录中的文件
       build: {
         outDir: 'dist',
         emptyOutDir: true,
@@ -52,7 +55,8 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             auth: path.resolve(__dirname, 'auth.html'),
-            userV6: path.resolve(__dirname, 'user-v6.html')
+            userV6: path.resolve(__dirname, 'user-v6.html'),
+            adminV2: path.resolve(__dirname, 'admin.html')
           },
           output: {
             assetFileNames: 'assets/[name]-[hash][extname]',
@@ -75,7 +79,45 @@ export default defineConfig(({ mode }) => {
           }
         }
       },
-      plugins: [react()],
+      plugins: [
+    react(),
+    {
+      name: 'copy-translations',
+      generateBundle() {
+        // 自动复制翻译文件到 dist/locals/
+        const rootDir = path.resolve(__dirname, 'locals');
+        const targetDir = path.resolve(__dirname, 'dist/locals');
+        
+        // 确保目标目录存在
+        if (!existsSync(targetDir)) {
+          mkdirSync(targetDir, { recursive: true });
+        }
+        
+        // 复制各个页面的翻译文件
+        if (existsSync(rootDir)) {
+          const subdirs = readdirSync(rootDir, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
+          
+          subdirs.forEach(subdir => {
+            const srcDir = path.join(rootDir, subdir);
+            const destSubDir = path.join(targetDir, subdir);
+            if (!existsSync(destSubDir)) {
+              mkdirSync(destSubDir, { recursive: true });
+            }
+            ['zh.json', 'en.json'].forEach(file => {
+              const srcFile = path.join(srcDir, file);
+              const destFile = path.join(destSubDir, file);
+              if (existsSync(srcFile)) {
+                copyFileSync(srcFile, destFile);
+                console.log(`[copy-translations] Copied ${subdir}/${file} to dist/locals/${subdir}/`);
+              }
+            });
+          });
+        }
+      }
+    }
+  ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
