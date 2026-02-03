@@ -758,7 +758,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
           <RefreshCw size={40} className="animate-spin text-ru-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:gap-6 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 gap-4 md:gap-6 w-full">
           {/* User Information Card */}
           <div className="bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md">
             <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-2">

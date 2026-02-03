@@ -12,7 +12,8 @@ import {
   LineChart as LucideLineChart, BarChart3, Search, Table, TrendingUp,
   Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff,
-  PanelLeftClose, PanelLeftOpen, LayoutDashboard, BarChart2 as BarChartIcon2
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, BarChart2 as BarChartIcon2,
+  LogOut
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { RuaLogo } from './LogoAnimation';
@@ -26,6 +27,28 @@ const formatRuntimeCompact = (seconds: number): string => {
   if (seconds < 60) return `${seconds}s`;
   else if (seconds < 3600) return `${(seconds / 60).toFixed(1)}m`;
   else return `${(seconds / 3600).toFixed(1)}h`;
+};
+
+// 搬砖动画组件
+const BrickLoader = () => {
+  return (
+    <div className="fixed bottom-0 right-0 pointer-events-none z-0 p-8 lg:p-12 opacity-30 mix-blend-screen">
+      <svg width="120" height="120" viewBox="0 0 100 100" overflow="visible">
+        {/* Set 1 */}
+        <g>
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '0s' }} x="5" y="60" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '0.15s' }} x="53" y="60" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '0.3s' }} x="29" y="32" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </g>
+        {/* Set 2 (Offset by 2s for continuous flow) */}
+        <g>
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '2s' }} x="5" y="60" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '2.15s' }} x="53" y="60" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <rect className="rua-brick-anim text-primary" style={{ animationDelay: '2.3s' }} x="29" y="32" width="42" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </g>
+      </svg>
+    </div>
+  );
 };
 
 // --- TYPES ---
@@ -306,6 +329,14 @@ export const Sidebar = ({
         window.location.hash = id;
     };
 
+    const handleLogout = () => {
+        if (confirm(trans.logoutConfirm || '确定要登出吗？')) {
+            localStorage.removeItem('rualive_token');
+            localStorage.removeItem('rualive_user');
+            window.location.href = '/login';
+        }
+    };
+
     return (
         <aside className={`
             fixed left-0 top-0 h-full z-50 border-r border-white/10 bg-black/40 backdrop-blur-xl
@@ -348,8 +379,16 @@ export const Sidebar = ({
                 })}
             </nav>
 
-            {/* 折叠按钮 */}
-            <div className="p-2 border-t border-white/5">
+            {/* 底部按钮区域 */}
+            <div className="p-2 border-t border-white/5 space-y-1">
+                <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
+                    title={trans.logout || '登出'}
+                >
+                    <LogOut size={20} className="flex-shrink-0" />
+                    {!isCollapsed && <span className="font-bold text-sm whitespace-nowrap">{trans.logout || '登出'}</span>}
+                </button>
                 <button
                     onClick={onToggleCollapse}
                     className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-ru-textDim hover:text-white hover:bg-white/5 transition-all"
@@ -2388,6 +2427,8 @@ const App = () => {
 
   return (
     <div className="min-h-screen font-sans selection:bg-ru-primary selection:text-white pb-20 md:pb-0">
+      {/* 搬砖动画背景 */}
+      <BrickLoader />
 
       <CalendarModal
         isOpen={isCalendarOpen}
