@@ -13,6 +13,7 @@ import {
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
+import { RuaLogo } from './LogoAnimation';
 import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType } from './src/api';
 import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
 import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
@@ -320,13 +321,16 @@ export const Header = ({
                 <span className="font-bold text-base md:text-lg">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-black rounded-full"></div>
                 </div>
-                <div>
-                <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
-                    RUALIVE
-                </h1>
-                <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
-                    {TRANS[lang].subtitle} {currentView !== 'dashboard' && ` // ${TRANS[lang][currentView]}`}
-                </p>
+                <div className="flex items-center gap-2">
+                  <RuaLogo className="w-8 h-6 md:w-10 md:h-8 text-ru-primary" />
+                  <div>
+                    <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
+                        RUALIVE
+                    </h1>
+                    <p className="text-[9px] md:text-[10px] text-ru-textMuted tracking-widest font-mono hidden sm:block">
+                        {TRANS[lang].subtitle} {currentView !== 'dashboard' && ` // ${TRANS[lang][currentView]}`}
+                    </p>
+                  </div>
                 </div>
             </div>
             

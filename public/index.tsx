@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import { RuaLogo } from './LogoAnimation';
 
 console.log('[DEBUG] index.tsx loaded successfully!');
 
@@ -988,8 +989,8 @@ const moveSlideToIndex = useCallback((index: number) => {
       <nav className="fixed top-0 w-full z-[60] bg-dark/60 backdrop-blur-md border-b border-white/5 h-14 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={() => switchView('landing')}>
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center rotate-3 shadow-lg shadow-primary/30 group-hover:rotate-0 transition-transform">
-               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <div className="w-10 h-8 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <RuaLogo className="w-10 h-8 text-primary" />
             </div>
             <span className="text-xl font-black tracking-tighter uppercase italic">RuAlive</span>
           </div>
