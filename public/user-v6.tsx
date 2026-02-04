@@ -482,50 +482,73 @@ export const Header = ({
     }, []);
 
     return (
-        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 md:px-8 md:py-6 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-4 md:gap-0">
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-3 py-2 md:px-6 md:py-4 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-2 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2 md:gap-4">
                 <div
-                    className="relative w-9 h-9 md:w-12 md:h-12 flex items-center justify-center border border-white/20 rounded-full group cursor-pointer"
+                    className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
                 >
-                <div className="absolute inset-0 rounded-full border-t border-ru-primary animate-spin"></div>
-                <span className="font-bold text-base md:text-lg">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
-                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 border-2 border-black rounded-full"></div>
+                <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
+                <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <RuaLogo className="w-8 h-6 md:w-10 md:h-8 text-ru-primary" />
-                  <div>
-                    <h1 className="text-lg md:text-xl font-black italic tracking-tighter">
+                <div className="flex items-center gap-2 min-w-0">
+                  <RuaLogo className="w-7 h-5 md:w-9 md:h-7 text-ru-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h1 className="text-base md:text-xl font-black italic tracking-tighter text-white">
                         RUALIVE
                     </h1>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 md:gap-2 flex-wrap mt-0.5">
                         {/* 总工作天数标签 */}
                         {workLogs && workLogs.length > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary">
-                                <span className="opacity-70">{trans.totalWorkDays}</span>
+                            <span className="inline-flex items-center gap-0.5 md:gap-1 px-1.5 py-0.5 text-[8px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary">
+                                <span className="opacity-70 hidden md:inline">{trans.totalWorkDays}</span>
                                 {workLogs.length}
                             </span>
                         )}
                         {aeStatus && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                                 {/* AE 版本徽章 */}
                                 {aeStatus.ae_version && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary">
+                                    <span className="inline-flex items-center gap-0.5 md:gap-1 px-1.5 py-0.5 text-[8px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary">
                                         <span className="opacity-70">AE</span>
-                                        {aeStatus.ae_version}
+                                        <span className="hidden sm:inline">{aeStatus.ae_version}</span>
                                     </span>
                                 )}
                                 {/* 操作系统徽章 */}
                                 {aeStatus.os_name && (
-                                    <span className="inline-flex items-center px-2 py-0.5 text-[9px] md:text-[10px] font-mono rounded bg-white/5 border border-white/10 text-white/80">
-                                        {aeStatus.os_name}
+                                    <span className="inline-flex items-center px-1 py-0.5 text-[8px] md:text-[10px] font-mono rounded bg-white/5 border border-white/10 text-white/80">
+                                        {aeStatus.os_name.toLowerCase().includes('windows') || aeStatus.os_name.toLowerCase().includes('win') ? (
+                                            <svg className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M412.224 511.904c-47.712-24.512-94.08-36.96-137.888-36.96-5.952 0-11.936 0.192-17.952 0.704-55.872 4.608-106.912 19.36-139.744 30.816-8.704 3.2-17.632 6.56-26.816 10.304L0 828.192c61.696-22.848 116.288-33.952 166.272-33.952 80.832 0 139.52 30.208 188 61.312 22.976-77.92 78.048-266.08 94.496-322.336C436.8 525.952 424.672 518.656 412.224 511.904zM528.352 591.072l-90.432 314.144c26.848 15.36 117.088 64.064 186.208 64.064 55.808 0 118.24-14.304 190.848-43.808l86.368-301.984c-58.624 18.912-114.88 28.512-167.456 28.512C637.888 652.032 570.72 620.928 528.352 591.072zM292.832 368.8c77.12 0.8 134.144 30.208 181.408 60.512l92.736-317.344c-19.552-11.2-70.816-39.104-107.872-48.608-24.384-5.696-50.016-8.608-77.216-8.608-51.808 0.96-108.384 13.952-172.896 39.808l-88.448 310.592c64.8-24.448 120.64-36.352 172.096-36.352C292.736 368.8 292.832 368.8 292.832 368.8zM1024 198.112c-58.816 22.848-116.192 34.464-171.04 34.464-91.68 0-159.296-31.808-203.104-62.368L557.92 488.448c61.76 39.712 128.288 59.872 198.112 59.872 56.96 0 115.936-13.664 175.456-40.704l-0.192-2.208 3.744-0.896L1024 198.112z" fill="#1296db"/>
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M849.124134 704.896288c-1.040702 3.157923-17.300015 59.872622-57.250912 118.190843-34.577516 50.305733-70.331835 101.018741-126.801964 101.909018-55.532781 0.976234-73.303516-33.134655-136.707568-33.134655-63.323211 0-83.23061 32.244378-135.712915 34.110889-54.254671 2.220574-96.003518-54.951543-130.712017-105.011682-70.934562-102.549607-125.552507-290.600541-52.30118-416.625816 36.040844-63.055105 100.821243-103.135962 171.364903-104.230899 53.160757-1.004887 103.739712 36.012192 136.028093 36.012192 33.171494 0 94.357018-44.791136 158.90615-38.089503 27.02654 1.151219 102.622262 11.298324 151.328567 81.891102-3.832282 2.607384-90.452081 53.724599-89.487104 157.76107C739.079832 663.275355 847.952448 704.467523 849.124134 704.896288M633.69669 230.749408c29.107945-35.506678 48.235584-84.314291 43.202964-132.785236-41.560558 1.630127-92.196819 27.600615-122.291231 62.896492-26.609031 30.794353-50.062186 80.362282-43.521213 128.270409C557.264926 291.935955 604.745311 264.949324 633.69669 230.749408" fill="#ffffff"/>
+                                            </svg>
+                                        )}
                                     </span>
                                 )}
                                 {/* 更新时间 */}
                                 {aeStatus.updated_at && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[8px] md:text-[9px] font-mono rounded text-ru-textMuted">
-                                        <span className="opacity-60">更新</span>
-                                        {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] md:text-[9px] font-mono rounded text-ru-textMuted">
+                                        <span className="hidden sm:inline">
+                                            {new Date(aeStatus.updated_at).toLocaleDateString('zh-CN', { 
+                                                year: 'numeric', 
+                                                month: '2-digit', 
+                                                day: '2-digit' 
+                                            }).replace(/\//g, '/')}-{new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
+                                                hour: '2-digit', 
+                                                minute: '2-digit', 
+                                                hour12: false 
+                                            })}
+                                        </span>
+                                        <span className="sm:hidden">
+                                            {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
+                                                hour: '2-digit', 
+                                                minute: '2-digit', 
+                                                hour12: false 
+                                            })}
+                                        </span>
                                     </span>
                                 )}
                             </div>
@@ -538,8 +561,9 @@ export const Header = ({
             {/* 移动端菜单按钮 - 后续实现 */}
         </div>
 
-        <div className="flex items-center gap-3 md:gap-6 w-full md:w-auto justify-end">
-            <div className="relative group flex-1 md:w-48 transition-all focus-within:w-64">
+        <div className="flex items-center gap-2 md:gap-6 w-full md:w-auto justify-end">
+            {/* 搜索框 - 桌面端显示 */}
+            <div className="relative group flex-1 md:w-48 transition-all focus-within:w-64 hidden md:block">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ru-textMuted group-focus-within:text-ru-primary transition-colors">
                     <Search size={14} />
                 </div>
@@ -552,34 +576,35 @@ export const Header = ({
                 />
             </div>
 
-            <div className="hidden md:flex items-center gap-0.5">
+            {/* 日历按钮 - 统一样式 */}
+            {onCalendarClick && (
                 <button
                     onClick={onCalendarClick}
-                    className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-sm hover:border-ru-primary hover:bg-white/10 transition-all group"
+                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
                     title={trans.missionLog}
                 >
-                    <CalendarIcon size={14} className="text-ru-textDim group-hover:text-ru-primary" />
-                    <span className="font-mono font-bold text-xs text-white">{dateDisplay}</span>
-                </button>
-            </div>
-
-            {onRefresh && (
-                <button
-                    onClick={onRefresh}
-                    className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
-                    title={trans.refreshTooltip}
-                >
-                    <RotateCcw size={14} />
-                    <span className="hidden md:inline">{trans.refresh}</span>
+                    <CalendarIcon size={16} />
                 </button>
             )}
 
+            {/* 刷新按钮 - 统一样式 */}
+            {onRefresh && (
+                <button
+                    onClick={onRefresh}
+                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
+                    title={trans.refreshTooltip}
+                >
+                    <RotateCcw size={16} />
+                </button>
+            )}
+
+            {/* 语言切换按钮 - 统一样式 */}
             <button
                 onClick={() => setLang(l => l === 'EN' ? 'ZH' : 'EN')}
-                className="flex items-center gap-1 md:gap-2 text-xs font-bold text-ru-textDim hover:text-white transition-colors shrink-0"
+                className="flex items-center justify-center gap-1 px-3 py-2 w-9 h-9 md:w-auto md:h-10 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
             >
-            <Globe size={14} />
-            {lang}
+                <Globe size={16} />
+                <span className="hidden md:inline">{lang}</span>
             </button>
         </div>
         </header>
@@ -620,17 +645,17 @@ interface DashboardPanelProps {
 }
 
 export const DashboardPanel: React.FC<DashboardPanelProps> = ({ title, count, countLabel, children, extraAction, className = "h-[400px]" }) => (
-    <div className={`bg-ru-glass border border-ru-glassBorder px-3 py-3 md:px-4 md:py-4 rounded-sm backdrop-blur-md flex flex-col hover:border-white/20 transition-colors duration-300 ${className}`}>
-       <div className="flex justify-between items-end mb-2 border-b border-white/10 pb-1 flex-shrink-0">
-         <div className="flex items-center gap-2 md:gap-3">
-             <h3 className="text-sm md:text-base font-bold italic font-sans text-white truncate">{title}</h3>
+    <div className={`bg-ru-glass border border-ru-glassBorder px-2 py-2 md:px-4 md:py-4 rounded-sm backdrop-blur-md flex flex-col hover:border-white/20 transition-colors duration-300 ${className}`}>
+       <div className="flex justify-between items-end mb-2 md:mb-3 border-b border-white/10 pb-1 flex-shrink-0">
+         <div className="flex items-center gap-1.5 md:gap-3">
+             <h3 className="text-xs md:text-base font-bold italic font-sans text-white truncate">{title}</h3>
              {extraAction}
          </div>
-         <div className="text-xs font-mono text-ru-primary flex items-baseline gap-1">
-            <span className="text-white font-bold text-base md:text-lg">
+         <div className="text-[10px] md:text-xs font-mono text-ru-primary flex items-baseline gap-0.5 md:gap-1">
+            <span className="text-white font-bold text-sm md:text-lg">
               {typeof count === 'number' ? <NumberTicker value={count} /> : count}
             </span>
-            <span className="opacity-70">{countLabel}</span>
+            <span className="opacity-70 hidden sm:inline">{countLabel}</span>
          </div>
        </div>
        <div className="flex-1 min-h-0 relative">
@@ -641,14 +666,14 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ title, count, co
 
 const VitalCard = ({ label, value, icon: Icon, delay }: { label: string, value: number, icon: any, delay: number }) => (
   <div 
-    className="relative group overflow-hidden bg-ru-glass border border-ru-glassBorder p-4 md:p-6 rounded-sm backdrop-blur-md transition-all duration-500 hover:border-ru-primary/50 hover:bg-white/5"
+    className="relative group overflow-hidden bg-ru-glass border border-ru-glassBorder p-3 md:p-6 rounded-sm backdrop-blur-md transition-all duration-500 hover:border-ru-primary/50 hover:bg-white/5"
     style={{ animationDelay: `${delay}ms` }}
   >
-    <div className="absolute top-0 right-0 p-2 md:p-4 opacity-20 group-hover:opacity-100 group-hover:text-ru-primary transition-all duration-300">
-        <Icon size={24} className="md:w-8 md:h-8" strokeWidth={1.5} />
+    <div className="absolute top-0 right-0 p-1.5 md:p-4 opacity-20 group-hover:opacity-100 group-hover:text-ru-primary transition-all duration-300">
+        <Icon size={20} className="md:w-8 md:h-8" strokeWidth={1.5} />
     </div>
-    <h3 className="text-ru-textMuted uppercase text-[10px] md:text-xs font-bold tracking-widest mb-1 md:mb-2 font-sans">{label}</h3>
-    <div className="text-2xl md:text-4xl font-mono font-black text-white group-hover:text-ru-primary transition-colors duration-300">
+    <h3 className="text-ru-textMuted uppercase text-[9px] md:text-xs font-bold tracking-widest mb-1 md:mb-2 font-sans truncate">{label}</h3>
+    <div className="text-xl md:text-4xl font-mono font-black text-white group-hover:text-ru-primary transition-colors duration-300">
       <NumberTicker value={value} />
     </div>
     <div className="absolute bottom-0 left-0 w-full h-1 bg-ru-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
@@ -675,20 +700,20 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
   };
 
   return (
-    <div className="w-full mb-6 md:mb-8">
+    <div className="w-full mb-4 md:mb-8">
       {/* 标题区域 */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-white/60 uppercase tracking-wider">
+      <div className="flex items-center justify-between mb-2 md:mb-3">
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <span className="text-xs md:text-sm font-bold text-white/60 uppercase tracking-wider">
             {trans.projects || 'PROJECTS'}
           </span>
-          <span className="text-xs font-mono text-white/30">
+          <span className="text-[10px] md:text-xs font-mono text-white/30">
             ({projects.length})
           </span>
         </div>
         <button
           onClick={onToggleAnonymize}
-          className={`flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 text-xs font-bold ${anonymizeMode ? 'text-ru-primary bg-ru-primary/20' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          className={`flex items-center justify-center w-7 h-7 md:w-auto md:h-auto md:px-2 md:py-1 rounded transition-all duration-200 text-xs font-bold ${anonymizeMode ? 'text-ru-primary bg-ru-primary/20' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
           title={anonymizeMode ? '关闭脱敏' : '开启脱敏'}
         >
           {anonymizeMode ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -699,7 +724,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
       </div>
 
       {/* 项目卡片列表 */}
-      <div className="flex w-full gap-1 h-16 md:h-24 overflow-x-auto">
+      <div className="flex w-full gap-0.5 md:gap-1 h-14 md:h-24 overflow-x-auto">
         {projects.map((proj, idx) => {
           const isActive = idx === selectedIndex;
           const displayName = anonymizeMode ? anonymizeName(proj.name) : proj.name;
@@ -714,28 +739,25 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
               }}
               style={{
                 flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
-                minWidth: '140px' // 设置最小宽度，确保项目名、运行时间和编号都能正常显示
+                minWidth: '120px' // 设置最小宽度，确保项目名、运行时间和编号都能正常显示
               }}
               className={`
-                relative h-full flex flex-col justify-between p-2 md:p-4 text-left transition-all duration-300 group
+                relative h-full flex flex-col justify-between p-1.5 md:p-4 text-left transition-all duration-300 group
                 border border-ru-glassBorder backdrop-blur-sm overflow-hidden
                 ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
               `}
               title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'}` : undefined}
             >
               <div className="flex justify-between items-start w-full">
-                 <span className={`text-xs md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
+                 <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
                    {displayName}
                  </span>
-                 {onProjectClick && <svg className="w-3 h-3 md:w-4 md:h-4 text-ru-textMuted opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                 </svg>}
-                 {isActive && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35]"></div>}
+                 {isActive && <div className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35] flex-shrink-0"></div>}
               </div>
 
               <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
-                 <span className="text-[10px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
-                 <span className="text-[9px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden sm:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
+                 <span className="text-[9px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
+                 <span className="text-[8px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden md:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
               </div>
 
               <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
@@ -2776,66 +2798,100 @@ const App = () => {
 
       {/* 项目历史拟态窗 */}
       {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowHistoryModal(false)} />
-          <div className="relative w-full max-w-2xl bg-[#0a0a0f] border border-ru-primary/30 rounded-lg shadow-2xl max-h-[85vh] md:max-h-[80vh] flex flex-col">
-            <div className="p-4 md:p-6 border-b border-ru-primary/20 bg-gradient-to-r from-ru-primary/10 to-transparent">
-              <div className="flex items-center justify-between">
+          <div className="relative w-full max-w-2xl bg-[#0a0a0f] border border-ru-primary/30 rounded-lg shadow-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden">
+            {/* 弹窗头部 */}
+            <div className="p-3 md:p-6 border-b border-ru-primary/20 bg-gradient-to-r from-ru-primary/10 to-transparent flex-shrink-0">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg md:text-xl font-black italic tracking-wider text-white truncate">
+                  <h2 className="text-base md:text-xl font-black italic tracking-wider text-white truncate">
                     {historyProject?.name}
                   </h2>
-                  <p className="text-xs text-ru-textMuted mt-1 font-mono">
+                  <p className="text-[10px] md:text-xs text-ru-textMuted mt-1 font-mono truncate">
                     ID: {historyProject?.id}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="text-white/60 hover:text-white transition-colors"
+                  className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            {/* 弹窗内容 */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6">
               {isLoadingHistory ? (
                 <div className="text-center py-8">
                   <div className="inline-block w-8 h-8 border-2 border-ru-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-ru-textMuted">{trans.historyLoading || '加载历史数据...'}</p>
+                  <p className="text-ru-textMuted text-sm">{trans.historyLoading || '加载历史数据...'}</p>
                 </div>
               ) : historyData && historyData.length > 0 ? (
                 <div className="space-y-4">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-ru-primary/20">
-                        <th className="text-left py-2 text-ru-textMuted font-semibold">{trans.historyDate || '日期'}</th>
-                        <th className="text-right py-2 text-ru-textMuted font-semibold">{trans.historyRuntime || '运行时长'}</th>
-                        <th className="text-right py-2 text-ru-textMuted font-semibold">{trans.historyComps || '合成数'}</th>
-                        <th className="text-right py-2 text-ru-textMuted font-semibold">{trans.historyLayers || '图层数'}</th>
-                        <th className="text-right py-2 text-ru-textMuted font-semibold">{trans.historyKeyframes || '关键帧'}</th>
-                        <th className="text-right py-2 text-ru-textMuted font-semibold">{trans.historyEffects || '效果数'}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historyData.map((item: any, idx: number) => (
-                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="py-2 font-mono text-ru-textDim">{item.work_date}</td>
-                          <td className="py-2 text-right font-mono text-ru-primary">{formatRuntimeCompact(item.accumulated_runtime)}</td>
-                          <td className="py-2 text-right font-mono">{item.composition_count}</td>
-                          <td className="py-2 text-right font-mono">{item.layer_count}</td>
-                          <td className="py-2 text-right font-mono">{item.keyframe_count}</td>
-                          <td className="py-2 text-right font-mono">{item.effect_count}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[500px]">
+                      <thead>
+                        <tr className="border-b border-ru-primary/20">
+                          <th className="text-left py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center gap-1 md:gap-2">
+                              <CalendarIcon size={16} className="flex-shrink-0" />
+                              <span className="hidden md:inline">{trans.historyDate || '日期'}</span>
+                            </div>
+                          </th>
+                          <th className="text-right py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
+                              <span className="hidden md:inline">{trans.historyRuntime || '运行时长'}</span>
+                              <Clock size={16} className="flex-shrink-0" />
+                            </div>
+                          </th>
+                          <th className="text-right py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
+                              <span className="hidden md:inline">{trans.historyComps || '合成数'}</span>
+                              <LayoutGrid size={16} className="flex-shrink-0" />
+                            </div>
+                          </th>
+                          <th className="text-right py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
+                              <span className="hidden md:inline">{trans.historyLayers || '图层数'}</span>
+                              <Layers size={16} className="flex-shrink-0" />
+                            </div>
+                          </th>
+                          <th className="text-right py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
+                              <span className="hidden md:inline">{trans.historyKeyframes || '关键帧'}</span>
+                              <Activity size={16} className="flex-shrink-0" />
+                            </div>
+                          </th>
+                          <th className="text-right py-2 text-ru-textMuted font-semibold">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
+                              <span className="hidden md:inline">{trans.historyEffects || '效果数'}</span>
+                              <Zap size={16} className="flex-shrink-0" />
+                            </div>
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {historyData.map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="py-2 font-mono text-ru-textDim whitespace-nowrap">{item.work_date}</td>
+                            <td className="py-2 text-right font-mono text-ru-primary whitespace-nowrap">{formatRuntimeCompact(item.accumulated_runtime)}</td>
+                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.composition_count}</td>
+                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.layer_count}</td>
+                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.keyframe_count}</td>
+                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.effect_count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-ru-textMuted">{trans.historyNoData || '暂无历史数据'}</p>
+                  <p className="text-ru-textMuted text-sm">{trans.historyNoData || '暂无历史数据'}</p>
                 </div>
               )}
             </div>

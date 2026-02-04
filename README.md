@@ -144,9 +144,21 @@ wrangler secret put RESEND_API_KEY
 使用自动化部署脚本（推荐）：
 
 ```bash
-# 在 rualive-email-worker 目录下执行部署脚本
+# 正常部署（智能检查文件变化）
 .\deploy.ps1
+
+# 强制重新构建（跳过检查）
+.\deploy.ps1 -Force
+
+# 只构建不部署
+.\deploy.ps1 -NoDeploy
 ```
+
+**脚本优化特性：**
+- ✅ **智能检查**：自动检测源文件是否修改，未修改则跳过构建
+- ✅ **节省时间**：避免不必要的重复构建
+- ✅ **强制模式**：使用 `-Force` 参数强制重新构建
+- ✅ **构建模式**：使用 `-NoDeploy` 参数只构建不部署
 
 或手动部署：
 
