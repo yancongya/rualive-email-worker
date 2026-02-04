@@ -2893,13 +2893,13 @@ async function saveWorkData(userId, workData, env, date) {
 
       if (existingProject) {
         console.log('[saveWorkData] 项目已存在，更新数据:', project.name);
-        // 如果项目已存在，更新其数据
+        // 如果项目已存在，更新其数据（使用最新值，不累加）
         existingProject.statistics = project.statistics || existingProject.statistics;
         existingProject.details = project.details || existingProject.details;
         existingProject.projectId = project.projectId || existingProject.projectId;
-        // 合并运行时间
+        // 使用最新的运行时间（不累加，避免重复计算）
         if (project.accumulatedRuntime && project.accumulatedRuntime > 0) {
-          existingProject.accumulatedRuntime = (existingProject.accumulatedRuntime || 0) + project.accumulatedRuntime;
+          existingProject.accumulatedRuntime = project.accumulatedRuntime;
         }
       } else {
         console.log('[saveWorkData] 新项目，添加到映射:', project.name, ', projectId=', project.projectId);
