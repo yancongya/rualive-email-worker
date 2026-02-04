@@ -455,6 +455,7 @@ export const Header = ({
     setSearchQuery,
     onRefresh,
     currentUser,
+    workLogs,
 }: {
     lang: LangType,
     setLang: React.Dispatch<React.SetStateAction<LangType>>,
@@ -465,6 +466,7 @@ export const Header = ({
     setSearchQuery: (s: string) => void,
     onRefresh?: () => void,
     currentUser?: any,
+    workLogs?: any[],
 }) => {
     const [aeStatus, setAeStatus] = useState<AEStatus | null>(null);
 
@@ -497,6 +499,13 @@ export const Header = ({
                         RUALIVE
                     </h1>
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* 总工作天数标签 */}
+                        {workLogs && workLogs.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary">
+                                <span className="opacity-70">{trans.totalWorkDays}</span>
+                                {workLogs.length}
+                            </span>
+                        )}
                         {aeStatus && (
                             <div className="flex items-center gap-2">
                                 {/* AE 版本徽章 */}
@@ -2417,6 +2426,41 @@ const App = () => {
   const [dailyData, setDailyData] = useState<DailyData>({ date: currentDate, projects: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [allWorkLogs, setAllWorkLogs] = useState<any[]>([]);
+
+  // Load all work logs for total work days display
+  useEffect(() => {
+    const ALL_DATA_RANGE = {
+      startDate: '2020-01-01',
+      endDate: '2030-12-31'
+    };
+
+    async function loadAllWorkLogs() {
+      try {
+        const cached = localStorage.getItem('app_all_work_logs');
+        const cachedTime = localStorage.getItem('app_all_work_logs_time');
+
+        if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < 24 * 60 * 60 * 1000) {
+          setAllWorkLogs(JSON.parse(cached));
+          return;
+        }
+
+        const response = await getWorkLogsByRange(ALL_DATA_RANGE.startDate, ALL_DATA_RANGE.endDate, false);
+        if (response.success && response.data) {
+          setAllWorkLogs(response.data);
+          localStorage.setItem('app_all_work_logs', JSON.stringify(response.data));
+          localStorage.setItem('app_all_work_logs_time', Date.now().toString());
+        } else {
+          setAllWorkLogs([]);
+        }
+      } catch (error) {
+        console.error('Failed to load all work logs:', error);
+        setAllWorkLogs([]);
+      }
+    }
+
+    loadAllWorkLogs();
+  }, []);
 
   // Load data from API when currentDate changes
   useEffect(() => {
@@ -2508,6 +2552,7 @@ const App = () => {
           setSearchQuery={setSearchQuery}
           onRefresh={handleRefresh}
           currentUser={currentUser}
+          workLogs={allWorkLogs}
         />
 
       <main className="px-4 pt-4 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
