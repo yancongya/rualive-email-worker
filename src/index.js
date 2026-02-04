@@ -387,6 +387,18 @@ export default {
       return handleGetWorkLogs(request, env);
     }
 
+    // 项目总时长列表 API
+    if (path === '/api/projects/summary' && request.method === 'GET') {
+      console.log('[Router] 项目总时长列表 API 被调用');
+      return handleGetProjectsSummary(request, env);
+    }
+
+    // 项目历史 API
+    if (path === '/api/projects/history' && request.method === 'GET') {
+      console.log('[Router] 项目历史 API 被调用');
+      return handleGetProjectHistory(request, env);
+    }
+
     // Cron触发器检测
     const userAgent = request.headers.get('User-Agent') || '';
     if (userAgent.includes('Cloudflare-Cron')) {
@@ -2575,6 +2587,81 @@ async function handleGetWorkLogs(request, env) {
     return Response.json({ success: true, data: result.results || [] });
   } catch (error) {
     console.error('handleGetWorkLogs error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// ==================== 项目相关 API ====================
+
+// 获取所有项目的总时长列表
+async function handleGetProjectsSummary(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 从token获取用户ID
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+
+    // 从projects表获取用户的所有项目及其总时长
+    const result = await DB.prepare(
+      'SELECT project_id, project_name, total_work_hours, total_work_days, first_work_date, last_work_date FROM projects WHERE user_id = ? ORDER BY last_work_date DESC'
+    ).bind(userId).all();
+
+    return Response.json({
+      success: true,
+      projects: result.results || []
+    });
+  } catch (error) {
+    console.error('handleGetProjectsSummary error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 获取单个项目的历史数据
+async function handleGetProjectHistory(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 从token获取用户ID
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
+
+    if (!projectId) {
+      return Response.json({ error: '缺少projectId参数' }, { status: 400 });
+    }
+
+    // 查询项目信息
+    const project = await DB.prepare(
+      'SELECT id, project_id, project_name FROM projects WHERE user_id = ? AND project_id = ?'
+    ).bind(userId, projectId).first();
+
+    if (!project) {
+      return Response.json({ error: '项目不存在' }, { status: 404 });
+    }
+
+    // 查询项目的历史数据
+    const dailyStats = await DB.prepare(
+      'SELECT work_date, work_hours, accumulated_runtime, composition_count, layer_count, keyframe_count, effect_count FROM project_daily_stats WHERE project_id = ? ORDER BY work_date DESC'
+    ).bind(project.id).all();
+
+    return Response.json({
+      success: true,
+      projectId: project.project_id,
+      projectName: project.project_name,
+      dailyStats: dailyStats.results || []
+    });
+  } catch (error) {
+    console.error('handleGetProjectHistory error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
