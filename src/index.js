@@ -583,7 +583,10 @@ async function verifyUserOnly(request, env) {
   const DB = env.DB || env.rualive;
   
   const payload = await verifyAuth(request, env);
+  console.log('[verifyUserOnly] Payload:', payload);
+  
   if (!payload) {
+    console.log('[verifyUserOnly] 验证失败：payload为空');
     return null;
   }
   
@@ -592,10 +595,20 @@ async function verifyUserOnly(request, env) {
     'SELECT id, email, role FROM users WHERE id = ?'
   ).bind(payload.userId).first();
   
-  if (!user || user.role === 'admin') {
+  console.log('[verifyUserOnly] 查询结果:', user);
+  console.log('[verifyUserOnly] 用户角色:', user ? user.role : 'null');
+  
+  if (!user) {
+    console.log('[verifyUserOnly] 验证失败：用户不存在');
     return null;
   }
   
+  if (user.role === 'admin') {
+    console.log('[verifyUserOnly] 验证失败：用户是管理员');
+    return null;
+  }
+  
+  console.log('[verifyUserOnly] 验证成功');
   return user;
 }
 
@@ -2164,8 +2177,12 @@ async function handleUpdateConfig(request, env) {
 }
 
 async function handleWorkData(request, env) {
+  console.log('[handleWorkData] ========== 开始处理工作数据上传请求 ==========');
+  console.log('[handleWorkData] 请求URL:', request.url);
+  console.log('[handleWorkData] 请求方法:', request.method);
+  console.log('[handleWorkData] 请求头:', Object.fromEntries(request.headers.entries()));
+
   try {
-    console.log('[handleWorkData] 开始处理工作数据上传请求');
     const body = await request.json();
     console.log('[handleWorkData] 请求体:', body);
     const { userId, workData, workDate, systemInfo } = body;
@@ -3229,7 +3246,7 @@ async function saveWorkData(userId, workData, env, date) {
         )
         .run();
 
-      return;
+      // 继续执行后面的项目累积数据更新
     } catch (error) {
       console.error('Failed to merge existing data:', error);
       // 如果合并失败，继续执行插入（会覆盖旧数据）
@@ -3276,6 +3293,157 @@ async function saveWorkData(userId, workData, env, date) {
       workHoursJson
     )
     .run();
+
+  // 更新projects表和project_daily_stats表
+  console.log('[saveWorkData] ========== 开始更新项目累积数据 ==========');
+  
+  // 遍历所有项目，更新projects表和project_daily_stats表
+  for (const project of allProjects) {
+    try {
+      // 获取项目的运行时长（秒）
+      const projectWorkHours = parseFloat(
+        allWorkHours.find(w => w.project === project.name)?.hours || '0'
+      );
+      
+      console.log('[saveWorkData] 处理项目累积数据:', project.name, '时长:', projectWorkHours, '小时');
+      
+      // 更新或插入projects表
+      const existingProject = await DB.prepare(
+        'SELECT id, total_work_hours, total_work_days FROM projects WHERE user_id = ? AND project_id = ?'
+      ).bind(userId, project.projectId).first();
+      
+      if (existingProject) {
+                // 检查当前日期是否是新日期（不同于last_work_date）
+                const isNewDate = existingProject.last_work_date !== workDate;
+                
+                // 更新现有项目 - 先更新基本信息，后面会重新计算total_work_hours
+                await DB.prepare(`
+                  UPDATE projects SET
+                    project_name = ?,
+                    project_path = ?,
+                    last_work_date = ?,
+                    total_work_days = total_work_days + ?,
+                    updated_at = datetime('now')
+                  WHERE id = ?
+                `).bind(
+                  project.name,
+                  project.path,
+                  workDate,
+                  isNewDate ? 1 : 0,  // 只在新日期时增加工作日
+                  existingProject.id
+                ).run();
+                console.log('[saveWorkData] 更新项目:', project.name, '新日期:', isNewDate);      } else {
+        // 插入新项目
+        await DB.prepare(`
+          INSERT INTO projects (
+            user_id, project_id, project_name, project_path,
+            first_work_date, last_work_date, total_work_hours, total_work_days
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          userId,
+          project.projectId,
+          project.name,
+          project.path,
+          workDate,
+          workDate,
+          projectWorkHours,
+          1
+        ).run();
+        console.log('[saveWorkData] 插入新项目:', project.name, '时长:', projectWorkHours, '小时');
+      }
+      
+      // 更新或插入project_daily_stats表
+      // 先获取项目的数据库ID
+      const projectRecord = await DB.prepare(
+        'SELECT id FROM projects WHERE user_id = ? AND project_id = ?'
+      ).bind(userId, project.projectId).first();
+      
+      if (projectRecord) {
+        const existingDailyStats = await DB.prepare(
+          'SELECT id FROM project_daily_stats WHERE project_id = ? AND work_date = ?'
+        ).bind(projectRecord.id, workDate).first();
+        
+        if (existingDailyStats) {
+          // 更新现有日期的统计 - 使用覆盖而不是累加（因为每次上传包含当天的总时长）
+          await DB.prepare(`
+            UPDATE project_daily_stats SET
+              work_hours = ?,
+              accumulated_runtime = ?,
+              composition_count = MAX(composition_count, ?),
+              layer_count = MAX(layer_count, ?),
+              keyframe_count = MAX(keyframe_count, ?),
+              effect_count = MAX(effect_count, ?)
+            WHERE id = ?
+          `).bind(
+            projectWorkHours,
+            projectWorkHours * 3600, // 转换为秒
+            project.compositions,
+            project.layers,
+            project.keyframes,
+            project.effects,
+            existingDailyStats.id
+          ).run();
+          console.log('[saveWorkData] 更新项目每日统计:', project.name, workDate);
+        } else {
+          // 插入新的每日统计
+          await DB.prepare(`
+            INSERT INTO project_daily_stats (
+              project_id, work_date, work_hours, accumulated_runtime,
+              composition_count, layer_count, keyframe_count, effect_count
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            projectRecord.id,
+            workDate,
+            projectWorkHours,
+            projectWorkHours * 3600, // 转换为秒
+            project.compositions,
+            project.layers,
+            project.keyframes,
+            project.effects
+          ).run();
+          console.log('[saveWorkData] 插入项目每日统计:', project.name, workDate);
+        }
+      }
+    } catch (error) {
+      console.error('[saveWorkData] 处理项目累积数据失败:', project.name, error);
+    }
+  }
+  
+  // 重新计算所有项目的total_work_hours（基于project_daily_stats表）
+  console.log('[saveWorkData] ========== 重新计算项目总时长 ==========');
+  for (const project of allProjects) {
+    try {
+      const projectRecord = await DB.prepare(
+        'SELECT id FROM projects WHERE user_id = ? AND project_id = ?'
+      ).bind(userId, project.projectId).first();
+      
+      if (projectRecord) {
+        const totalHoursResult = await DB.prepare(
+          'SELECT SUM(work_hours) as total_hours, COUNT(DISTINCT work_date) as total_days FROM project_daily_stats WHERE project_id = ?'
+        ).bind(projectRecord.id).first();
+        
+        const totalHours = totalHoursResult.total_hours || 0;
+        const totalDays = totalHoursResult.total_days || 0;
+        
+        await DB.prepare(`
+          UPDATE projects SET
+            total_work_hours = ?,
+            total_work_days = ?
+          WHERE id = ?
+        `).bind(
+          totalHours,
+          totalDays,
+          projectRecord.id
+        ).run();
+        
+        console.log('[saveWorkData] 重新计算项目总时长:', project.name, '总时长:', totalHours, '小时', '工作日:', totalDays);
+      }
+    } catch (error) {
+      console.error('[saveWorkData] 重新计算项目总时长失败:', project.name, error);
+    }
+  }
+  
+  console.log('[saveWorkData] ========== 项目累积数据更新完成 ==========');
 }
 
 async function getSendLogs(userId, limit, env) {
