@@ -454,18 +454,20 @@ export const Header = ({
     searchQuery,
     setSearchQuery,
     onRefresh,
+    onNavigate,
     currentUser,
     workLogs,
 }: {
     lang: LangType,
-    setLang: React.Dispatch<React.SetStateAction<LangType>>,
-    trans: any,
-    dateDisplay?: string,
-    onCalendarClick?: () => void,
-    searchQuery: string,
-    setSearchQuery: (s: string) => void,
-    onRefresh?: () => void,
-    currentUser?: any,
+    setLang: React.Dispatch<React.SetStateAction<LangType>>;
+    trans: any;
+    dateDisplay?: string;
+    onCalendarClick?: () => void;
+    searchQuery: string;
+    setSearchQuery: (s: string) => void;
+    onRefresh?: () => void;
+    onNavigate?: (view: string) => void;
+    currentUser?: any;
     workLogs?: any[],
 }) => {
     const [aeStatus, setAeStatus] = useState<AEStatus | null>(null);
@@ -481,23 +483,27 @@ export const Header = ({
         });
     }, []);
 
+    // 处理头像点击事件
+    const handleAvatarClick = () => {
+        if (onNavigate) {
+            onNavigate('settings');
+        }
+    };
+
     return (
         <header className="flex flex-col md:flex-row md:items-center justify-between px-3 py-2 md:px-6 md:py-4 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-2 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2 md:gap-4">
                 <div
                     className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
+                    onClick={handleAvatarClick}
                 >
                 <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
                 <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
-                  <RuaLogo className="w-7 h-5 md:w-9 md:h-7 text-ru-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <h1 className="text-base md:text-xl font-black italic tracking-tighter text-white">
-                        RUALIVE
-                    </h1>
-                    <div className="flex items-center gap-1 md:gap-2 flex-wrap mt-0.5">
+                    <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                         {/* 总工作天数标签 */}
                         {workLogs && workLogs.length > 0 && (
                             <span className="inline-flex items-center gap-0.5 md:gap-1 px-1.5 py-0.5 text-[8px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary">
@@ -699,6 +705,43 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
   };
 
+  // 用于检测移动端单击和桌面端双击
+  const [clickTimeouts, setClickTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+
+  const handleCardClick = (e: React.MouseEvent | React.TouchEvent, projectId: string, projectName: string) => {
+    // 移动端：单击直接打开历史
+    if ('ontouchstart' in window) {
+      if (onProjectClick) onProjectClick(projectId, projectName);
+      return;
+    }
+
+    // 桌面端：双击打开历史
+    const existingTimeout = clickTimeouts.get(projectId);
+    
+    if (existingTimeout) {
+      // 清除超时，这是双击
+      clearTimeout(existingTimeout);
+      const newTimeouts = new Map(clickTimeouts);
+      newTimeouts.delete(projectId);
+      setClickTimeouts(newTimeouts);
+      
+      // 双击：打开历史
+      if (onProjectClick) onProjectClick(projectId, projectName);
+    } else {
+      // 这是第一次点击，设置超时
+      const timeout = setTimeout(() => {
+        // 超时后，这是单击（不执行任何操作）
+        const newTimeouts = new Map(clickTimeouts);
+        newTimeouts.delete(projectId);
+        setClickTimeouts(newTimeouts);
+      }, 300); // 300ms 用于区分单击和双击
+      
+      const newTimeouts = new Map(clickTimeouts);
+      newTimeouts.set(projectId, timeout);
+      setClickTimeouts(newTimeouts);
+    }
+  };
+
   return (
     <div className="w-full mb-4 md:mb-8">
       {/* 标题区域 */}
@@ -717,9 +760,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
           title={anonymizeMode ? '关闭脱敏' : '开启脱敏'}
         >
           {anonymizeMode ? <EyeOff size={14} /> : <Eye size={14} />}
-          <span className="hidden sm:inline ml-1">
-            {anonymizeMode ? '脱敏开启' : '脱敏关闭'}
-          </span>
         </button>
       </div>
 
@@ -732,10 +772,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
           return (
             <button
               key={proj.projectId}
-              onClick={() => onSelect(idx)}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                if (onProjectClick) onProjectClick(proj.projectId, proj.name);
+              onClick={(e) => {
+                onSelect(idx);
+                if (onProjectClick) handleCardClick(e, proj.projectId, proj.name);
               }}
               style={{
                 flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
@@ -2684,6 +2723,7 @@ const App = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onRefresh={handleRefresh}
+          onNavigate={handleNavigate}
           currentUser={currentUser}
           workLogs={allWorkLogs}
         />
@@ -2800,23 +2840,23 @@ const App = () => {
       {showHistoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowHistoryModal(false)} />
-          <div className="relative w-full max-w-2xl bg-[#0a0a0f] border border-ru-primary/30 rounded-lg shadow-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden">
+          <div className="relative w-full max-w-2xl bg-[#0a0a0f] border border-ru-primary/30 rounded-lg shadow-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden" style={{ transformOrigin: 'center center' }}>
             {/* 弹窗头部 */}
-            <div className="p-3 md:p-6 border-b border-ru-primary/20 bg-gradient-to-r from-ru-primary/10 to-transparent flex-shrink-0">
+            <div className="p-2 md:p-6 border-b border-ru-primary/20 bg-gradient-to-r from-ru-primary/10 to-transparent flex-shrink-0">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base md:text-xl font-black italic tracking-wider text-white truncate">
+                  <h2 className="text-sm md:text-xl font-black italic tracking-wider text-white truncate">
                     {historyProject?.name}
                   </h2>
-                  <p className="text-[10px] md:text-xs text-ru-textMuted mt-1 font-mono truncate">
+                  <p className="text-[9px] md:text-xs text-ru-textMuted mt-1 font-mono truncate">
                     ID: {historyProject?.id}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
+                  className="flex items-center justify-center w-7 h-7 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
                 >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -2824,7 +2864,7 @@ const App = () => {
             </div>
 
             {/* 弹窗内容 */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 md:p-6">
               {isLoadingHistory ? (
                 <div className="text-center py-8">
                   <div className="inline-block w-8 h-8 border-2 border-ru-primary border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -2832,44 +2872,44 @@ const App = () => {
                 </div>
               ) : historyData && historyData.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[500px]">
+                  <div className="w-full">
+                    <table className="w-full text-[10px] md:text-sm">
                       <thead>
                         <tr className="border-b border-ru-primary/20">
                           <th className="text-left py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center gap-1 md:gap-2">
-                              <CalendarIcon size={16} className="flex-shrink-0" />
+                              <CalendarIcon size={14} className="flex-shrink-0 md:size-16" />
                               <span className="hidden md:inline">{trans.historyDate || '日期'}</span>
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyRuntime || '运行时长'}</span>
-                              <Clock size={16} className="flex-shrink-0" />
+                              <Clock size={14} className="flex-shrink-0 md:size-16" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyComps || '合成数'}</span>
-                              <LayoutGrid size={16} className="flex-shrink-0" />
+                              <LayoutGrid size={14} className="flex-shrink-0 md:size-16" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyLayers || '图层数'}</span>
-                              <Layers size={16} className="flex-shrink-0" />
+                              <Layers size={14} className="flex-shrink-0 md:size-16" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyKeyframes || '关键帧'}</span>
-                              <Activity size={16} className="flex-shrink-0" />
+                              <Activity size={14} className="flex-shrink-0 md:size-16" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyEffects || '效果数'}</span>
-                              <Zap size={16} className="flex-shrink-0" />
+                              <Zap size={14} className="flex-shrink-0 md:size-16" />
                             </div>
                           </th>
                         </tr>
@@ -2877,12 +2917,12 @@ const App = () => {
                       <tbody>
                         {historyData.map((item: any, idx: number) => (
                           <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="py-2 font-mono text-ru-textDim whitespace-nowrap">{item.work_date}</td>
-                            <td className="py-2 text-right font-mono text-ru-primary whitespace-nowrap">{formatRuntimeCompact(item.accumulated_runtime)}</td>
-                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.composition_count}</td>
-                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.layer_count}</td>
-                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.keyframe_count}</td>
-                            <td className="py-2 text-right font-mono whitespace-nowrap">{item.effect_count}</td>
+                            <td className="py-2 font-mono text-ru-textDim">{item.work_date}</td>
+                            <td className="py-2 text-right font-mono text-ru-primary">{formatRuntimeCompact(item.accumulated_runtime)}</td>
+                            <td className="py-2 text-right font-mono">{item.composition_count}</td>
+                            <td className="py-2 text-right font-mono">{item.layer_count}</td>
+                            <td className="py-2 text-right font-mono">{item.keyframe_count}</td>
+                            <td className="py-2 text-right font-mono">{item.effect_count}</td>
                           </tr>
                         ))}
                       </tbody>
