@@ -2932,11 +2932,20 @@ async function saveWorkData(userId, workData, env, date) {
         effects: project.statistics ? project.statistics.effects || 0 : 0
       });
 
-      // 工作时长列表
-      if (project.accumulatedRuntime && project.accumulatedRuntime > 0) {
+      // 工作时长列表 - 使用当天运行时间（workData.work_hours 或 project.currentDayRuntime）
+      // 注意：workData.work_hours 是当天总工作时长，project.currentDayRuntime 是项目的当天运行时间
+      let projectDailyHours = 0;
+      if (project.currentDayRuntime && project.currentDayRuntime > 0) {
+        projectDailyHours = (project.currentDayRuntime / 3600).toFixed(2);
+      } else if (workData.work_hours && workData.work_hours > 0) {
+        // 如果没有项目级别的当天运行时间，使用总运行时长（可能需要按项目分配）
+        projectDailyHours = workData.work_hours.toFixed(2);
+      }
+      
+      if (projectDailyHours > 0) {
         allWorkHours.push({
           project: project.name,
-          hours: (project.accumulatedRuntime / 3600).toFixed(2)
+          hours: projectDailyHours
         });
       }
 
@@ -3253,7 +3262,13 @@ async function saveWorkData(userId, workData, env, date) {
     }
   }
 
-  // 如果不存在或合并失败，执行插入或覆盖
+  // 计算当天总工作时长（所有项目的当天运行时间之和）
+// 注意：需要在处理完所有项目后才能计算
+// 这里先使用 workData.work_hours（累积运行时间），后面会重新计算
+let totalDailyWorkHours = workData.work_hours || 0;
+let accumulatedWorkHours = workData.work_hours || 0;
+
+// 如果不存在或合并失败，执行插入或覆盖
   await DB.prepare(`
     INSERT INTO work_logs (
       user_id, work_date, work_hours, keyframe_count, json_size,
@@ -3278,7 +3293,7 @@ async function saveWorkData(userId, workData, env, date) {
   `)
     .bind(
       userId, workDate,
-      workData.work_hours || 0,
+      totalDailyWorkHours,  // 先使用临时值，后面会更新
       workData.keyframe_count || 0,
       workData.json_size || 0,
       allProjects.length,  // 使用过滤后的项目数量
@@ -3300,39 +3315,42 @@ async function saveWorkData(userId, workData, env, date) {
   // 遍历所有项目，更新projects表和project_daily_stats表
   for (const project of allProjects) {
     try {
-      // 获取项目的运行时长（秒）
-      const projectWorkHours = parseFloat(
+      // 获取项目的累积运行时长（秒）
+      const dailyHours = parseFloat(
         allWorkHours.find(w => w.project === project.name)?.hours || '0'
       );
+      const dailyRuntime = dailyHours * 3600;  // 转换为秒
       
-      console.log('[saveWorkData] 处理项目累积数据:', project.name, '时长:', projectWorkHours, '小时');
+      console.log('[saveWorkData] ========== 开始处理项目:', project.name, '==========');
+      console.log('[saveWorkData] 当天运行时长（来自AE扩展端）:', dailyHours.toFixed(2), '小时 (', dailyRuntime, '秒)');
       
-      // 更新或插入projects表
+      // 检查项目是否已存在
       const existingProject = await DB.prepare(
         'SELECT id, total_work_hours, total_work_days FROM projects WHERE user_id = ? AND project_id = ?'
       ).bind(userId, project.projectId).first();
-      
-      if (existingProject) {
                 // 检查当前日期是否是新日期（不同于last_work_date）
                 const isNewDate = existingProject.last_work_date !== workDate;
                 
-                // 更新现有项目 - 先更新基本信息，后面会重新计算total_work_hours
-                await DB.prepare(`
-                  UPDATE projects SET
-                    project_name = ?,
-                    project_path = ?,
-                    last_work_date = ?,
-                    total_work_days = total_work_days + ?,
-                    updated_at = datetime('now')
-                  WHERE id = ?
-                `).bind(
-                  project.name,
-                  project.path,
-                  workDate,
-                  isNewDate ? 1 : 0,  // 只在新日期时增加工作日
-                  existingProject.id
-                ).run();
-                console.log('[saveWorkData] 更新项目:', project.name, '新日期:', isNewDate);      } else {
+                if (existingProject) {
+        console.log('[saveWorkData] 项目已存在，更新项目信息');
+        
+        // 更新现有项目基本信息
+        await DB.prepare(`
+          UPDATE projects SET
+            project_name = ?,
+            project_path = ?,
+            last_work_date = ?,
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          project.name,
+          project.path,
+          workDate,
+          existingProject.id
+        ).run();
+      } else {
+        console.log('[saveWorkData] 新项目，插入项目信息');
+        
         // 插入新项目
         await DB.prepare(`
           INSERT INTO projects (
@@ -3346,10 +3364,9 @@ async function saveWorkData(userId, workData, env, date) {
           project.path,
           workDate,
           workDate,
-          projectWorkHours,
+          0,  // total_work_hours 将在后面通过累加计算
           1
         ).run();
-        console.log('[saveWorkData] 插入新项目:', project.name, '时长:', projectWorkHours, '小时');
       }
       
       // 更新或插入project_daily_stats表
@@ -3364,7 +3381,7 @@ async function saveWorkData(userId, workData, env, date) {
         ).bind(projectRecord.id, workDate).first();
         
         if (existingDailyStats) {
-          // 更新现有日期的统计 - 使用覆盖而不是累加（因为每次上传包含当天的总时长）
+          // 更新现有日期的统计 - 直接使用当天运行时间
           await DB.prepare(`
             UPDATE project_daily_stats SET
               work_hours = ?,
@@ -3375,15 +3392,15 @@ async function saveWorkData(userId, workData, env, date) {
               effect_count = MAX(effect_count, ?)
             WHERE id = ?
           `).bind(
-            projectWorkHours,
-            projectWorkHours * 3600, // 转换为秒
+            dailyHours,  // ✅ 直接使用当天运行时间（小时）
+            dailyRuntime,  // ✅ 当天运行时间（秒）
             project.compositions,
             project.layers,
             project.keyframes,
             project.effects,
             existingDailyStats.id
           ).run();
-          console.log('[saveWorkData] 更新项目每日统计:', project.name, workDate);
+          console.log('[saveWorkData] ✅ 更新项目每日统计:', project.name, workDate, '当天时长:', dailyHours.toFixed(2), '小时');
         } else {
           // 插入新的每日统计
           await DB.prepare(`
@@ -3394,14 +3411,14 @@ async function saveWorkData(userId, workData, env, date) {
           `).bind(
             projectRecord.id,
             workDate,
-            projectWorkHours,
-            projectWorkHours * 3600, // 转换为秒
+            dailyHours,  // ✅ 直接使用当天运行时间（小时）
+            dailyRuntime,  // ✅ 当天运行时间（秒）
             project.compositions,
             project.layers,
             project.keyframes,
             project.effects
           ).run();
-          console.log('[saveWorkData] 插入项目每日统计:', project.name, workDate);
+          console.log('[saveWorkData] ✅ 插入项目每日统计:', project.name, workDate, '当天时长:', dailyHours.toFixed(2), '小时');
         }
       }
     } catch (error) {
@@ -3444,6 +3461,24 @@ async function saveWorkData(userId, workData, env, date) {
   }
   
   console.log('[saveWorkData] ========== 项目累积数据更新完成 ==========');
+  
+  // 重新计算 work_logs.work_hours（当天总工作时长）
+  console.log('[saveWorkData] ========== 重新计算当天总工作时长 ==========');
+  const dailyTotalResult = await DB.prepare(
+    'SELECT SUM(work_hours) as total_hours FROM project_daily_stats pds ' +
+    'JOIN projects p ON pds.project_id = p.id ' +
+    'WHERE p.user_id = ? AND pds.work_date = ?'
+  ).bind(userId, workDate).first();
+  
+  totalDailyWorkHours = dailyTotalResult.total_hours || 0;  // 直接赋值，不重新声明
+  console.log('[saveWorkData] 当天总工作时长:', totalDailyWorkHours.toFixed(2), '小时');
+  
+  // 更新 work_logs 表的 work_hours 字段
+  await DB.prepare(`
+    UPDATE work_logs SET work_hours = ? WHERE user_id = ? AND work_date = ?
+  `).bind(totalDailyWorkHours, userId, workDate).run();
+  
+  console.log('[saveWorkData] ✅ 已更新 work_logs.work_hours 为当天总工作时长:', totalDailyWorkHours.toFixed(2), '小时');
 }
 
 async function getSendLogs(userId, limit, env) {
