@@ -2932,14 +2932,11 @@ async function saveWorkData(userId, workData, env, date) {
         effects: project.statistics ? project.statistics.effects || 0 : 0
       });
 
-      // 工作时长列表 - 使用当天运行时间（workData.work_hours 或 project.currentDayRuntime）
-      // 注意：workData.work_hours 是当天总工作时长，project.currentDayRuntime 是项目的当天运行时间
+      // 工作时长列表 - 使用每个项目的当天运行时间（project.currentDayRuntime）
+      // 注意：只有 project.currentDayRuntime 存在时才计入该项目的工时
       let projectDailyHours = 0;
       if (project.currentDayRuntime && project.currentDayRuntime > 0) {
         projectDailyHours = (project.currentDayRuntime / 3600).toFixed(2);
-      } else if (workData.work_hours && workData.work_hours > 0) {
-        // 如果没有项目级别的当天运行时间，使用总运行时长（可能需要按项目分配）
-        projectDailyHours = workData.work_hours.toFixed(2);
       }
       
       if (projectDailyHours > 0) {
@@ -3146,15 +3143,6 @@ async function saveWorkData(userId, workData, env, date) {
         });
       });
 
-      // 🔍 使用新工作时长数据覆盖旧数据
-      const newWorkHours = [];
-      allWorkHours.forEach(function(w) {
-        newWorkHours.push({
-          project: w.project,
-          hours: w.hours
-        });
-      });
-
       // 从映射中获取最终的项目列表
       const mergedProjects = Array.from(projectMap.values());
 
@@ -3215,7 +3203,7 @@ async function saveWorkData(userId, workData, env, date) {
         layers: mergedLayers.reduce(function(acc, l) { return acc + (l.count || 0); }, 0),
         keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + (k.count || 0); }, 0),
         effects: mergedEffects.reduce(function(acc, e) { return acc + (e.count || 0); }, 0),  // 🔍 计算总使用次数
-        work_hours: newWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)
+        work_hours: allWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)  // 🔍 从 allWorkHours 计算总工作时长
       };
 
       // 更新数据库
@@ -3263,12 +3251,12 @@ async function saveWorkData(userId, workData, env, date) {
   }
 
   // 计算当天总工作时长（所有项目的当天运行时间之和）
-// 注意：需要在处理完所有项目后才能计算
-// 这里先使用 workData.work_hours（累积运行时间），后面会重新计算
-let totalDailyWorkHours = workData.work_hours || 0;
-let accumulatedWorkHours = workData.work_hours || 0;
+  // 这才是正确的当天总工作时长！
+  const totalDailyWorkHours = allWorkHours.reduce(function(acc, w) { 
+    return acc + parseFloat(w.hours); 
+  }, 0);
 
-// 如果不存在或合并失败，执行插入或覆盖
+  // 如果不存在或合并失败，执行插入或覆盖
   await DB.prepare(`
     INSERT INTO work_logs (
       user_id, work_date, work_hours, keyframe_count, json_size,
@@ -3464,13 +3452,6 @@ let accumulatedWorkHours = workData.work_hours || 0;
   
   // 重新计算 work_logs.work_hours（当天总工作时长）
   console.log('[saveWorkData] ========== 重新计算当天总工作时长 ==========');
-  const dailyTotalResult = await DB.prepare(
-    'SELECT SUM(work_hours) as total_hours FROM project_daily_stats pds ' +
-    'JOIN projects p ON pds.project_id = p.id ' +
-    'WHERE p.user_id = ? AND pds.work_date = ?'
-  ).bind(userId, workDate).first();
-  
-  totalDailyWorkHours = dailyTotalResult.total_hours || 0;  // 直接赋值，不重新声明
   console.log('[saveWorkData] 当天总工作时长:', totalDailyWorkHours.toFixed(2), '小时');
   
   // 更新 work_logs 表的 work_hours 字段
