@@ -494,122 +494,118 @@ export const Header = ({
         <header className="flex flex-col md:flex-row md:items-center justify-between px-3 py-2 md:px-6 md:py-4 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-2 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2 md:gap-4">
-                <div
-                    className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
-                    onClick={handleAvatarClick}
-                >
-                <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
-                <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                        {/* 总工作天数标签 */}
-                        {workLogs && workLogs.length > 0 && (
-                            <span className="inline-flex items-center gap-0.5 md:gap-1 px-1.5 py-0.5 text-[8px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary">
-                                <span className="opacity-70 hidden md:inline">{trans.totalWorkDays}</span>
-                                {workLogs.length}
-                            </span>
-                        )}
-                        {aeStatus && (
-                            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                                {/* AE 版本徽章 */}
-                                {aeStatus.ae_version && (
-                                    <span className="inline-flex items-center gap-0.5 md:gap-1 px-1.5 py-0.5 text-[8px] md:text-[10px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary">
-                                        <span className="opacity-70">AE</span>
-                                        <span className="hidden sm:inline">{aeStatus.ae_version}</span>
-                                    </span>
-                                )}
-                                {/* 操作系统徽章 */}
-                                {aeStatus.os_name && (
-                                    <span className="inline-flex items-center px-1 py-0.5 text-[8px] md:text-[10px] font-mono rounded bg-white/5 border border-white/10 text-white/80">
-                                        {aeStatus.os_name.toLowerCase().includes('windows') || aeStatus.os_name.toLowerCase().includes('win') ? (
-                                            <svg className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M412.224 511.904c-47.712-24.512-94.08-36.96-137.888-36.96-5.952 0-11.936 0.192-17.952 0.704-55.872 4.608-106.912 19.36-139.744 30.816-8.704 3.2-17.632 6.56-26.816 10.304L0 828.192c61.696-22.848 116.288-33.952 166.272-33.952 80.832 0 139.52 30.208 188 61.312 22.976-77.92 78.048-266.08 94.496-322.336C436.8 525.952 424.672 518.656 412.224 511.904zM528.352 591.072l-90.432 314.144c26.848 15.36 117.088 64.064 186.208 64.064 55.808 0 118.24-14.304 190.848-43.808l86.368-301.984c-58.624 18.912-114.88 28.512-167.456 28.512C637.888 652.032 570.72 620.928 528.352 591.072zM292.832 368.8c77.12 0.8 134.144 30.208 181.408 60.512l92.736-317.344c-19.552-11.2-70.816-39.104-107.872-48.608-24.384-5.696-50.016-8.608-77.216-8.608-51.808 0.96-108.384 13.952-172.896 39.808l-88.448 310.592c64.8-24.448 120.64-36.352 172.096-36.352C292.736 368.8 292.832 368.8 292.832 368.8zM1024 198.112c-58.816 22.848-116.192 34.464-171.04 34.464-91.68 0-159.296-31.808-203.104-62.368L557.92 488.448c61.76 39.712 128.288 59.872 198.112 59.872 56.96 0 115.936-13.664 175.456-40.704l-0.192-2.208 3.744-0.896L1024 198.112z" fill="#1296db"/>
-                                            </svg>
-                                        ) : (
-                                            <svg className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M849.124134 704.896288c-1.040702 3.157923-17.300015 59.872622-57.250912 118.190843-34.577516 50.305733-70.331835 101.018741-126.801964 101.909018-55.532781 0.976234-73.303516-33.134655-136.707568-33.134655-63.323211 0-83.23061 32.244378-135.712915 34.110889-54.254671 2.220574-96.003518-54.951543-130.712017-105.011682-70.934562-102.549607-125.552507-290.600541-52.30118-416.625816 36.040844-63.055105 100.821243-103.135962 171.364903-104.230899 53.160757-1.004887 103.739712 36.012192 136.028093 36.012192 33.171494 0 94.357018-44.791136 158.90615-38.089503 27.02654 1.151219 102.622262 11.298324 151.328567 81.891102-3.832282 2.607384-90.452081 53.724599-89.487104 157.76107C739.079832 663.275355 847.952448 704.467523 849.124134 704.896288M633.69669 230.749408c29.107945-35.506678 48.235584-84.314291 43.202964-132.785236-41.560558 1.630127-92.196819 27.600615-122.291231 62.896492-26.609031 30.794353-50.062186 80.362282-43.521213 128.270409C557.264926 291.935955 604.745311 264.949324 633.69669 230.749408" fill="#ffffff"/>
-                                            </svg>
-                                        )}
-                                    </span>
-                                )}
-                                {/* 更新时间 */}
-                                {aeStatus.updated_at && (
-                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] md:text-[9px] font-mono rounded text-ru-textMuted">
-                                        <span className="hidden sm:inline">
-                                            {new Date(aeStatus.updated_at).toLocaleDateString('zh-CN', { 
-                                                year: 'numeric', 
-                                                month: '2-digit', 
-                                                day: '2-digit' 
-                                            }).replace(/\//g, '/')}-{new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
-                                                hour: '2-digit', 
-                                                minute: '2-digit', 
-                                                hour12: false 
-                                            })}
-                                        </span>
-                                        <span className="sm:hidden">
-                                            {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
-                                                hour: '2-digit', 
-                                                minute: '2-digit', 
-                                                hour12: false 
-                                            })}
-                                        </span>
-                                    </span>
-                                )}
-                            </div>
-                        )}
+                {/* 头像 + 运行天数 */}
+                <div className="flex items-center gap-2">
+                    <div
+                        className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
+                        onClick={handleAvatarClick}
+                    >
+                        <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
+                        <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
                     </div>
-                  </div>
+                    {/* 运行天数 - 替换日历按钮 */}
+                    {workLogs && workLogs.length > 0 && (
+                        <button
+                            onClick={onCalendarClick}
+                            className="flex items-center gap-1 px-2 py-1 text-[9px] md:text-xs font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary hover:bg-ru-primary/30 transition-all shrink-0"
+                            title={trans.missionLog}
+                        >
+                            <span className="hidden sm:inline">{trans.workDaysPrefix || '你已经打卡苟活了'}</span>
+                            <span>{workLogs.length}</span>
+                            <span className="hidden sm:inline">{trans.day || '天'}</span>
+                            <span className="sm:hidden">{workLogs.length}{trans.day || '天'}</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* 移动端菜单按钮 - 后续实现 */}
         </div>
 
-        <div className="flex items-center gap-2 md:gap-6 w-full md:w-auto justify-end">
-            {/* 搜索框 - 桌面端显示 */}
-            <div className="relative group flex-1 md:w-48 transition-all focus-within:w-64 hidden md:block">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ru-textMuted group-focus-within:text-ru-primary transition-colors">
-                    <Search size={14} />
+        {/* 统一的一行按钮组 - 自适应缩放 */}
+        <div className="flex items-center gap-1.5 md:gap-2 w-full md:w-auto justify-end overflow-x-auto">
+            {/* AE 版本 */}
+            {aeStatus?.ae_version && (
+                <button className="flex items-center gap-0.5 px-1.5 py-1 text-[8px] md:text-[9px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary hover:bg-ru-primary/20 transition-all shrink-0">
+                    <span className="opacity-70">AE</span>
+                    <span className="hidden sm:inline">{aeStatus.ae_version}</span>
+                </button>
+            )}
+
+            {/* 操作系统 */}
+            {aeStatus?.os_name && (
+                <button className="flex items-center gap-1 px-1 py-1 text-[8px] md:text-[9px] font-mono rounded bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-all shrink-0">
+                    {aeStatus.os_name.toLowerCase().includes('windows') || aeStatus.os_name.toLowerCase().includes('win') ? (
+                        <svg className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M412.224 511.904c-47.712-24.512-94.08-36.96-137.888-36.96-5.952 0-11.936 0.192-17.952 0.704-55.872 4.608-106.912 19.36-139.744 30.816-8.704 3.2-17.632 6.56-26.816 10.304L0 828.192c61.696-22.848 116.288-33.952 166.272-33.952 80.832 0 139.52 30.208 188 61.312 22.976-77.92 78.048-266.08 94.496-322.336C436.8 525.952 424.672 518.656 412.224 511.904zM528.352 591.072l-90.432 314.144c26.848 15.36 117.088 64.064 186.208 64.064 55.808 0 118.24-14.304 190.848-43.808l86.368-301.984c-58.624 18.912-114.88 28.512-167.456 28.512C637.888 652.032 570.72 620.928 528.352 591.072zM292.832 368.8c77.12 0.8 134.144 30.208 181.408 60.512l92.736-317.344c-19.552-11.2-70.816-39.104-107.872-48.608-24.384-5.696-50.016-8.608-77.216-8.608-51.808 0.96-108.384 13.952-172.896 39.808l-88.448 310.592c64.8-24.448 120.64-36.352 172.096-36.352C292.736 368.8 292.832 368.8 292.832 368.8zM1024 198.112c-58.816 22.848-116.192 34.464-171.04 34.464-91.68 0-159.296-31.808-203.104-62.368L557.92 488.448c61.76 39.712 128.288 59.872 198.112 59.872 56.96 0 115.936-13.664 175.456-40.704l-0.192-2.208 3.744-0.896L1024 198.112z" fill="#1296db"/>
+                        </svg>
+                    ) : (
+                        <svg className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M849.124134 704.896288c-1.040702 3.157923-17.300015 59.872622-57.250912 118.190843-34.577516 50.305733-70.331835 101.018741-126.801964 101.909018-55.532781 0.976234-73.303516-33.134655-136.707568-33.134655-63.323211 0-83.23061 32.244378-135.712915 34.110889-54.254671 2.220574-96.003518-54.951543-130.712017-105.011682-70.934562-102.549607-125.552507-290.600541-52.30118-416.625816 36.040844-63.055105 100.821243-103.135962 171.364903-104.230899 53.160757-1.004887 103.739712 36.012192 136.028093 36.012192 33.171494 0 94.357018-44.791136 158.90615-38.089503 27.02654 1.151219 102.622262 11.298324 151.328567 81.891102-3.832282 2.607384-90.452081 53.724599-89.487104 157.76107C739.079832 663.275355 847.952448 704.467523 849.124134 704.896288M633.69669 230.749408c29.107945-35.506678 48.235584-84.314291 43.202964-132.785236-41.560558 1.630127-92.196819 27.600615-122.291231 62.896492-26.609031 30.794353-50.062186 80.362282-43.521213 128.270409C557.264926 291.935955 604.745311 264.949324 633.69669 230.749408" fill="#ffffff"/>
+                        </svg>
+                    )}
+                    <span className="hidden sm:inline">{aeStatus.os_name}</span>
+                </button>
+            )}
+
+            {/* 更新时间 */}
+            {aeStatus?.updated_at && (
+                <button className="flex items-center gap-0.5 px-1 py-1 text-[8px] md:text-[9px] font-mono rounded text-ru-textMuted hover:bg-white/5 transition-all shrink-0">
+                    <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                    <span className="hidden sm:inline">
+                        {new Date(aeStatus.updated_at).toLocaleDateString('zh-CN', { 
+                            month: '2-digit', 
+                            day: '2-digit' 
+                        }).replace(/\//g, '/')} {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            hour12: false 
+                        })}
+                    </span>
+                    <span className="sm:hidden">
+                        {new Date(aeStatus.updated_at).toLocaleTimeString('zh-CN', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            hour12: false 
+                        })}
+                    </span>
+                </button>
+            )}
+
+            {/* 搜索框 */}
+            <div className="relative group w-24 md:w-32 transition-all focus-within:w-40 md:focus-within:w-48 shrink-0">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-ru-textMuted group-focus-within:text-ru-primary transition-colors">
+                    <Search size={12} />
                 </div>
                 <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={trans.searchPlaceholder}
-                    className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-sm py-2 pl-9 pr-3 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50"
+                    className="w-full bg-white/5 border border-white/10 text-white text-[9px] md:text-xs rounded-sm py-1 pl-6 pr-2 focus:outline-none focus:border-ru-primary/50 focus:bg-white/10 transition-all font-mono placeholder:text-ru-textMuted/50"
                 />
             </div>
 
-            {/* 日历按钮 - 统一样式 */}
-            {onCalendarClick && (
-                <button
-                    onClick={onCalendarClick}
-                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
-                    title={trans.missionLog}
-                >
-                    <CalendarIcon size={16} />
-                </button>
-            )}
-
-            {/* 刷新按钮 - 统一样式 */}
+            {/* 刷新按钮 */}
             {onRefresh && (
                 <button
                     onClick={onRefresh}
-                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white/5 border border-white/10 text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
+                    className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded bg-white/5 border border-white/10 text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
                     title={trans.refreshTooltip}
                 >
-                    <RotateCcw size={16} />
+                    <RotateCcw size={14} />
                 </button>
             )}
 
-            {/* 语言切换按钮 - 统一样式 */}
+            {/* 语言切换按钮 */}
             <button
                 onClick={() => setLang(l => l === 'EN' ? 'ZH' : 'EN')}
-                className="flex items-center justify-center gap-1 px-3 py-2 w-9 h-9 md:w-auto md:h-10 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
+                className="flex items-center justify-center gap-1 px-2 py-1 w-7 h-7 md:w-auto md:h-8 rounded bg-white/5 border border-white/10 text-[9px] md:text-xs font-bold text-ru-textDim hover:text-white hover:bg-white/10 transition-all shrink-0"
             >
-                <Globe size={16} />
+                <Globe size={14} />
                 <span className="hidden md:inline">{lang}</span>
             </button>
         </div>
@@ -2878,38 +2874,38 @@ const App = () => {
                         <tr className="border-b border-ru-primary/20">
                           <th className="text-left py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center gap-1 md:gap-2">
-                              <CalendarIcon size={14} className="flex-shrink-0 md:size-16" />
+                              <CalendarIcon className="flex-shrink-0 w-3.5 h-3.5" />
                               <span className="hidden md:inline">{trans.historyDate || '日期'}</span>
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyRuntime || '运行时长'}</span>
-                              <Clock size={14} className="flex-shrink-0 md:size-16" />
+                              <Clock className="flex-shrink-0 w-3.5 h-3.5" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyComps || '合成数'}</span>
-                              <LayoutGrid size={14} className="flex-shrink-0 md:size-16" />
+                              <LayoutGrid className="flex-shrink-0 w-3.5 h-3.5" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyLayers || '图层数'}</span>
-                              <Layers size={14} className="flex-shrink-0 md:size-16" />
+                              <Layers className="flex-shrink-0 w-3.5 h-3.5" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyKeyframes || '关键帧'}</span>
-                              <Activity size={14} className="flex-shrink-0 md:size-16" />
+                              <Activity className="flex-shrink-0 w-3.5 h-3.5" />
                             </div>
                           </th>
                           <th className="text-right py-2 text-ru-textMuted font-semibold">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
                               <span className="hidden md:inline">{trans.historyEffects || '效果数'}</span>
-                              <Zap size={14} className="flex-shrink-0 md:size-16" />
+                              <Zap className="flex-shrink-0 w-3.5 h-3.5" />
                             </div>
                           </th>
                         </tr>

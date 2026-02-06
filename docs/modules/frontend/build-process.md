@@ -322,6 +322,48 @@ npm run deploy
 2. 切换到上级目录
 3. 执行 `npx wrangler deploy`
 
+**⚠️ 重要：dist 目录复制说明**
+
+当前 `public/package.json` 中的 deploy 脚本为：
+```json
+"deploy": "npm run build && cd .. && npx wrangler deploy"
+```
+
+但这个脚本**缺少 dist 目录复制步骤**，会导致部署的是旧版本的静态文件。
+
+**正确的手动部署流程**：
+```bash
+# 1. 进入 public 目录
+cd public
+
+# 2. 构建前端（输出到 public/dist）
+npm run build
+
+# 3. 切换到根目录
+cd ..
+
+# 4. 复制 public/dist 到根目录 dist
+Remove-Item -Recurse -Force dist
+Copy-Item -Recurse -Force public\dist dist
+
+# 5. 部署到 Cloudflare
+npm run deploy
+```
+
+**为什么需要复制**：
+- `wrangler.toml` 配置：`assets.directory = "dist"`（根目录）
+- Vite 构建输出：`public/dist` 目录
+- 不复制会导致部署旧的根目录 dist 文件
+
+**建议修复 deploy 脚本**：
+```json
+{
+  "scripts": {
+    "deploy": "npm run build && cd .. && Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; Copy-Item -Recurse -Force public\\dist dist; npx wrangler deploy"
+  }
+}
+```
+
 ---
 
 ## 6. 构建优化

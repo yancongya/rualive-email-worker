@@ -77,9 +77,53 @@ wrangler secret put JWT_SECRET
 # 使用自动化部署脚本
 .\deploy.ps1
 
-# 或手动部署
-npm run build:frontend
+# 或手动部署（完整流程）
+# 步骤1：构建前端
+cd public
+npm run build
+
+# 步骤2：复制构建产物到根目录 dist
+# 重要：wrangler.toml 配置的 assets.directory 是根目录的 dist
+# Vite 构建输出到 public/dist，需要复制到根目录 dist
+cd ..
+Remove-Item -Recurse -Force dist
+Copy-Item -Recurse -Force public\dist dist
+
+# 步骤3：部署到 Cloudflare
 npm run deploy
+```
+
+#### 📌 重要注意事项
+
+**构建目录结构说明**：
+- `public/vite.config.ts` 配置输出目录为 `dist`
+- Vite 构建输出到 `public/dist/` 目录
+- `wrangler.toml` 配置 `assets.directory = "dist"`（根目录）
+- **必须将 `public/dist` 复制到根目录 `dist` 才能正确部署**
+
+**为什么需要复制 dist 目录**：
+1. Vite 构建工具默认输出到 `public/dist` 目录
+2. Cloudflare Wrangler 的 Assets 绑定配置指向根目录的 `dist`
+3. 如果不复制，部署的将是旧版本的静态文件
+4. 复制确保最新的前端代码被部署到 Cloudflare Workers
+
+**常见问题**：
+- **问题**：部署后前端代码没有更新
+- **原因**：只构建了 `public/dist`，没有复制到根目录 `dist`
+- **解决**：执行 `Remove-Item -Recurse -Force dist; Copy-Item -Recurse -Force public\dist dist`
+- **验证**：检查 `dist/user-v6.html` 中的 JS 文件引用是否是最新的哈希值
+
+**文件哈希验证**：
+```bash
+# 检查构建输出
+cd public/dist
+cat user-v6.html | grep userV6
+# 输出示例：src="/assets/userV6-KJ6OtQ4y.js"
+
+# 检查部署输出
+cd ../dist
+cat user-v6.html | grep userV6
+# 应该与构建输出一致
 ```
 
 ### 2.5 验证部署
