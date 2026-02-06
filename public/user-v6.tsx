@@ -455,6 +455,7 @@ export const Header = ({
     setSearchQuery,
     onRefresh,
     onNavigate,
+    onNavigateView,
     currentUser,
     workLogs,
 }: {
@@ -467,6 +468,7 @@ export const Header = ({
     setSearchQuery: (s: string) => void;
     onRefresh?: () => void;
     onNavigate?: (view: string) => void;
+    onNavigateView?: (view: ViewType) => void;
     currentUser?: any;
     workLogs?: any[],
 }) => {
@@ -485,8 +487,8 @@ export const Header = ({
 
     // 处理头像点击事件
     const handleAvatarClick = () => {
-        if (onNavigate) {
-            onNavigate('settings');
+        if (onNavigateView) {
+            onNavigateView('settings');
         }
     };
 
@@ -494,28 +496,14 @@ export const Header = ({
         <header className="flex flex-col md:flex-row md:items-center justify-between px-3 py-2 md:px-6 md:py-4 border-b border-white/5 bg-black/40 backdrop-blur-sm sticky top-0 z-40 gap-2 md:gap-0">
         <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2 md:gap-4">
-                {/* 头像 + 运行天数 */}
-                <div className="flex items-center gap-2">
-                    <div
-                        className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
-                        onClick={handleAvatarClick}
-                    >
-                        <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
-                        <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
-                    </div>
-                    {/* 运行天数 - 替换日历按钮 */}
-                    {workLogs && workLogs.length > 0 && (
-                        <button
-                            onClick={onCalendarClick}
-                            className="flex items-center gap-1 px-2 py-1 text-[9px] md:text-xs font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary hover:bg-ru-primary/30 transition-all shrink-0"
-                            title={trans.missionLog}
-                        >
-                            <span className="hidden sm:inline">{trans.workDaysPrefix || '你已经打卡苟活了'}</span>
-                            <span>{workLogs.length}</span>
-                            <span className="hidden sm:inline">{trans.day || '天'}</span>
-                            <span className="sm:hidden">{workLogs.length}{trans.day || '天'}</span>
-                        </button>
-                    )}
+                {/* 头像 */}
+                <div
+                    className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-2 border-ru-primary rounded-full group cursor-pointer flex-shrink-0"
+                    onClick={handleAvatarClick}
+                    title={trans.settings || '设置'}
+                >
+                    <span className="font-bold text-sm md:text-base">{currentUser?.username?.[0]?.toUpperCase() || 'U'}</span>
+                    <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 border-2 border-black rounded-full"></div>
                 </div>
             </div>
 
@@ -524,6 +512,20 @@ export const Header = ({
 
         {/* 统一的一行按钮组 - 自适应缩放 */}
         <div className="flex items-center gap-1.5 md:gap-2 w-full md:w-auto justify-end overflow-x-auto">
+            {/* 运行天数 - 替换日历按钮 */}
+            {workLogs && workLogs.length > 0 && (
+                <button
+                    onClick={onCalendarClick}
+                    className="flex items-center gap-1 px-2 py-1 text-[9px] md:text-xs font-bold font-mono rounded bg-ru-primary/20 border border-ru-primary/40 text-ru-primary hover:bg-ru-primary/30 transition-all shrink-0"
+                    title={trans.missionLog || '任务日志'}
+                >
+                    <span className="hidden sm:inline">{trans.workDaysPrefix || '你已经打卡苟活了'}</span>
+                    <span>{workLogs.length}</span>
+                    <span className="hidden sm:inline">{trans.day || '天'}</span>
+                    <span className="sm:hidden">{workLogs.length}{trans.day || '天'}</span>
+                </button>
+            )}
+
             {/* AE 版本 */}
             {aeStatus?.ae_version && (
                 <button className="flex items-center gap-0.5 px-1.5 py-1 text-[8px] md:text-[9px] font-bold font-mono rounded bg-ru-primary/10 border border-ru-primary/30 text-ru-primary hover:bg-ru-primary/20 transition-all shrink-0">
@@ -2457,6 +2459,11 @@ const App = () => {
      setCurrentView('dashboard');
   };
 
+  // 视图导航函数（用于切换页面）
+  const handleViewNavigate = (view: ViewType) => {
+    setCurrentView(view);
+  };
+
   const handleToggleAnonymize = () => {
     setAnonymizeMode(prev => !prev);
   };
@@ -2720,6 +2727,7 @@ const App = () => {
           setSearchQuery={setSearchQuery}
           onRefresh={handleRefresh}
           onNavigate={handleNavigate}
+          onNavigateView={handleViewNavigate}
           currentUser={currentUser}
           workLogs={allWorkLogs}
         />
