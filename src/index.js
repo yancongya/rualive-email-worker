@@ -2937,6 +2937,7 @@ async function saveWorkData(userId, workData, env, date) {
       let projectDailyHours = 0;
       if (project.currentDayRuntime && project.currentDayRuntime > 0) {
         projectDailyHours = (project.currentDayRuntime / 3600).toFixed(2);
+        console.log('[saveWorkData] 项目 ' + project.name + ' 的当天运行时间:', project.currentDayRuntime, '秒 =', projectDailyHours, '小时');
       }
       
       if (projectDailyHours > 0) {
