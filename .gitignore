@@ -4,3 +4,5 @@ deploy-temp/
 temp/
 *.log
 .env
+dist/
+rualive-email-worker-dist/
