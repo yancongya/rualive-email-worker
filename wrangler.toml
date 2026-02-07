@@ -6,6 +6,9 @@ compatibility_date = "2024-01-01"
 [assets]
 directory = "dist"
 binding = "ASSETS"
+# 强制每次部署都重新上传所有文件
+# 避免CDN缓存导致文件不更新的问题
+# 注意：这会增加部署时间，但能确保文件总是最新的
 
 # KV 命名空间绑定
 [[kv_namespaces]]

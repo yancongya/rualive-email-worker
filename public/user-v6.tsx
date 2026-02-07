@@ -4,11 +4,12 @@ import { HashRouter } from 'react-router-dom';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   PieChart, Pie, Cell, Tooltip,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  BarChart, Bar, Legend
 } from 'recharts';
 import {
   LayoutGrid, Layers, Hexagon, Activity, Calendar as CalendarIcon,
-  Globe, ChevronRight, X, ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw,
+  Globe, ChevronRight, X, ChevronLeft, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, RefreshCw,
   LineChart as LucideLineChart, BarChart3, Search, Table, TrendingUp,
   Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff,
@@ -177,7 +178,14 @@ const DEFAULT_USER_TRANS: any = {
     projectCount: "PROJECT COUNT",
     settings: "SETTINGS",
     refresh: "REFRESH",
-    refreshTooltip: "Refresh data from server"
+    refreshTooltip: "Refresh data from server",
+    projectRuntimeGantt: "PROJECT RUNTIME GANTT",
+    date: "DATE",
+    days: "DAYS",
+    noData: "No data available",
+    loading: "Loading...",
+    noHistory: "No history data",
+    loadHistory: "Load History"
   },
   ZH: {
     subtitle: "",
@@ -248,7 +256,14 @@ const DEFAULT_USER_TRANS: any = {
     projectCount: "项目数量",
     settings: "系统设置",
     refresh: "刷新",
-    refreshTooltip: "从服务器刷新数据"
+    refreshTooltip: "从服务器刷新数据",
+    projectRuntimeGantt: "项目运行甘特图",
+    date: "日期",
+    days: "天",
+    noData: "暂无数据",
+    loading: "加载中...",
+    noHistory: "暂无历史数据",
+    loadHistory: "加载历史"
   }
 };
 
@@ -1115,6 +1130,175 @@ export const EffectDonut = ({ data, trans }: { data: Record<string, number>, tra
 
 };
 
+// 甘特图组件 - 显示项目运行时间（时间轴风格）
+export const ProjectGanttChart = ({ 
+  dailyStats, 
+  trans,
+  projectName
+}: { 
+  dailyStats: Array<{
+    work_date: string;
+    work_hours: number;
+    accumulated_runtime: number;
+    composition_count: number;
+    layer_count: number;
+    keyframe_count: number;
+    effect_count: number;
+  }>, 
+  trans: any,
+  projectName?: string
+}) => {
+  // 检测语言
+  const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
+
+  // 数据转换：按日期排序并格式化为甘特图数据
+  const chartData = useMemo(() => {
+    if (!dailyStats || dailyStats.length === 0) return [];
+    
+    // 按日期升序排序
+    const sorted = [...dailyStats].sort((a, b) => 
+      new Date(a.work_date).getTime() - new Date(b.work_date).getTime()
+    );
+    
+    // 格式化日期显示
+    return sorted.map(stat => {
+      const date = new Date(stat.work_date);
+      const displayDate = isChinese
+        ? `${date.getMonth() + 1}/${date.getDate()}`
+        : `${date.getMonth() + 1}/${date.getDate()}`;
+      
+      // 根据运行时长设置颜色
+      const hours = stat.work_hours || 0;
+      let color = '#10b981'; // 绿色 - 短时长
+      if (hours >= 1 && hours < 4) {
+        color = '#f59e0b'; // 黄色 - 中等时长
+      } else if (hours >= 4) {
+        color = '#ef4444'; // 红色 - 长时长
+      }
+
+      return {
+        date: displayDate,
+        fullDate: stat.work_date,
+        start: 0, // 从0点开始
+        duration: hours, // 持续时间
+        runtime: hours,
+        keyframes: stat.keyframe_count || 0,
+        compositions: stat.composition_count || 0,
+        layers: stat.layer_count || 0,
+        effects: stat.effect_count || 0,
+        color,
+        end: hours // 结束时间
+      };
+    });
+  }, [dailyStats, trans, isChinese]);
+
+  if (chartData.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-ru-textMuted text-sm">
+        {trans.noData || 'No data available'}
+      </div>
+    );
+  }
+
+  // 计算时间轴范围（0-24小时，或根据最大时长调整）
+  const maxRuntime = Math.max(...chartData.map(d => d.runtime), 8); // 最小8小时范围
+
+  return (
+    <div className="w-full h-full relative">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart 
+          data={chartData} 
+          layout="vertical"
+          margin={{ top: 5, right: 30, left: 50, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={true} horizontal={false} />
+          <XAxis 
+            type="number"
+            domain={[0, maxRuntime]}
+            stroke="#666"
+            tick={{ fill: '#666', fontSize: 9, fontFamily: 'monospace' }}
+            tickLine={false}
+            axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+            ticks={[0, 4, 8, 12, 16, 20, 24].filter(t => t <= maxRuntime)}
+            tickFormatter={(value) => `${value}h`}
+          />
+          <YAxis 
+            type="category" 
+            dataKey="date"
+            stroke="#666"
+            tick={{ fill: '#666', fontSize: 10, fontFamily: 'monospace' }}
+            tickLine={false}
+            axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+            width={45}
+            interval={0}
+          />
+          <Tooltip
+            contentStyle={{ 
+              backgroundColor: 'rgba(5,5,5,0.95)', 
+              borderColor: '#333', 
+              color: '#fff', 
+              borderRadius: '4px', 
+              backdropFilter: 'blur(8px)',
+              fontSize: 11,
+              fontFamily: 'monospace'
+            }}
+            itemStyle={{ 
+              fontSize: 11, 
+              fontFamily: 'monospace', 
+              paddingTop: '2px', 
+              paddingBottom: '2px' 
+            }}
+            labelStyle={{ 
+              color: '#888', 
+              marginBottom: '8px', 
+              fontSize: '11px', 
+              fontWeight: 'bold' 
+            }}
+            labelFormatter={(label, payload) => {
+              if (payload && payload.length > 0) {
+                return `${trans.date || 'Date'}: ${payload[0].payload.fullDate}`;
+              }
+              return label;
+            }}
+            formatter={(value: number, name: string, props: any) => {
+              if (name === 'duration') {
+                const start = props.payload.start;
+                const end = props.payload.end;
+                return [`${start}h - ${end}h (${value.toFixed(2)}h)`, trans.runtime || 'Runtime'];
+              }
+              return [value, name];
+            }}
+          />
+          <Bar 
+            dataKey="duration" 
+            radius={[0, 0, 0, 0]}
+            isAnimationActive={true}
+            animationDuration={500}
+            minPointSize={2}
+          >
+            {chartData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color}
+                style={{
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e: any) => {
+                  e.target.style.opacity = '0.7';
+                }}
+                onMouseOut={(e: any) => {
+                  e.target.style.opacity = '1';
+                }}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 export const DataList = ({ data, trans, type = 'count', anonymizeMode = false }: { data: Record<string, number> | string[], trans: any, type?: 'count' | 'list', anonymizeMode?: boolean }) => {
   const [sortKey, setSortKey] = useState<'name' | 'value'>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -1816,30 +2000,17 @@ export const AnalyticsView = ({
     }, []);  // 空依赖，只执行一次
 
     // 根据当前视图模式过滤数据
+    const filteredWorkLogs = useMemo(() => {
+        const { startDate, endDate } = getDateRange(viewMode, cursorDate);
 
-        const filteredWorkLogs = useMemo(() => {
+        const filtered = workLogs.filter(log => {
+            const date = log.work_date;
+            const isInRange = date >= startDate && date <= endDate;
+            return isInRange;
+        });
 
-            const { startDate, endDate } = getDateRange(viewMode, cursorDate);
-
-    
-
-            const filtered = workLogs.filter(log => {
-
-                const date = log.work_date;
-
-    
-
-                const isInRange = date >= startDate && date <= endDate;
-
-                return isInRange;
-
-            });
-
-    
-
-            return filtered;
-
-        }, [workLogs, viewMode, cursorDate]);
+        return filtered;
+    }, [workLogs, viewMode, cursorDate]);
 
     // 数据量监控：当数据量过大时自动禁用 showDaily
     useEffect(() => {
@@ -2502,7 +2673,7 @@ const App = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // Handle fetch project history
+  // Handle fetch project history (for modal)
   const handleFetchProjectHistory = async (projectId: string, projectName: string) => {
     console.log('[Dashboard] Fetching project history:', projectId, projectName);
     setHistoryProject({ id: projectId, name: projectName });
@@ -2550,6 +2721,55 @@ const App = () => {
       }
     } catch (error) {
       console.error('[Dashboard] Error fetching project history:', error);
+      setHistoryData([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Load project history for gantt chart (without modal)
+  const loadProjectHistoryForGantt = async (projectId: string) => {
+    console.log('[Dashboard] Loading project history for gantt:', projectId);
+    setIsLoadingHistory(true);
+
+    try {
+      const token = localStorage.getItem('rualive_token');
+      if (!token) {
+        console.error('[Dashboard] No authentication token found');
+        return;
+      }
+
+      const response = await fetch(`${window.location.origin}/api/projects/history?projectId=${projectId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.dailyStats) {
+          const transformedData = result.dailyStats.map((item: any) => ({
+            work_date: item.work_date,
+            work_hours: item.work_hours,
+            accumulated_runtime: item.accumulated_runtime,
+            composition_count: item.composition_count,
+            layer_count: item.layer_count,
+            keyframe_count: item.keyframe_count,
+            effect_count: item.effect_count
+          }));
+          setHistoryData(transformedData);
+        } else {
+          console.error('[Dashboard] Failed to fetch project history for gantt:', result.error);
+          setHistoryData([]);
+        }
+      } else {
+        console.error('[Dashboard] API request failed for gantt:', response.status);
+        setHistoryData([]);
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error fetching project history for gantt:', error);
       setHistoryData([]);
     } finally {
       setIsLoadingHistory(false);
@@ -2668,6 +2888,14 @@ const App = () => {
   const project: ProjectData | null = filteredProjects[selectedProjectIndex] 
     ? filteredProjects[selectedProjectIndex] 
     : null;
+
+  // 自动加载项目历史数据（不打开模态框）
+  useEffect(() => {
+    if (project && project.projectId) {
+      console.log('[Dashboard] Auto-loading project history for gantt:', project.projectId, project.name);
+      loadProjectHistoryForGantt(project.projectId);
+    }
+  }, [project?.projectId]);
 
   useEffect(() => {
     setSelectedProjectIndex(0);
@@ -2789,6 +3017,48 @@ const App = () => {
                     <EffectDonut data={project.details.effectCounts} trans={trans} />
                   </DashboardPanel>
                 </div>
+
+                {/* 甘特图 - 项目运行时间 */}
+                <DashboardPanel 
+                    title={trans.projectRuntimeGantt || 'Project Runtime Gantt'} 
+                    count={historyData ? historyData.length : 0}
+                    countLabel={trans.days || 'Days'}
+                    className="h-[200px] md:h-[250px]"
+                    extraAction={
+                        <button
+                            onClick={() => project && loadProjectHistoryForGantt(project.projectId)}
+                            className="flex items-center gap-1 px-2 py-1 text-[9px] md:text-xs font-bold rounded bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-all"
+                            title={trans.refresh || 'Refresh'}
+                        >
+                            <RefreshCw size={12} />
+                            <span className="hidden md:inline">{trans.refresh || 'Refresh'}</span>
+                        </button>
+                    }
+                >
+                    {historyData && historyData.length > 0 ? (
+                        <ProjectGanttChart 
+                            dailyStats={historyData}
+                            trans={trans}
+                            projectName={project.name}
+                        />
+                    ) : isLoadingHistory ? (
+                        <div className="w-full h-full flex items-center justify-center text-ru-textMuted text-sm">
+                            <Activity size={24} className="animate-spin mr-2" />
+                            {trans.loading || 'Loading...'}
+                        </div>
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-ru-textMuted text-sm">
+                            <Calendar size={24} className="mb-2 opacity-50" />
+                            <p>{trans.noHistory || 'No history data'}</p>
+                            <button
+                                onClick={() => project && loadProjectHistoryForGantt(project.projectId)}
+                                className="mt-2 px-3 py-1 text-xs bg-ru-primary/20 border border-ru-primary/40 text-ru-primary rounded hover:bg-ru-primary/30 transition-all"
+                            >
+                                {trans.loadHistory || 'Load History'}
+                            </button>
+                        </div>
+                    )}
+                </DashboardPanel>
               </>
             ) : (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-ru-textDim opacity-50">
