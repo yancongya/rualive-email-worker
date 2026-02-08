@@ -1744,26 +1744,9 @@ const AnalyticsTable = ({
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
-    const flatRows = useMemo(() => {
-        return data.flatMap(period => {
-            if (!period.projects || !Array.isArray(period.projects)) return [];
-            return period.projects.map((proj: any) => ({
-                periodLabel: period.fullLabel || '',
-                displayX: period.displayX,
-                isoDate: period.isoDate || '',
-                id: proj.projectId || '',
-                name: proj.name || '',
-                compositions: proj.statistics?.compositions || 0,
-                layers: proj.statistics?.layers || 0,
-                keyframes: proj.statistics?.keyframes || 0,
-                effects: proj.statistics?.effects || 0,
-                runtime: proj.accumulatedRuntime || 0
-            }));
-        });
-    }, [data]);
-
+    // 直接使用聚合数据，不再扁平化
     const sortedRows = useMemo(() => {
-        let items = [...flatRows];
+        let items = [...data];
         if (sortConfig !== null) {
             items.sort((a, b) => {
                 let aValue = a[sortConfig.key];
@@ -1784,7 +1767,7 @@ const AnalyticsTable = ({
             });
         }
         return items;
-    }, [flatRows, sortConfig]);
+    }, [data, sortConfig]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
@@ -1840,7 +1823,7 @@ const AnalyticsTable = ({
                     <thead className="sticky top-0 bg-[#050505] z-10 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]">
                         <tr className="border-b border-white/10 text-[10px] uppercase font-mono">
                             <SortableHeader label={isChinese ? '时间' : 'PERIOD'} sortKey="periodLabel" width="20%" />
-                            <SortableHeader label={isChinese ? '项目' : 'PROJECT'} sortKey="name" width="25%" />
+                            <SortableHeader label={isChinese ? '项目数' : 'PROJECTS'} sortKey="projectCount" align="center" colorClass="text-cyan-400/80" width="15%" />
                             <SortableHeader label={trans.compositions} sortKey="compositions" align="right" colorClass="text-blue-400/80" />
                             <SortableHeader label={trans.totalLayers} sortKey="layers" align="right" colorClass="text-purple-400/80" />
                             <SortableHeader label={trans.keyframes} sortKey="keyframes" align="right" colorClass="text-ru-primary/80" />
@@ -1850,21 +1833,17 @@ const AnalyticsTable = ({
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {visibleRows.map((row: any, idx: number) => (
-                            <tr key={`${row.periodLabel}-${row.id}-${idx}`} className="hover:bg-white/5 transition-colors group cursor-pointer select-none">
+                            <tr key={`${row.isoDate}-${idx}`} className="hover:bg-white/5 transition-colors group cursor-pointer select-none">
                                 <td 
                                     className="p-3 text-xs font-bold text-ru-textDim group-hover:text-white align-top hover:underline decoration-white/30 underline-offset-4"
                                     onDoubleClick={() => onNavigate(row.isoDate)}
-                                    title="Double click to jump to this date on Dashboard"
+                                    title="Double click to jump to this period on Dashboard"
                                 >
-                                    {row.periodLabel}
-                                    {row.displayX && <span className="ml-2 opacity-50 text-[9px]">({row.displayX})</span>}
+                                    {row.fullLabel || row.periodLabel}
+                                    {row.displayX !== undefined && <span className="ml-2 opacity-50 text-[9px]">({row.displayX})</span>}
                                 </td>
-                                <td 
-                                    className="p-3 text-xs font-mono text-white group-hover:text-ru-primary transition-colors hover:underline decoration-ru-primary/30 underline-offset-4"
-                                    onDoubleClick={() => onNavigate(row.isoDate, row.name)}
-                                    title="Double click to filter this project on Dashboard"
-                                >
-                                    {row.name}
+                                <td className="p-3 text-xs font-mono text-center text-cyan-100/70 font-bold">
+                                    {(row.projectCount || 0).toLocaleString()}
                                 </td>
                                 <td className="p-3 text-xs font-mono text-right text-blue-100/70">{(row.compositions || 0).toLocaleString()}</td>
                                 <td className="p-3 text-xs font-mono text-right text-purple-100/70">{(row.layers || 0).toLocaleString()}</td>

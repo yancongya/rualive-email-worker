@@ -115,9 +115,43 @@ export default {
       try {
         console.log('[Assets] Fetching static file for path:', path);
         const assetResponse = await ASSETS.fetch(request);
+        console.log('[Assets] Response status:', assetResponse.status);
+        console.log('[Assets] Response Content-Type:', assetResponse.headers.get('Content-Type'));
+        
         if (assetResponse && assetResponse.status !== 404) {
           console.log('[Assets] Static file found, returning response');
-          return assetResponse;
+          
+          // 确定正确的 MIME 类型
+          let contentType = 'text/plain;charset=UTF-8';
+          if (path.endsWith('.js') || path.endsWith('.mjs')) {
+            contentType = 'application/javascript;charset=UTF-8';
+          } else if (path.endsWith('.json')) {
+            contentType = 'application/json;charset=UTF-8';
+          } else if (path.endsWith('.css')) {
+            contentType = 'text/css;charset=UTF-8';
+          } else if (path.endsWith('.html')) {
+            contentType = 'text/html;charset=UTF-8';
+          } else if (path.endsWith('.svg')) {
+            contentType = 'image/svg+xml;charset=UTF-8';
+          } else if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+            contentType = 'image/jpeg';
+          } else if (path.endsWith('.webp')) {
+            contentType = 'image/webp';
+          }
+          
+          console.log('[Assets] Setting Content-Type to:', contentType);
+          
+          // 创建新的 Response 对象，明确设置 Content-Type
+          return new Response(assetResponse.body, {
+            status: assetResponse.status,
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            }
+          });
         }
       } catch (error) {
         // Assets 失败，继续处理其他路由
@@ -176,160 +210,22 @@ export default {
     }
 
     if (path === '/user') {
-      // 直接返回用户页面HTML，避免Assets缓存问题
-      const userHtml = `<!DOCTYPE html>
-<!-- Build Time: 2026-02-07-14:00 -->
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuAlive@烟囱鸭 - 你还在做动画嘛 - 用户页</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        ru: {
-                            primary: '#FF6B35',
-                            secondary: '#00D9FF',
-                            glass: 'rgba(255, 255, 255, 0.03)',
-                            glassBorder: 'rgba(255, 255, 255, 0.08)',
-                            textMuted: 'rgba(255, 255, 255, 0.5)',
-                            textDim: 'rgba(255, 255, 255, 0.3)',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Rajdhani', 'sans-serif'],
-                        mono: ['Orbitron', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html {
-                    background: #0a0a0f;
-                    color: #e0e0e0;
-                    font-family: 'Rajdhani', sans-serif;
-                    overflow: hidden;
-                    width: 100%;
-                    height: 100%;
-                    -webkit-tap-highlight-color: transparent;
-                    -webkit-user-select: none;
-                    user-select: none;
-                }
-                
-                #root {
-                    width: 100%;
-                    height: 100%;
-                    overflow-y: auto;
-                    overflow-x: hidden;
-                    -webkit-overflow-scrolling: touch;
-                    /* Hide scrollbar in all browsers */
-                    scrollbar-width: none; /* Firefox */
-                    -ms-overflow-style: none; /* IE and Edge */
-                }
-                
-                /* Hide scrollbar for Chrome, Safari and Opera */
-                #root::-webkit-scrollbar {
-                    display: none;
-                }
-                
-                /* Prevent click feedback on all elements */
-                * {
-                    -webkit-tap-highlight-color: transparent;
-                    -webkit-user-select: none;
-                    user-select: none;
-                    -webkit-focus-ring-color: transparent;
-                }
-                
-                /* Remove focus outline but keep pointer events */
-                *:focus {
-                    outline: none !important;
-                }
-                
-                /* Custom scrollbar */
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.03);
-                    border-radius: 3px;
-                }
-                
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 107, 53, 0.3);
-                    border-radius: 3px;
-                    transition: background 0.3s;
-                }
-                
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 107, 53, 0.6);
-                }
-                
-                .custom-scrollbar::-webkit-scrollbar-thumb:active {
-                    background: rgba(255, 107, 53, 0.8);
-                }
-                
-                .custom-scrollbar {
-                    scrollbar-width: thin;
-                    scrollbar-color: rgba(255, 107, 53, 0.3) rgba(255, 255, 255, 0.03);
-                }
-
-                /* BRICK LOADER ANIMATION */
-                @keyframes rua-brick-cycle {
-                    0% { 
-                        opacity: 0; 
-                        transform: translateY(-60px); 
-                    }
-                    15% { 
-                        opacity: 1; 
-                        transform: translateY(0); 
-                    }
-                    50% { 
-                        opacity: 1; 
-                        transform: translateY(0); 
-                    }
-                    65% { 
-                        opacity: 0; 
-                        transform: translateY(60px); 
-                    }
-                    100% { 
-                        opacity: 0; 
-                        transform: translateY(60px); 
-                    }
-                }
-                
-                .rua-brick-anim {
-                    opacity: 0; /* Hidden by default */
-                    transform-box: fill-box;
-                    transform-origin: center;
-                    animation: rua-brick-cycle 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
-                    will-change: transform, opacity;
-                }
-    </style>
-  <script type="module" crossorigin src="/assets/user-v6-DqW8xjDM.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/client-Dv1YTpHR.js">
-  <link rel="modulepreload" crossorigin href="/assets/x-CicuLh4o.js">
-  <link rel="modulepreload" crossorigin href="/assets/index-C8pce-KX.js">
-  <link rel="modulepreload" crossorigin href="/assets/LogoAnimation-B3HyV7h6.js">
-</head>
-<body>
-    <div id="root"></div>
-</body>
-</html>`;
+      // 从 Assets 读取用户页面 HTML
+      const userV6Url = new URL('/public/user-v6.html', request.url);
+      const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
+      if (assetResponse && assetResponse.status !== 404) {
+        console.log('[Route] /user: Found user-v6.html in Assets');
+        return new Response(assetResponse.body, {
+          status: assetResponse.status,
+          headers: {
+            'Content-Type': 'text/html;charset=UTF-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+          }
+        });
+      }
       
-      return new Response(userHtml, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html;charset=UTF-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-        }
-      });
+      console.log('[Route] /user: user-v6.html not found in Assets, returning 404');
+      return new Response('User page not found', { status: 404 });
     }
 
     if (path === '/user-v6') {

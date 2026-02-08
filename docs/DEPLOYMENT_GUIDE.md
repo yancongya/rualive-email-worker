@@ -87,6 +87,97 @@ Failed to load module script: Expected a JavaScript-or-Wasm module script
 
 ---
 
+### 6. Worker 路由返回错误的 HTML 内容
+
+**现象**：
+- 浏览器控制台报错：
+  ```
+  Failed to load module script: Expected a JavaScript-or-Wasm module script
+  but the server responded with a MIME type of ""
+  ```
+- 页面无法加载
+
+**错误信息**：
+```
+GET /user-v6.tsx 404 (Not Found)
+```
+
+**原因**：
+- Worker 代码中 `/user` 路由返回硬编码的 HTML 内容
+- 硬编码的 HTML 引用的是源文件 `./user-v6.tsx` 而非编译后的 JS 文件
+- 每次构建后 JS 文件名会变化（如 `user-v6-DOnukJ-W.js`），但硬编码的 HTML 不更新
+
+**示例问题代码**：
+```javascript
+// ❌ 错误：硬编码 HTML 内容
+if (path === '/user') {
+  const userHtml = `<!DOCTYPE html>
+    ...
+    <script type="module" src="./user-v6.tsx"></script>
+  </html>`;
+  return new Response(userHtml, { ... });
+}
+```
+
+**修复方案**：
+```javascript
+// ✅ 正确：从 Assets 读取构建后的 HTML
+if (path === '/user') {
+  const userV6Url = new URL('/public/user-v6.html', request.url);
+  const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
+  if (assetResponse && assetResponse.status !== 404) {
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      headers: {
+        'Content-Type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      }
+    });
+  }
+  return new Response('User page not found', { status: 404 });
+}
+```
+
+---
+
+### 7. Assets 返回的 MIME 类型为空
+
+**现象**：
+- 浏览器控制台报错：
+  ```
+  Failed to load module script: Expected a JavaScript-or-Wasm module script
+  but the server responded with a MIME type of ""
+  ```
+
+**原因**：
+- Cloudflare Assets 返回的静态文件 MIME 类型可能为空或不正确
+- 模块脚本要求 MIME 类型必须为 `application/javascript` 或 `text/javascript`
+
+**修复方案**：
+```javascript
+// 确保正确的 MIME 类型
+let contentType = 'text/plain;charset=UTF-8';
+if (path.endsWith('.js') || path.endsWith('.mjs')) {
+  contentType = 'application/javascript;charset=UTF-8';
+} else if (path.endsWith('.json')) {
+  contentType = 'application/json;charset=UTF-8';
+} else if (path.endsWith('.css')) {
+  contentType = 'text/css;charset=UTF-8';
+} else if (path.endsWith('.html')) {
+  contentType = 'text/html;charset=UTF-8';
+}
+
+return new Response(assetResponse.body, {
+  status: assetResponse.status,
+  headers: {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  }
+});
+```
+
+---
+
 ## 根本原因分析
 
 ### 1. Wrangler 的文件检测机制
@@ -536,7 +627,117 @@ crons = ["0 * * * *"]  # 每小时执行一次
 
 ---
 
-### 问题 3：翻译文件 404 错误
+### 问题 4：MIME 类型错误
+
+**现象**：
+```
+Failed to load module script: Expected a JavaScript-or-Wasm module script
+but the server responded with a MIME type of ""
+```
+
+**排查步骤**：
+
+1. 检查 Worker 返回的 MIME 类型：
+   ```bash
+   # 使用 PowerShell
+   Invoke-WebRequest -Uri "https://.../assets/user-v6-DOnukJ-W.js" -Method Head | 
+     Select-Object -ExpandProperty Headers | 
+     Select-Object Content-Type
+   
+   # 应该返回：
+   # Content-Type : application/javascript
+   ```
+
+2. 检查 Worker 代码中的 MIME 类型设置：
+   ```javascript
+   // src/index.js
+   // 确保有正确的 MIME 类型映射
+   if (path.endsWith('.js') || path.endsWith('.mjs')) {
+     contentType = 'application/javascript;charset=UTF-8';
+   }
+   
+   // 确保返回新的 Response 对象
+   return new Response(assetResponse.body, {
+     status: assetResponse.status,
+     headers: {
+       'Content-Type': contentType,
+       // ...
+     }
+   });
+   ```
+
+3. 检查 Assets 绑定配置：
+   ```toml
+   # wrangler.toml
+   [assets]
+   directory = "dist"
+   binding = "ASSETS"
+   ```
+
+4. 部署后清除浏览器缓存：
+   - Windows/Linux: `Ctrl + Shift + R`
+   - Mac: `Cmd + Shift + R`
+   - 或使用无痕模式
+
+---
+
+### 问题 5：Worker 路由返回错误的 HTML 内容
+
+**现象**：
+- 页面引用 `./user-v6.tsx`（源文件）
+- 控制台显示 404 错误
+
+**排查步骤**：
+
+1. 检查 `/user` 路由返回的内容：
+   ```bash
+   curl https://rualive-email-worker.cubetan57.workers.dev/user | 
+     grep "script.*user-v6"
+   
+   # 应该看到：
+   # src="/assets/user-v6-DOnukJ-W.js"
+   
+   # 不应该看到：
+   # src="./user-v6.tsx"
+   ```
+
+2. 检查 Worker 代码中的路由处理：
+   ```javascript
+   // src/index.js
+   if (path === '/user') {
+     // ❌ 错误：硬编码 HTML
+     // const userHtml = `...`;
+     // return new Response(userHtml, { ... });
+     
+     // ✅ 正确：从 Assets 读取
+     const userV6Url = new URL('/public/user-v6.html', request.url);
+     const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
+     if (assetResponse && assetResponse.status !== 404) {
+       return new Response(assetResponse.body, {
+         status: assetResponse.status,
+         headers: {
+           'Content-Type': 'text/html;charset=UTF-8',
+           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+         }
+       });
+     }
+   }
+   ```
+
+3. 确保构建后的 HTML 文件在 Assets 中：
+   ```bash
+   ls -la dist/public/user-v6.html
+   # 应该存在
+   ```
+
+4. 避免在 Worker 代码中硬编码 HTML 内容：
+   - 每次构建后 JS 文件名会变化
+   - 硬编码的 HTML 不会自动更新
+   - 始终从 Assets 读取构建后的文件
+
+---
+
+### 问题 6：翻译文件 404 错误
 
 **排查步骤**：
 
@@ -676,8 +877,77 @@ Timeout: Deploy operation timed out
 - [ ] 环境变量已设置（`wrangler secret list`）
 - [ ] 数据库迁移已执行（`npm run db:migrate`）
 - [ ] 在预览环境测试（`wrangler dev`）
+- [ ] Worker 路由使用 Assets 读取 HTML 文件（非硬编码）
+- [ ] 静态文件返回正确的 MIME 类型
+- [ ] 浏览器控制台无 404 或 MIME 类型错误
 
-### 2. 版本管理
+### 2. 避免硬编码 HTML 内容
+
+**❌ 错误做法**：
+```javascript
+// 硬编码 HTML 内容
+if (path === '/user') {
+  const html = `<!DOCTYPE html>
+    <script type="module" src="./user-v6.tsx"></script>
+  </html>`;
+  return new Response(html, { ... });
+}
+```
+
+**✅ 正确做法**：
+```javascript
+// 从 Assets 读取构建后的 HTML
+if (path === '/user') {
+  const userV6Url = new URL('/public/user-v6.html', request.url);
+  const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
+  if (assetResponse && assetResponse.status !== 404) {
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      headers: {
+        'Content-Type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      }
+    });
+  }
+}
+```
+
+**原因**：
+- 每次构建后 JS 文件名会变化（哈希值）
+- 硬编码的 HTML 不会自动更新
+- 从 Assets 读取确保总是使用最新版本
+
+### 3. 正确设置 MIME 类型
+
+**所有静态资源必须设置正确的 MIME 类型**：
+```javascript
+// MIME 类型映射
+const mimeTypes = {
+  '.js': 'application/javascript;charset=UTF-8',
+  '.mjs': 'application/javascript;charset=UTF-8',
+  '.json': 'application/json;charset=UTF-8',
+  '.css': 'text/css;charset=UTF-8',
+  '.html': 'text/html;charset=UTF-8',
+  '.svg': 'image/svg+xml;charset=UTF-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf'
+};
+
+// 获取 MIME 类型
+const ext = path.substring(path.lastIndexOf('.'));
+const contentType = mimeTypes[ext] || 'application/octet-stream';
+```
+
+**重要**：
+- 模块脚本（`type="module"`）必须返回 `application/javascript` 或 `text/javascript`
+- MIME 类型不能为空字符串
+
+### 4. 版本管理
 
 **使用 Git 标签**：
 ```bash
@@ -875,6 +1145,10 @@ ISC
 
 ---
 
-**文档版本**: 1.0.0  
-**最后更新**: 2026-02-07  
-**维护者**: iFlow CLI
+**文档版本**: 1.1.0  
+**最后更新**: 2026-02-08  
+**维护者**: iFlow CLI  
+
+**更新日志**：
+- v1.1.0 (2026-02-08): 添加 Worker 路由错误和 MIME 类型问题的解决方案
+- v1.0.0 (2026-02-07): 初始版本，汇总部署问题和解决方案
