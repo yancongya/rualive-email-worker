@@ -1081,7 +1081,7 @@ const moveSlideToIndex = useCallback((index: number) => {
             ) : (
               <button onClick={() => { setMobileMenuOpen(false); switchView('landing'); }} className="text-left text-2xl font-black italic">返回首页 HOME</button>
             )}
-            <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="text-left text-lg font-bold opacity-60">LANGUAGE: {lang === 'zh' ? 'EN' : 'ZH'}</button>
+            <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="text-left text-lg font-bold opacity-60 hover:text-primary transition-colors">{lang === 'zh' ? 'EN' : 'ZH'}</button>
           </div>
         )}
       </nav>
