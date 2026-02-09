@@ -419,6 +419,47 @@ Get-ChildItem dist\assets\showcase -File
 - 英文配置：`public/locals/landing/en.json`
 - 内嵌配置：`public/index.tsx` 中的 `TRANSLATIONS` 对象
 
+### 问题 6：登录页/其他页面 404 错误
+
+**症状**：
+```
+GET https://rualive-email-worker.cubetan57.workers.dev/assets/client-Cc-pX27n-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG.js net::ERR_ABORTED 404 (Not Found)
+```
+
+**原因**：
+- HTML 源文件（`public/auth.html`, `public/index.html` 等）中包含旧的 `<link rel="modulepreload">` 标签
+- 这些标签引用了之前构建时生成的 JS 文件（如 `client-Cc-pX27n-FUpTIXKG-...js`）
+- 这些文件已被删除或文件哈希已更改
+
+**解决方法**：
+1. 检查 HTML 源文件中的 `<link rel="modulepreload">` 标签
+2. 删除所有手动添加的 modulepreload 标签
+3. 只保留 `<script type="module">` 主入口点标签
+4. 重新构建并部署
+
+**验证方法**：
+```powershell
+# 检查 HTML 文件中的 modulepreload 标签
+Select-String -Path "public\*.html" -Pattern "modulepreload"
+
+# 重新构建并部署
+.\deploy.ps1 -Force
+```
+
+**修复后的正确 HTML 结构**：
+```html
+<!-- ❌ 错误：旧的 modulepreload 标签 -->
+<link rel="modulepreload" crossorigin href="/assets/client-Cc-pX27n-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG-FUpTIXKG.js">
+
+<!-- ✅ 正确：只保留主入口点 -->
+<script type="module" crossorigin src="/assets/auth-QHsbu9yW.js"></script>
+```
+
+**注意事项**：
+- 不要手动添加 `<link rel="modulepreload">` 标签
+- Vite 会自动优化加载策略
+- 每次构建后，文件哈希会变化，需要重新部署
+
 **添加/修改 showcase 图片**：
 1. 将图片放入 `public/assets/showcase/` 目录
 2. 更新配置文件中的 `showcase.items` 数组
