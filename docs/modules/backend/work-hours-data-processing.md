@@ -280,17 +280,95 @@ const workData = await getWorkData(userId, today, env);
 // - project_count: 项目数量
 // - work_hours_json: 每个项目的工作时长
 // - projects_json: 项目详情
+// - composition_count: 合成数量
+// - layer_count: 图层数量
+// - keyframe_count: 关键帧数量
+// - effect_count: 特效数量
 ```
+
+### getWorkData 数据重新计算逻辑
+
+**重要**：`getWorkData()` 函数会在获取数据后，从 `projects_json` 和 `work_hours_json` 重新计算所有统计数据，确保邮件显示的是完整的数据。
+
+```javascript
+async function getWorkData(userId, date, env) {
+  const result = await DB.prepare(
+    'SELECT * FROM work_logs WHERE user_id = ? AND work_date = ?'
+  ).bind(userId, date).first();
+  
+  if (!result) {
+    return null;
+  }
+  
+  // 🔍 从 projects_json 和 work_hours_json 重新计算统计数据
+  // 确保邮件显示的是完整的数据，而不是可能不准确的统计字段
+  if (result.projects_json && result.work_hours_json) {
+    const projects = JSON.parse(result.projects_json);
+    const workHoursList = JSON.parse(result.work_hours_json);
+    
+    // 重新计算项目数量
+    result.project_count = projects.length;
+    
+    // 重新计算总工作时长
+    result.work_hours = workHoursList.reduce(function(acc, w) {
+      return acc + parseFloat(w.hours || 0);
+    }, 0);
+    
+    // 重新计算其他维度数据（从 projects_json 累加）
+    result.composition_count = projects.reduce(function(acc, p) {
+      return acc + (p.compositions || 0);
+    }, 0);
+    
+    result.layer_count = projects.reduce(function(acc, p) {
+      return acc + (p.layers || 0);
+    }, 0);
+    
+    result.keyframe_count = projects.reduce(function(acc, p) {
+      return acc + (p.keyframes || 0);
+    }, 0);
+    
+    result.effect_count = projects.reduce(function(acc, p) {
+      return acc + (p.effects || 0);
+    }, 0);
+    
+    console.log('[getWorkData] 重新计算统计数据:', {
+      date: date,
+      project_count: result.project_count,
+      work_hours: result.work_hours,
+      composition_count: result.composition_count,
+      layer_count: result.layer_count,
+      keyframe_count: result.keyframe_count,
+      effect_count: result.effect_count
+    });
+  }
+  
+  return result;
+}
+```
+
+**设计原理**：
+1. **数据来源**：从 `projects_json` 和 `work_hours_json` 获取完整的项目数据
+2. **重新计算**：不依赖数据库中可能不准确的统计字段，而是从 JSON 数据重新计算
+3. **确保完整性**：即使 AE 扩展只上传部分项目，邮件也会显示完整的数据
+4. **数据一致性**：所有统计数据都基于同一数据源，确保一致性
 
 ### 邮件模板使用
 ```javascript
 // templates/daily-summary-email.js
 const workHours = Number(workData?.work_hours) || 0;
 const projectCount = workData?.project_count || 0;
+const compositionCount = workData?.composition_count || 0;
+const layerCount = workData?.layer_count || 0;
+const keyframeCount = workData?.keyframe_count || 0;
+const effectCount = workData?.effect_count || 0;
 
 // 显示在邮件中
 <div class="stat-value">${workHours.toFixed(2)}h</div>
 <div class="stat-value">${projectCount}</div>
+<div class="stat-value">${compositionCount}</div>
+<div class="stat-value">${layerCount}</div>
+<div class="stat-value">${keyframeCount}</div>
+<div class="stat-value">${effectCount}</div>
 ```
 
 ## 常见问题
@@ -315,6 +393,12 @@ const projectCount = workData?.project_count || 0;
 - **API 端点**: `POST /api/work-data`
 
 ## 更新历史
+
+- **2026-02-09**: 修复邮件数据统计问题，确保所有维度数据正确
+  - 在 `getWorkData()` 函数中添加统计数据重新计算逻辑
+  - 从 `projects_json` 和 `work_hours_json` 重新计算所有维度数据
+  - 修复项目数量、工作时长、合成数、图层数、关键帧数、特效数
+  - 更新数据库记录，确保数据一致性
 
 - **2026-02-09**: 修复 work_hours_json 和 project_count 计算错误
   - 添加 `mergedWorkHours` 变量
