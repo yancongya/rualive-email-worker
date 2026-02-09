@@ -1275,23 +1275,15 @@ export const ProjectGanttChart = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // 添加调试日志 - 确保重新构建
-  useEffect(() => {
-    console.log('[GanttChart] Component mounted with ResizeObserver support v3');
-    return () => console.log('[GanttChart] Component unmounted');
-  }, []);
-
-  // 使用 ResizeObserver 监听容器尺寸变化 (Fix v3 - Forced Rebuild)
+  // 使用 ResizeObserver 监听容器尺寸变化
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    console.log('[GanttChart] Setting up ResizeObserver');
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          console.log('[GanttChart] Container resized:', { width, height });
           setContainerSize({ width, height });
         }
       }

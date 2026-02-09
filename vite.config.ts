@@ -1,6 +1,7 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, readdirSync, copyFileSync as fsCopyFileSync } from 'fs';
 import { join } from 'path';
 
 export default defineConfig({
@@ -14,11 +15,9 @@ export default defineConfig({
         const localsDest = join(__dirname, 'dist/public/locals');
 
         if (existsSync(localsSrc)) {
-          // 创建目标目录
           mkdirSync(localsDest, { recursive: true });
           mkdirSync(join(localsDest, 'user'), { recursive: true });
 
-          // 复制翻译文件
           const files = ['zh.json', 'en.json'];
           files.forEach(file => {
             const srcPath = join(localsSrc, 'user', file);
@@ -27,6 +26,31 @@ export default defineConfig({
               copyFileSync(srcPath, destPath);
             }
           });
+        }
+      }
+    },
+    {
+      name: 'copy-showcase',
+      closeBundle() {
+        // 复制 showcase 图片到 dist 目录
+        const showcaseSrc = join(__dirname, 'public/assets/showcase');
+        const showcaseDest = join(__dirname, 'dist/assets/showcase');
+
+        if (existsSync(showcaseSrc)) {
+          mkdirSync(showcaseDest, { recursive: true });
+          const files = readdirSync(showcaseSrc);
+          files.forEach(file => {
+            const srcPath = join(showcaseSrc, file);
+            const destPath = join(showcaseDest, file);
+            copyFileSync(srcPath, destPath);
+          });
+        }
+        
+        // 复制 index.html 到 dist 根目录
+        const indexSrc = join(__dirname, 'dist/public/index.html');
+        const indexDest = join(__dirname, 'dist/index.html');
+        if (existsSync(indexSrc)) {
+          copyFileSync(indexSrc, indexDest);
         }
       }
     }

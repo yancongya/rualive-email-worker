@@ -139,10 +139,10 @@ const TRANSLATIONS = {
         desc: "部分扩展和用户页截图",
         hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
         items: [
-          { title: "AE 插件面板", img: "/assets/showcase/01-panel.svg" },
-          { title: "生存看板详情", img: "/assets/showcase/02-dashboard.svg" },
-          { title: "受难同胞地图", img: "/assets/showcase/03-map.svg" },
-          { title: "遗言设置页面", img: "/assets/showcase/04-setup.svg" }
+          { title: "AE 插件面板", img: "/assets/showcase/打卡页.jpg" },
+          { title: "生存看板详情", img: "/assets/showcase/监控面板.jpg" },
+          { title: "受难同胞地图", img: "/assets/showcase/数据分析页.jpg" },
+          { title: "遗言设置页面", img: "/assets/showcase/设置页.jpg" }
         ]
       },    cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
     footer: { copy: "活着，为了做动画。", rights: "© 2026 RuAlive@烟囱鸭.", data: "本地存储", survival: "99% 生还预测" },
@@ -217,10 +217,10 @@ const TRANSLATIONS = {
         desc: "UI screenshots & dashboard previews",
         hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
         items: [
-          { title: "AE Extension Panel", img: "/assets/showcase/01-panel.svg" },
-          { title: "Vital Dashboard", img: "/assets/showcase/02-dashboard.svg" },
-          { title: "Global Map", img: "/assets/showcase/03-map.svg" },
-          { title: "Setup Page", img: "/assets/showcase/04-setup.svg" }
+          { title: "AE Extension Panel", img: "/assets/showcase/打卡页.jpg" },
+          { title: "Vital Dashboard", img: "/assets/showcase/监控面板.jpg" },
+          { title: "Global Map", img: "/assets/showcase/数据分析页.jpg" },
+          { title: "Setup Page", img: "/assets/showcase/设置页.jpg" }
         ]
       },    cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
     footer: { copy: "Live to animate.", rights: "© 2026 RuAlive@ChimneyDuck.", data: "Local", survival: "99% Odds" },

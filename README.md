@@ -280,6 +280,122 @@ npm run tail
 - `minKeyframes`: 最小关键帧数量
 - `minJsonSize`: 最小JSON文件大小（KB）
 
+## 常见部署问题
+
+### 问题 1：静态资源 404 错误
+
+**症状**：部署后访问页面，控制台显示静态资源（图片、JS、CSS）404 错误
+
+**原因**：
+- 配置文件引用的图片路径与实际文件路径不匹配
+- 图片格式不一致（如配置引用 `.svg` 但实际是 `.jpg`）
+
+**解决方法**：
+1. 检查 `public/locals/landing/zh.json` 和 `en.json` 中的图片路径
+2. 确保图片文件存在于 `public/assets/showcase/` 目录
+3. 如果图片格式变更，更新配置文件中的文件扩展名
+
+**示例**：
+```json
+// 错误配置
+"showcase.items.0.img": "/assets/showcase/01-panel.svg"
+
+// 正确配置（实际文件是 .jpg）
+"showcase.items.0.img": "/assets/showcase/打卡页.jpg"
+```
+
+### 问题 2：MIME 类型错误
+
+**症状**：
+```
+Failed to load module script: Expected a JavaScript-or-Wasm module script 
+but the server responded with a MIME type of "".
+```
+
+**原因**：
+- HTML 中引用了源代码文件（`.tsx`）而不是编译后的 JS 文件
+- Worker 返回了错误的 MIME type
+
+**解决方法**：
+1. 确保使用 Vite 构建前端：`npm run build`
+2. Vite 会自动编译 TSX 为 JS 并更新 HTML 引用
+3. 部署前检查 `dist/index.html` 中的脚本引用
+
+**对比**：
+```html
+<!-- 错误：引用源文件 -->
+<script type="module" src="./index.tsx"></script>
+
+<!-- 正确：引用编译后的文件 -->
+<script type="module" crossorigin src="/assets/index-D0ADt15k.js"></script>
+```
+
+### 问题 3：构建产物路径问题
+
+**症状**：部署后页面无法加载，Worker 找不到 `index.html`
+
+**原因**：
+- Vite 默认将 `public/` 目录下的文件构建到 `dist/public/`
+- Worker 期望 `index.html` 在 `dist/` 根目录
+- 路径不匹配导致 404
+
+**解决方法**：
+1. 在 `vite.config.ts` 中添加 `copy-showcase` 插件
+2. 插件会在构建后自动复制 `index.html` 到正确位置
+
+**配置示例**：
+```typescript
+{
+  name: "copy-showcase",
+  closeBundle() {
+    // 复制 index.html 到 dist 根目录
+    const indexSrc = join(__dirname, "dist/public/index.html");
+    const indexDest = join(__dirname, "dist/index.html");
+    if (existsSync(indexSrc)) {
+      copyFileSync(indexSrc, indexDest);
+    }
+  }
+}
+```
+
+### 问题 4：旧构建文件残留
+
+**症状**：部署后仍显示旧版本代码或样式
+
+**原因**：
+- `public/assets/` 目录残留了之前的构建文件（JS 文件）
+- 这些旧文件没有被清理，可能干扰新的构建
+
+**解决方法**：
+1. 定期清理 `public/assets/` 目录下的 JS 文件
+2. 使用 `Get-ChildItem public\assets -Filter "*.js" | Remove-Item -Force` 清理
+3. 或者使用自动化部署脚本 `.\deploy.ps1`
+
+**清理命令**：
+```powershell
+Get-ChildItem public\assets -Filter "*.js" | Remove-Item -Force
+```
+
+### 问题 5：图片未正确部署
+
+**症状**：部署后 showcase 图片无法显示
+
+**原因**：
+- Showcase 图片没有被复制到 `dist/assets/showcase/` 目录
+- Vite 构建时只处理 JS 文件，不自动复制图片
+
+**解决方法**：
+1. 确保在 `vite.config.ts` 中配置了 `copy-showcase` 插件
+2. 插件会在 `closeBundle` 钩子中复制所有图片
+3. 验证构建输出中是否包含图片复制日志
+
+**验证方法**：
+```powershell
+Get-ChildItem dist\assets\showcase -File
+```
+
+---
+
 ## 故障排查
 
 ### 邮件发送失败
