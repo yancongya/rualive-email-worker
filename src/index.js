@@ -3291,6 +3291,14 @@ async function saveWorkData(userId, workData, env, date) {
       // 从映射中获取最终的项目列表
       const mergedProjects = Array.from(projectMap.values());
 
+      // 🔍 重新构建 work_hours_json，确保所有项目都被包含
+      const mergedWorkHours = mergedProjects.map(function(p) {
+        return {
+          project: p.name,
+          hours: (p.accumulatedRuntime / 3600).toFixed(2)
+        };
+      });
+
       // 🔍 合并其他数据（去重，使用新数据）
       // 🔍 过滤掉旧格式的合成数据（只有 count 没有 name 的数据）
       const filteredExistingCompositions = existingCompositions.filter(function(c) {
@@ -3335,7 +3343,7 @@ async function saveWorkData(userId, workData, env, date) {
       layersJson = mergedLayers.length > 0 ? JSON.stringify(mergedLayers) : null;
       keyframesJson = mergedKeyframes.length > 0 ? JSON.stringify(mergedKeyframes) : null;
       projectsJson = mergedProjects.length > 0 ? JSON.stringify(mergedProjects) : null;
-      workHoursJson = newWorkHours.length > 0 ? JSON.stringify(newWorkHours) : null;
+      workHoursJson = mergedWorkHours.length > 0 ? JSON.stringify(mergedWorkHours) : null;
 
       console.log('[saveWorkData] ========== 合并后的项目数据 ==========');
       console.log('[saveWorkData] mergedProjects:', JSON.stringify(mergedProjects, null, 2));
@@ -3348,7 +3356,7 @@ async function saveWorkData(userId, workData, env, date) {
         layers: mergedLayers.reduce(function(acc, l) { return acc + (l.count || 0); }, 0),
         keyframes: mergedKeyframes.reduce(function(acc, k) { return acc + (k.count || 0); }, 0),
         effects: mergedEffects.reduce(function(acc, e) { return acc + (e.count || 0); }, 0),  // 🔍 计算总使用次数
-        work_hours: allWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)  // 🔍 从 allWorkHours 计算总工作时长
+        work_hours: mergedWorkHours.reduce(function(acc, w) { return acc + parseFloat(w.hours); }, 0)  // 🔍 从 mergedWorkHours 计算总工作时长
       };
 
       // 更新数据库
