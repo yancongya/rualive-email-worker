@@ -2537,7 +2537,7 @@ export const AnalyticsView = ({
 
             </div>
 
-            <div className="bg-ru-glass border border-ru-glassBorder p-2 md:p-6 rounded-sm h-[250px] md:h-[500px] mb-8 relative group flex flex-col">
+            <div className={`bg-ru-glass border border-ru-glassBorder p-2 md:p-6 rounded-sm mb-8 relative group flex flex-col ${displayMode === 'chart' ? 'h-[350px]' : 'h-[600px]'}`}>
 
                 {displayMode === 'chart' ? (
                     <>
