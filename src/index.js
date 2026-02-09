@@ -2981,10 +2981,39 @@ async function getWorkData(userId, date, env) {
       .bind(userId, date)
       .first();
     
-    // 如果有数据，添加 last_work_date 字段（使用 work_date）
-    if (result && result.work_date) {
-      result.last_work_date = result.work_date;
+    if (!result) {
+      return null;
     }
+    
+    // 🔍 从 projects_json 和 work_hours_json 重新计算统计数据
+    // 确保邮件显示的是完整的数据，而不是可能不准确的统计字段
+    if (result.projects_json && result.work_hours_json) {
+      try {
+        const projects = JSON.parse(result.projects_json);
+        const workHoursList = JSON.parse(result.work_hours_json);
+        
+        // 重新计算项目数量
+        result.project_count = projects.length;
+        
+        // 重新计算总工作时长
+        result.work_hours = workHoursList.reduce(function(acc, w) {
+          return acc + parseFloat(w.hours || 0);
+        }, 0);
+        
+        console.log('[getWorkData] 重新计算统计数据:', {
+          date: date,
+          original_project_count: result.project_count,
+          original_work_hours: result.work_hours,
+          calculated_project_count: projects.length,
+          calculated_work_hours: result.work_hours
+        });
+      } catch (error) {
+        console.error('[getWorkData] 重新计算统计数据失败:', error);
+      }
+    }
+    
+    // 添加 last_work_date 字段（使用 work_date）
+    result.last_work_date = result.work_date;
     
     return result;
   } catch (error) {
