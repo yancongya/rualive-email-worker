@@ -3000,12 +3000,33 @@ async function getWorkData(userId, date, env) {
           return acc + parseFloat(w.hours || 0);
         }, 0);
         
+        // 🔍 重新计算其他维度数据（从 projects_json 累加）
+        result.composition_count = projects.reduce(function(acc, p) {
+          return acc + (p.compositions || 0);
+        }, 0);
+        
+        result.layer_count = projects.reduce(function(acc, p) {
+          return acc + (p.layers || 0);
+        }, 0);
+        
+        result.keyframe_count = projects.reduce(function(acc, p) {
+          return acc + (p.keyframes || 0);
+        }, 0);
+        
+        result.effect_count = projects.reduce(function(acc, p) {
+          return acc + (p.effects || 0);
+        }, 0);
+        
         console.log('[getWorkData] 重新计算统计数据:', {
           date: date,
           original_project_count: result.project_count,
           original_work_hours: result.work_hours,
           calculated_project_count: projects.length,
-          calculated_work_hours: result.work_hours
+          calculated_work_hours: result.work_hours,
+          calculated_composition_count: result.composition_count,
+          calculated_layer_count: result.layer_count,
+          calculated_keyframe_count: result.keyframe_count,
+          calculated_effect_count: result.effect_count
         });
       } catch (error) {
         console.error('[getWorkData] 重新计算统计数据失败:', error);
