@@ -814,6 +814,35 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
 };
 
 export const LayerRadar = ({ data, trans }: { data: any, trans: any }) => {
+  // 添加容器引用和尺寸状态
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // 使用 ResizeObserver 监听容器尺寸变化
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setContainerSize({ width, height });
+        }
+      }
+    });
+
+    observer.observe(container);
+
+    // 初始检查
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo(() => {
     // 过滤掉值为 0 的类别
     const filteredEntries = Object.entries(data).filter(([_, value]) => value > 0);
@@ -863,8 +892,13 @@ export const LayerRadar = ({ data, trans }: { data: any, trans: any }) => {
   const isChinese = trans.months && trans.months[0] && trans.months[0].includes('月');
 
   return (
-    <div className="w-full h-full relative" onClick={(e) => e.stopPropagation()}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div ref={containerRef} className="w-full h-full relative" style={{ minWidth: 300, minHeight: 150 }} onClick={(e) => e.stopPropagation()}>
+      {containerSize.width > 0 && containerSize.height > 0 ? (
+        <ResponsiveContainer
+          width={containerSize.width}
+          height={containerSize.height}
+          debounce={0}
+        >
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
           <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: isChinese ? 'Noto Sans SC' : 'Plus Jakarta Sans' }} />
@@ -890,15 +924,74 @@ export const LayerRadar = ({ data, trans }: { data: any, trans: any }) => {
           />
         </RadarChart>
       </ResponsiveContainer>
+      ) : (
+        <div>Loading...</div>
+      )}
     </div>
   );
 };
 
 export const EffectDonut = ({ data, trans }: { data: Record<string, number>, trans: any }) => {
 
-
-
   const [hoveredName, setHoveredName] = useState<string | null>(null);
+
+
+
+  // 添加容器引用和尺寸状态
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+
+
+  // 使用 ResizeObserver 监听容器尺寸变化
+
+  useEffect(() => {
+
+    const container = containerRef.current;
+
+    if (!container) return;
+
+
+
+    const observer = new ResizeObserver((entries) => {
+
+      for (const entry of entries) {
+
+        const { width, height } = entry.contentRect;
+
+        if (width > 0 && height > 0) {
+
+          setContainerSize({ width, height });
+
+        }
+
+      }
+
+    });
+
+
+
+    observer.observe(container);
+
+
+
+    // 初始检查
+
+    const rect = container.getBoundingClientRect();
+
+    if (rect.width > 0 && rect.height > 0) {
+
+      setContainerSize({ width: rect.width, height: rect.height });
+
+    }
+
+
+
+    return () => observer.disconnect();
+
+  }, []);
 
 
 
@@ -986,11 +1079,37 @@ export const EffectDonut = ({ data, trans }: { data: Record<string, number>, tra
 
   return (
 
-    <div className="w-full h-full relative flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
 
-      <div className="relative w-full flex-1 min-h-0">
 
-        <ResponsiveContainer width="100%" height="100%">
+      <div ref={containerRef} className="w-full h-full relative flex flex-col items-center justify-center" style={{ minWidth: 300, minHeight: 150 }} onClick={(e) => e.stopPropagation()}>
+
+
+
+        <div className="relative w-full flex-1 min-h-0">
+
+
+
+          {containerSize.width > 0 && containerSize.height > 0 ? (
+
+
+
+            <ResponsiveContainer
+
+
+
+              width={containerSize.width}
+
+
+
+              height={containerSize.height}
+
+
+
+              debounce={0}
+
+
+
+            >
 
           <PieChart>
 
@@ -1047,9 +1166,10 @@ export const EffectDonut = ({ data, trans }: { data: Record<string, number>, tra
             </Pie>
 
           </PieChart>
-
         </ResponsiveContainer>
-
+        ) : (
+          <div>Loading...</div>
+        )}
         
 
 
@@ -1151,6 +1271,43 @@ export const ProjectGanttChart = ({
   // 检测语言
   const isChinese = trans.compositions && /[\u4e00-\u9fa5]/.test(trans.compositions);
 
+  // 添加容器引用和尺寸状态
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // 添加调试日志 - 确保重新构建
+  useEffect(() => {
+    console.log('[GanttChart] Component mounted with ResizeObserver support v3');
+    return () => console.log('[GanttChart] Component unmounted');
+  }, []);
+
+  // 使用 ResizeObserver 监听容器尺寸变化 (Fix v3 - Forced Rebuild)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    console.log('[GanttChart] Setting up ResizeObserver');
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          console.log('[GanttChart] Container resized:', { width, height });
+          setContainerSize({ width, height });
+        }
+      }
+    });
+
+    observer.observe(container);
+
+    // 初始检查
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   // 数据转换：按日期排序并格式化为甘特图数据
   const chartData = useMemo(() => {
     if (!dailyStats || dailyStats.length === 0) return [];
@@ -1204,13 +1361,18 @@ export const ProjectGanttChart = ({
   const maxRuntime = Math.max(...chartData.map(d => d.runtime), 8); // 最小8小时范围
 
   return (
-    <div className="w-full h-full relative">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart 
-          data={chartData} 
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 50, bottom: 20 }}
+    <div ref={containerRef} className="w-full h-full relative" style={{ minWidth: 300, minHeight: 150 }}>
+      {containerSize.width > 0 && containerSize.height > 0 ? (
+        <ResponsiveContainer
+          width={containerSize.width}
+          height={containerSize.height}
+          debounce={0}
         >
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 50, bottom: 20 }}
+          >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={true} horizontal={false} />
           <XAxis 
             type="number"
@@ -1233,6 +1395,7 @@ export const ProjectGanttChart = ({
             interval={0}
           />
           <Tooltip
+            cursor={false}
             contentStyle={{ 
               backgroundColor: 'rgba(5,5,5,0.95)', 
               borderColor: '#333', 
@@ -1269,32 +1432,27 @@ export const ProjectGanttChart = ({
               return [value, name];
             }}
           />
-          <Bar 
-            dataKey="duration" 
-            radius={[0, 0, 0, 0]}
+          <Bar
+            dataKey="duration"
+            radius={[4, 4, 4, 4]}
             isAnimationActive={true}
             animationDuration={500}
             minPointSize={2}
           >
             {chartData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
+              <Cell
+                key={`cell-${index}`}
                 fill={entry.color}
-                style={{
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-                onMouseOver={(e: any) => {
-                  e.target.style.opacity = '0.7';
-                }}
-                onMouseOut={(e: any) => {
-                  e.target.style.opacity = '1';
-                }}
               />
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-ru-textMuted text-sm">
+          Loading...
+        </div>
+      )}
     </div>
   );
 };
@@ -1920,6 +2078,32 @@ export const AnalyticsView = ({
         projectCount: false
     });
 
+    // Analytics AreaChart container state
+    const analyticsChartRef = useRef<HTMLDivElement>(null);
+    const [analyticsChartSize, setAnalyticsChartSize] = useState({ width: 0, height: 0 });
+
+    useEffect(() => {
+        const container = analyticsChartRef.current;
+        if (!container) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                if (width > 0 && height > 0) {
+                    setAnalyticsChartSize({ width, height });
+                }
+            }
+        });
+
+        observer.observe(container);
+        const rect = container.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            setAnalyticsChartSize({ width: rect.width, height: rect.height });
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
     const handleNav = (dir: -1 | 1) => {
         const newDate = new Date(cursorDate);
         if (viewMode === 'week') {
@@ -2354,13 +2538,19 @@ export const AnalyticsView = ({
             </div>
 
             <div className="bg-ru-glass border border-ru-glassBorder p-2 md:p-6 rounded-sm h-[250px] md:h-[500px] mb-8 relative group flex flex-col">
-                
+
                 {displayMode === 'chart' ? (
                     <>
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:40px_40px] pointer-events-none"></div>
 
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={finalDisplayData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+                        <div ref={analyticsChartRef} style={{ minWidth: 600, minHeight: 250 }}>
+                          {analyticsChartSize.width > 0 && analyticsChartSize.height > 0 ? (
+                            <ResponsiveContainer
+                              width={analyticsChartSize.width}
+                              height={analyticsChartSize.height}
+                              debounce={0}
+                            >
+                              <AreaChart data={finalDisplayData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="gradKeyframes" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.2}/>
@@ -2445,7 +2635,13 @@ export const AnalyticsView = ({
                                     />
                                 )}
                             </AreaChart>
-                        </ResponsiveContainer>
+                            </ResponsiveContainer>
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    Loading...
+                                </div>
+                            )}
+                        </div>
                     </>
                 ) : (
                     <AnalyticsTable

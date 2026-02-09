@@ -211,7 +211,7 @@ export default {
 
     if (path === '/user') {
       // 从 Assets 读取用户页面 HTML
-      const userV6Url = new URL('/public/user-v6.html', request.url);
+      const userV6Url = new URL('/user-v6.html', request.url);
       const assetResponse = await ASSETS.fetch(new Request(userV6Url, { method: 'GET' }));
       if (assetResponse && assetResponse.status !== 404) {
         console.log('[Route] /user: Found user-v6.html in Assets');
