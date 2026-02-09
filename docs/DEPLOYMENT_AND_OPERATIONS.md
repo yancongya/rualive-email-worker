@@ -386,7 +386,36 @@ curl -X POST https://api.resend.com/emails \
 wrangler d1 execute rualive --remote --command="SELECT * FROM email_logs WHERE status = 'failed' ORDER BY created_at DESC LIMIT 10"
 ```
 
-#### 问题4: 性能问题
+#### 问题4: 项目历史 API 返回 404 错误
+**症状**: 点击项目查看历史时返回 404 错误
+
+**原因**: 
+- 项目不在 `projects` 表中（旧数据）
+- 项目不在 `work_logs` 表中
+- 项目 ID 不匹配
+
+**解决方案**:
+
+系统已内置自动修复机制：
+- API 会自动从 `work_logs` 表中提取项目信息
+- 自动创建 `projects` 表记录
+- 自动聚合 `project_daily_stats` 数据
+
+**验证修复**:
+
+```bash
+# 1. 查看日志
+wrangler tail | grep "handleGetProjectHistory"
+
+# 2. 检查项目记录
+wrangler d1 execute rualive --remote --command="SELECT * FROM projects WHERE project_id = 'your-project-id'"
+
+# 3. 测试 API
+curl "https://rualive-email-worker.cubetan57.workers.dev/api/projects/history?projectId=your-project-id" \
+  -H "Authorization: Bearer your-token"
+```
+
+#### 问题5: 性能问题
 **症状**: 响应时间过长
 
 **解决方案**:
@@ -656,7 +685,7 @@ fi
 
 ---
 
-**文档版本**: 1.0
-**最后更新**: 2026-02-07
+**文档版本**: 1.1
+**最后更新**: 2026-02-09
 **作者**: iFlow CLI
 **状态**: ✅ 完成

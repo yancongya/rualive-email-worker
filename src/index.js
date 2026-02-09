@@ -2688,9 +2688,76 @@ async function handleGetProjectHistory(request, env) {
     }
 
     // 查询项目信息
-    const project = await DB.prepare(
+    let project = await DB.prepare(
       'SELECT id, project_id, project_name FROM projects WHERE user_id = ? AND project_id = ?'
     ).bind(userId, projectId).first();
+
+    // 如果 projects 表中没有记录，从 work_logs 表中查询并创建记录
+    if (!project) {
+      console.log('[handleGetProjectHistory] 项目不在 projects 表中，尝试从 work_logs 表中查询:', projectId);
+
+      // 从 work_logs 表中查询所有包含该项目的日志
+      const workLogs = await DB.prepare(
+        'SELECT work_date, projects_json, work_hours_json FROM work_logs WHERE user_id = ? AND projects_json IS NOT NULL ORDER BY work_date DESC'
+      ).bind(userId).all();
+
+      if (workLogs.results && workLogs.results.length > 0) {
+        // 在 JavaScript 中过滤出匹配的项目
+        const matchingLogs = workLogs.results.filter(log => {
+          if (!log.projects_json) return false;
+          try {
+            const projects = JSON.parse(log.projects_json);
+            return Array.isArray(projects) && projects.some(p => p.projectId === projectId);
+          } catch (e) {
+            return false;
+          }
+        });
+
+        if (matchingLogs.length > 0) {
+          // 获取第一个匹配日志中的项目信息
+          const firstProject = JSON.parse(matchingLogs[0].projects_json).find(p => p.projectId === projectId);
+          const firstWorkDate = matchingLogs[0].work_date;
+          const lastWorkDate = firstWorkDate;
+
+          // 计算总时长和总天数
+          let totalWorkHours = 0;
+          let totalWorkDays = 0;
+
+          matchingLogs.forEach(log => {
+            const projects = JSON.parse(log.projects_json);
+            const project = projects.find(p => p.projectId === projectId);
+            if (project) {
+              totalWorkHours += (project.dailyRuntime || 0) / 3600; // 转换为小时
+              totalWorkDays += 1;
+            }
+          });
+
+          // 在 projects 表中创建记录
+          await DB.prepare(`
+            INSERT INTO projects (
+              user_id, project_id, project_name, project_path,
+              first_work_date, last_work_date, total_work_hours, total_work_days
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            userId,
+            projectId,
+            firstProject.name || '未知项目',
+            firstProject.path || '',
+            firstWorkDate,
+            lastWorkDate,
+            totalWorkHours,
+            totalWorkDays
+          ).run();
+
+          console.log('[handleGetProjectHistory] 已在 projects 表中创建记录:', projectId);
+
+          // 重新查询项目信息
+          project = await DB.prepare(
+            'SELECT id, project_id, project_name FROM projects WHERE user_id = ? AND project_id = ?'
+          ).bind(userId, projectId).first();
+        }
+      }
+    }
 
     if (!project) {
       return Response.json({ error: '项目不存在' }, { status: 404 });
@@ -2700,6 +2767,53 @@ async function handleGetProjectHistory(request, env) {
     const dailyStats = await DB.prepare(
       'SELECT work_date, work_hours, accumulated_runtime, composition_count, layer_count, keyframe_count, effect_count FROM project_daily_stats WHERE project_id = ? ORDER BY work_date DESC'
     ).bind(project.id).all();
+
+    // 如果 project_daily_stats 表中没有数据，尝试从 work_logs 表中聚合
+    if (!dailyStats.results || dailyStats.results.length === 0) {
+      console.log('[handleGetProjectHistory] project_daily_stats 表中没有数据，尝试从 work_logs 表中聚合:', projectId);
+
+      const workLogs = await DB.prepare(
+        'SELECT work_date, projects_json FROM work_logs WHERE user_id = ? AND projects_json IS NOT NULL ORDER BY work_date DESC'
+      ).bind(userId).all();
+
+      if (workLogs.results && workLogs.results.length > 0) {
+        // 在 JavaScript 中过滤出匹配的项目
+        const matchingLogs = workLogs.results.filter(log => {
+          if (!log.projects_json) return false;
+          try {
+            const projects = JSON.parse(log.projects_json);
+            return Array.isArray(projects) && projects.some(p => p.projectId === projectId);
+          } catch (e) {
+            return false;
+          }
+        });
+
+        if (matchingLogs.length > 0) {
+          const aggregatedStats = matchingLogs.map((log) => {
+            const projects = JSON.parse(log.projects_json);
+            const project = projects.find(p => p.projectId === projectId);
+            return {
+              work_date: log.work_date,
+              work_hours: (project?.dailyRuntime || 0) / 3600, // 转换为小时
+              accumulated_runtime: project?.dailyRuntime || 0,
+              composition_count: project?.statistics?.compositions || 0,
+              layer_count: project?.statistics?.layers || 0,
+              keyframe_count: project?.statistics?.keyframes || 0,
+              effect_count: project?.statistics?.effects || 0
+            };
+          });
+
+          console.log('[handleGetProjectHistory] 已从 work_logs 表中聚合', aggregatedStats.length, '天的数据');
+
+          return Response.json({
+            success: true,
+            projectId: project.project_id,
+            projectName: project.project_name,
+            dailyStats: aggregatedStats
+          });
+        }
+      }
+    }
 
     return Response.json({
       success: true,

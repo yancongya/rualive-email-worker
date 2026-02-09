@@ -2057,11 +2057,11 @@ export const AnalyticsView = ({
 
             // Re-aggregate stats for this subset
             const newStats = matchingProjects.reduce((acc: any, p: any) => ({
-                compositions: acc.compositions + p.compositions,
-                layers: acc.layers + p.layers,
-                keyframes: acc.keyframes + p.keyframes,
-                effects: acc.effects + p.effects,
-                runtime: acc.runtime + p.runtime,
+                compositions: acc.compositions + (p.statistics?.compositions || 0),
+                layers: acc.layers + (p.statistics?.layers || 0),
+                keyframes: acc.keyframes + (p.statistics?.keyframes || 0),
+                effects: acc.effects + (p.statistics?.effects || 0),
+                runtime: acc.runtime + (p.accumulatedRuntime || 0),
             }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0 });
 
             return {
@@ -2080,7 +2080,9 @@ export const AnalyticsView = ({
             projectCount: d.projects ? d.projects.length : 0
         }));
 
-        if (!normalizeData) return withCounts;
+        if (!normalizeData) {
+            return withCounts;
+        }
         
         const maxVals = {
             compositions: Math.max(...withCounts.map((d: any) => d.compositions), 1),
@@ -2109,10 +2111,18 @@ export const AnalyticsView = ({
         return processedData;
     }, [processedData]);
 
+    // Table data: use raw data with projectCount, not normalized
+    const tableData = useMemo(() => {
+        return filteredRawData.map((d: any) => ({
+            ...d,
+            projectCount: d.projects ? d.projects.length : 0
+        }));
+    }, [filteredRawData]);
+
     const totals = useMemo(() => {
         // 🔍 使用 filteredWorkLogs 直接计算，确保与 aggregatedDetails 使用相同的数据源
         const dailyDataMap = aggregateWorkLogsByDate(filteredWorkLogs);
-        return Array.from(dailyDataMap.values()).reduce((acc: any, dailyData) => ({
+        const result = Array.from(dailyDataMap.values()).reduce((acc: any, dailyData) => ({
             compositions: acc.compositions + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.compositions, 0),
             layers: acc.layers + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.layers, 0),
             keyframes: acc.keyframes + dailyData.projects.reduce((sum: number, p: any) => sum + p.statistics.keyframes, 0),
@@ -2124,6 +2134,8 @@ export const AnalyticsView = ({
             runtime: acc.runtime + dailyData.projects.reduce((sum: number, p: any) => sum + p.accumulatedRuntime, 0),
             projectCount: acc.projectCount + dailyData.projects.length,
         }), { compositions: 0, layers: 0, keyframes: 0, effects: 0, runtime: 0, projectCount: 0 });
+
+        return result;
     }, [filteredWorkLogs]);
 
     const aggregatedDetails = useMemo(() => {
@@ -2437,7 +2449,7 @@ export const AnalyticsView = ({
                     </>
                 ) : (
                     <AnalyticsTable
-                        data={finalDisplayData}
+                        data={tableData}
                         trans={trans}
                         formatRuntime={formatRuntime}
                         onNavigate={onNavigate}

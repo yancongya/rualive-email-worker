@@ -2,6 +2,9 @@
 
 本文档汇总了在 RuAlive Email Worker 部署过程中遇到的所有问题、注意事项和最佳实践。
 
+**文档版本**: 1.2.0
+**最后更新**: 2026-02-09
+
 ## 目录
 
 1. [常见问题](#常见问题)
@@ -1108,6 +1111,92 @@ wrangler kv:key list --namespace-id=your-kv-id
 - [Resend Email API](https://resend.com/)
 - [D1 Database](https://developers.cloudflare.com/d1/)
 
+### 7. 项目历史 API 返回 404 错误
+
+**现象**：
+- 点击项目查看历史时返回 404 错误
+- 项目历史数据无法加载
+- 甘特图无法显示项目数据
+
+**错误信息**：
+```
+GET /api/projects/history?projectId=617bc8f 404 (Not Found)
+[Dashboard] API request failed for gantt: 404
+```
+
+**原因**：
+- 项目不在 `projects` 表中（旧数据）
+- 项目不在 `work_logs` 表中
+- 项目 ID 不匹配
+
+**数据结构说明**：
+
+`work_logs` 表中的 `projects_json` 字段是一个 JSON 数组：
+```json
+[
+  {
+    "projectId": "617bc8f",
+    "name": "10000钻-星河梦骑.aep",
+    "path": "E:\\工作\\2026\\202602\\20260202\\10000钻-星河梦骑.aep",
+    "statistics": {
+      "compositions": 46,
+      "layers": 367,
+      "keyframes": 698,
+      "effects": 424
+    },
+    "dailyRuntime": 9000
+  }
+]
+```
+
+**修复方案**：
+
+系统已内置自动修复机制，API 会自动处理：
+
+1. **查询优先级**：
+   - 优先查询 `project_daily_stats` 表（新数据）
+   - 后备查询 `work_logs` 表（旧数据）
+   - 自动创建 `projects` 表记录
+
+2. **JavaScript 过滤**：
+   - 查询所有 `work_logs` 记录
+   - 在 JavaScript 中解析 `projects_json` 数组
+   - 过滤出匹配 `projectId` 的日志
+
+3. **自动创建记录**：
+   - 提取项目名称、路径等信息
+   - 计算总工作时长和工作天数
+   - 在 `projects` 表中创建记录
+
+4. **聚合统计数据**：
+   - `work_hours`: 从 `dailyRuntime` 转换为小时（`dailyRuntime / 3600`）
+   - `accumulated_runtime`: 直接使用 `dailyRuntime`（秒）
+   - `composition_count`: 从 `statistics.compositions` 获取
+   - `layer_count`: 从 `statistics.layers` 获取
+   - `keyframe_count`: 从 `statistics.keyframes` 获取
+   - `effect_count`: 从 `statistics.effects` 获取
+
+**验证修复**：
+
+```bash
+# 1. 查看日志
+npx wrangler tail | grep "handleGetProjectHistory"
+
+# 2. 检查项目记录
+npx wrangler d1 execute rualive --remote --command="SELECT * FROM projects WHERE project_id = '617bc8f'"
+
+# 3. 测试 API
+curl "https://rualive-email-worker.cubetan57.workers.dev/api/projects/history?projectId=617bc8f" \
+  -H "Authorization: Bearer your-token"
+```
+
+**兼容性说明**：
+
+- ✅ 支持新数据：`project_daily_stats` 表中的项目累积数据
+- ✅ 支持旧数据：`work_logs` 表中的历史数据
+- ✅ 自动迁移：首次查询旧数据时自动创建 `projects` 表记录
+- ✅ 无缝切换：前端代码无需修改，API 自动适配不同数据源
+
 ---
 
 ## 更新日志
@@ -1150,5 +1239,6 @@ ISC
 **维护者**: iFlow CLI  
 
 **更新日志**：
+- v1.2.0 (2026-02-09): 添加项目历史 API 404 错误的解决方案
 - v1.1.0 (2026-02-08): 添加 Worker 路由错误和 MIME 类型问题的解决方案
 - v1.0.0 (2026-02-07): 初始版本，汇总部署问题和解决方案

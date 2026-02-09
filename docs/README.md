@@ -9,6 +9,8 @@
 ### 🚀 快速开始
 - **[快速开始指南](guides/quick-start.md)** - 5分钟快速部署指南
 - **[故障排查](guides/troubleshooting.md)** - 常见问题和解决方案
+- **[部署场景](guides/deployment-scenarios.md)** - 各种部署场景和环境配置
+- **[运维指南](guides/operations.md)** - 监控、日志、备份等运维内容
 
 ### 📖 核心文档
 - **[项目结构分析](PHASE1_PROJECT_STRUCTURE.md)** - 项目结构和技术栈
@@ -31,6 +33,8 @@
 - **[前端模块总览](modules/frontend/README.md)** - 前端模块索引
   - **[前端架构](modules/frontend/architecture.md)** - React 19 + TypeScript + Vite 架构
   - **[构建流程](modules/frontend/build-process.md)** - Vite 构建流程和优化
+  - **[组件文档](modules/frontend/components.md)** - 主要组件说明和使用方法
+  - **[状态管理](modules/frontend/state-management.md)** - 状态管理和数据流
   - **[面板功能](modules/frontend/panels.md)** - 前端面板功能（4个面板）
 
 ### 数据库模块 (Database Modules)
@@ -40,6 +44,11 @@
 
 ### API 模块 (API Modules)
 - **[API 模块总览](modules/api/README.md)** - API 模块索引
+  - **[认证 API](modules/api/auth-api.md)** - 用户认证和授权 API（注册、登录、登出、修改密码）
+  - **[配置 API](modules/api/config-api.md)** - 用户配置 API（获取和更新配置）
+  - **[工作数据 API](modules/api/work-data-api.md)** - 工作数据上传和管理 API
+  - **[项目 API](modules/api/project-api.md)** - 项目数据 API（项目总时长、项目历史）
+  - **[日志 API](modules/api/logs-api.md)** - 日志查询 API（发送日志、工作日志）
   - **[管理后台 API](modules/api/admin-api.md)** - 管理员功能 API（邀请码、用户、API密钥、日志）
 
 ### 功能模块 (Feature Modules)
@@ -92,12 +101,12 @@
 |---------|-------|-------|-------|
 | 核心文档 | 4 | 0 | 0 |
 | 后端模块 | 4 | 0 | 0 |
-| 前端模块 | 3 | 0 | 0 |
+| 前端模块 | 5 | 0 | 0 |
 | 数据库模块 | 2 | 0 | 0 |
-| API 模块 | 1 | 0 | 0 |
+| API 模块 | 6 | 0 | 0 |
 | 功能模块 | 1 | 0 | 0 |
-| 开发指南 | 2 | 0 | 0 |
-| **总计** | **17** | **0** | **0** |
+| 开发指南 | 4 | 0 | 0 |
+| **总计** | **22** | **0** | **0** |
 
 ### 已完成的文档列表
 
