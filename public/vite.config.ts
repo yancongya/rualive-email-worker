@@ -87,18 +87,18 @@ export default defineConfig(({ mode }) => {
         // 自动复制翻译文件到 dist/locals/
         const rootDir = path.resolve(__dirname, 'locals');
         const targetDir = path.resolve(__dirname, 'dist/locals');
-        
+
         // 确保目标目录存在
         if (!existsSync(targetDir)) {
           mkdirSync(targetDir, { recursive: true });
         }
-        
+
         // 复制各个页面的翻译文件
         if (existsSync(rootDir)) {
           const subdirs = readdirSync(rootDir, { withFileTypes: true })
             .filter(dirent => dirent.isDirectory())
             .map(dirent => dirent.name);
-          
+
           subdirs.forEach(subdir => {
             const srcDir = path.join(rootDir, subdir);
             const destSubDir = path.join(targetDir, subdir);
@@ -114,6 +114,25 @@ export default defineConfig(({ mode }) => {
               }
             });
           });
+        }
+      }
+    },
+    {
+      name: 'copy-showcase',
+      closeBundle() {
+        // 复制 showcase 图片到 dist 目录
+        const showcaseSrc = path.resolve(__dirname, 'assets/showcase');
+        const showcaseDest = path.resolve(__dirname, 'dist/assets/showcase');
+
+        if (existsSync(showcaseSrc)) {
+          mkdirSync(showcaseDest, { recursive: true });
+          const files = readdirSync(showcaseSrc);
+          files.forEach(file => {
+            const srcPath = path.join(showcaseSrc, file);
+            const destPath = path.join(showcaseDest, file);
+            copyFileSync(srcPath, destPath);
+          });
+          console.log(`[copy-showcase] Copied ${files.length} showcase images to dist/assets/showcase/`);
         }
       }
     }

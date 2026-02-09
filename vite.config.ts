@@ -2,7 +2,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { copyFileSync, mkdirSync, existsSync, readdirSync, copyFileSync as fsCopyFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// 获取 __dirname 的兼容方式（ES模块）
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
@@ -33,8 +38,10 @@ export default defineConfig({
       name: 'copy-showcase',
       closeBundle() {
         // 复制 showcase 图片到 dist 目录
-        const showcaseSrc = join(__dirname, 'public/assets/showcase');
-        const showcaseDest = join(__dirname, 'dist/assets/showcase');
+        // 注意：vite.config.ts 在项目根目录，所以需要正确处理路径
+        const projectRoot = join(__dirname);
+        const showcaseSrc = join(projectRoot, 'public/assets/showcase');
+        const showcaseDest = join(projectRoot, 'dist/assets/showcase');
 
         if (existsSync(showcaseSrc)) {
           mkdirSync(showcaseDest, { recursive: true });
@@ -45,10 +52,10 @@ export default defineConfig({
             copyFileSync(srcPath, destPath);
           });
         }
-        
+
         // 复制 index.html 到 dist 根目录
-        const indexSrc = join(__dirname, 'dist/public/index.html');
-        const indexDest = join(__dirname, 'dist/index.html');
+        const indexSrc = join(projectRoot, 'dist/public/index.html');
+        const indexDest = join(projectRoot, 'dist/index.html');
         if (existsSync(indexSrc)) {
           copyFileSync(indexSrc, indexDest);
         }

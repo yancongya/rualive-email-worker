@@ -139,10 +139,15 @@ const TRANSLATIONS = {
         desc: "部分扩展和用户页截图",
         hint: "← 左右滑动、滚动滚轮或拖拽切换 →",
         items: [
-          { title: "AE 插件面板", img: "/assets/showcase/打卡页.jpg" },
-          { title: "生存看板详情", img: "/assets/showcase/监控面板.jpg" },
-          { title: "受难同胞地图", img: "/assets/showcase/数据分析页.jpg" },
-          { title: "遗言设置页面", img: "/assets/showcase/设置页.jpg" }
+          { title: "打卡页 - 点击后即可定时循环进行刷新扫描打卡", img: "/assets/showcase/打卡页.jpg" },
+          { title: "登录 - 数据默认本地进行保存，也可注册登录", img: "/assets/showcase/登录.jpg" },
+          { title: "统计页 - 查看当天所有项目的各维度分析", img: "/assets/showcase/统计页.jpg" },
+          { title: "设置页 - 设置扫描间隔和下班提醒时间", img: "/assets/showcase/设置页.jpg" },
+          { title: "提醒 - 到时间后提醒当天工作的总结数据", img: "/assets/showcase/提醒.jpg" },
+          { title: "监控面板 - 各种图表查看当天的项目各项数据", img: "/assets/showcase/监控面板.jpg" },
+          { title: "数据分析页 - 各个维度查看工作的变化", img: "/assets/showcase/数据分析页.jpg" },
+          { title: "同步提醒设置 - 可以每天邮箱进行提醒", img: "/assets/showcase/同步提醒设置.jpg" },
+          { title: "紧急联络人 - 工作时长低于一定阈值会触发提醒紧急联系人邮箱", img: "/assets/showcase/紧急联络人.jpg" }
         ]
       },    cta: { title: "RU ALIVE?", subtitle: "大声点，赶紧注册。", btn: "我还活着，快开始！" },
     footer: { copy: "活着，为了做动画。", rights: "© 2026 RuAlive@烟囱鸭.", data: "本地存储", survival: "99% 生还预测" },
@@ -217,10 +222,15 @@ const TRANSLATIONS = {
         desc: "UI screenshots & dashboard previews",
         hint: "← SWIPE, SCROLL OR DRAG TO EXPLORE →",
         items: [
-          { title: "AE Extension Panel", img: "/assets/showcase/打卡页.jpg" },
-          { title: "Vital Dashboard", img: "/assets/showcase/监控面板.jpg" },
-          { title: "Global Map", img: "/assets/showcase/数据分析页.jpg" },
-          { title: "Setup Page", img: "/assets/showcase/设置页.jpg" }
+          { title: "Check-in Page - Click to start automatic refresh scanning", img: "/assets/showcase/打卡页.jpg" },
+          { title: "Login - Data saved locally, or register and login", img: "/assets/showcase/登录.jpg" },
+          { title: "Statistics Page - View daily project analysis across all dimensions", img: "/assets/showcase/统计页.jpg" },
+          { title: "Settings Page - Configure scan interval and off-work reminder time", img: "/assets/showcase/设置页.jpg" },
+          { title: "Reminder - Daily work summary reminder at scheduled time", img: "/assets/showcase/提醒.jpg" },
+          { title: "Dashboard - View project data with various charts and metrics", img: "/assets/showcase/监控面板.jpg" },
+          { title: "Analytics Page - Track work changes across different dimensions", img: "/assets/showcase/数据分析页.jpg" },
+          { title: "Email Sync - Enable daily email reminders", img: "/assets/showcase/同步提醒设置.jpg" },
+          { title: "Emergency Contact - Notify emergency contact when work hours drop below threshold", img: "/assets/showcase/紧急联络人.jpg" }
         ]
       },    cta: { title: "RU ALIVE?", subtitle: "Register loud and fast.", btn: "I'm Alive!" },
     footer: { copy: "Live to animate.", rights: "© 2026 RuAlive@ChimneyDuck.", data: "Local", survival: "99% Odds" },
@@ -732,6 +742,7 @@ const App = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
   const [shouldRedirectToStats, setShouldRedirectToStats] = useState(false);
+  const [imageViewer, setImageViewer] = useState<{ isOpen: boolean; src: string; title: string }>({ isOpen: false, src: '', title: '' });
   const currentSectionRef = useRef(0);
   const popupId = useRef(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1007,6 +1018,29 @@ const moveSlideToIndex = useCallback((index: number) => {
         <div key={p.id} style={{ left: p.x, top: p.y }} className="fixed pointer-events-none -translate-x-1/2 z-[100] text-primary font-black italic text-base sm:text-2xl tracking-tighter select-none animate-float-up-fade mix-blend-screen">{p.text}</div>
       ))}
 
+      {/* Image Viewer Modal */}
+      {imageViewer.isOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8" onClick={() => setImageViewer({ isOpen: false, src: '', title: '' })}>
+          <div className="relative max-w-7xl max-h-full flex flex-col items-center">
+            <button
+              className="absolute -top-12 right-0 text-white/60 hover:text-white transition-colors text-sm font-black uppercase tracking-widest"
+              onClick={() => setImageViewer({ isOpen: false, src: '', title: '' })}
+            >
+              [ CLOSE ]
+            </button>
+            <img
+              src={imageViewer.src}
+              alt={imageViewer.title}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="mt-4 text-white/80 text-sm font-medium text-center max-w-2xl">
+              {imageViewer.title}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-[60] bg-dark/60 backdrop-blur-md border-b border-white/5 h-14 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
@@ -1154,7 +1188,7 @@ const moveSlideToIndex = useCallback((index: number) => {
                           {getArray('showcase.items').map((item: any, i: number) => (
                               <div key={i} className="showcase-slide">
                                   <div className="glass-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group shadow-2xl transition-all duration-500 hover:scale-[1.01]">
-                                      <div className="aspect-[16/10] sm:aspect-[4/3] bg-white/5 relative overflow-hidden">
+                                      <div className="aspect-[16/10] sm:aspect-[4/3] bg-white/5 relative overflow-hidden cursor-pointer" onClick={() => item.img && setImageViewer({ isOpen: true, src: item.img, title: item.title })}>
                                           {item.img ? (
                                               <img src={item.img} alt={item.title} className="w-full h-full object-cover pointer-events-none group-hover:scale-102 transition-transform duration-1000" />
                                           ) : (
@@ -1164,7 +1198,7 @@ const moveSlideToIndex = useCallback((index: number) => {
                                                   </svg>
                                               </div>
                                           )}
-                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 sm:p-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 sm:p-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                               <h4 className="text-lg sm:text-3xl font-black italic uppercase text-white tracking-tighter">{item.title}</h4>
                                           </div>
                                       </div>

@@ -394,6 +394,37 @@ Get-ChildItem public\assets -Filter "*.js" | Remove-Item -Force
 Get-ChildItem dist\assets\showcase -File
 ```
 
+**Showcase 配置说明**：
+
+落地页 showcase 部分支持展示 9 张功能截图，包含以下功能：
+
+1. **打卡页** - 点击后即可定时循环进行刷新扫描打卡
+2. **登录** - 数据默认本地进行保存，也可注册登录
+3. **统计页** - 查看当天所有项目的各维度分析
+4. **设置页** - 设置扫描间隔和下班提醒时间
+5. **提醒** - 到时间后提醒当天工作的总结数据
+6. **监控面板** - 各种图表查看当天的项目各项数据
+7. **数据分析页** - 各个维度查看工作的变化
+8. **同步提醒设置** - 可以每天邮箱进行提醒
+9. **紧急联络人** - 工作时长低于一定阈值会触发提醒紧急联系人邮箱
+
+**图片查看器功能**：
+- 点击任何 showcase 图片可以打开全屏查看器
+- 查看器包含黑色半透明背景和模糊效果
+- 显示图片和完整的功能描述
+- 点击任意位置或关闭按钮退出
+
+**配置文件位置**：
+- 中文配置：`public/locals/landing/zh.json`
+- 英文配置：`public/locals/landing/en.json`
+- 内嵌配置：`public/index.tsx` 中的 `TRANSLATIONS` 对象
+
+**添加/修改 showcase 图片**：
+1. 将图片放入 `public/assets/showcase/` 目录
+2. 更新配置文件中的 `showcase.items` 数组
+3. 格式：`{ "title": "标题 - 描述", "img": "/assets/showcase/文件名.jpg" }`
+4. 重新构建并部署：`.\deploy.ps1`
+
 ---
 
 ## 故障排查
