@@ -2,45 +2,10 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-/**
- * Vite Configuration for RuAlive Frontend
- *
- * ==================== 目录结构说明 ====================
- *
- * 源代码结构：
- * - public/ - 前端源代�? *   - index.html - 落地�? *   - auth.html - 登录/注册�? *   - user-v6.html - 用户面板
- *   - admin.html - 管理后台
- *   - locals/ - 国际化文�? *   - assets/ - 静态资�? *   - *.tsx - React 组件
- *
- * 构建产物�? * - dist/ - 构建输出目录
- *   - index.html - 编译后的落地�? *   - auth.html - 编译后的登录�? *   - user-v6.html - 编译后的用户面板
- *   - admin.html - 编译后的管理后台
- *   - assets/ - 编译后的 JS/CSS 文件
- *   - locals/ - 国际化文件（复制�? *
- * ==================== 构建流程 ====================
- *
- * 1. 清空 dist/ 目录
- * 2. 编译 React 组件�?assets/
- * 3. 生成优化�?HTML 文件
- * 4. 复制静态资�? *
- * ==================== 部署配置 ====================
- *
- * wrangler.toml:
- * [assets]
- * directory = "dist"
- * binding = "ASSETS"
- *
- * 这会部署 dist/ 目录�?Cloudflare Assets
- *
- * ==================== 常见问题 ====================
- *
- * Q: 为什�?HTML 文件�?dist/ 而不�?dist/public/�? * A: 通过配置 root �?outDir 确保所有文件直接在 dist/ �? *
- * Q: 为什么构建后 HTML 引用的是编译后的 JS 而不�?.tsx�? * A: Vite 会自动替�?HTML 中的入口点引�? *
- * Q: 如何确保构建产物是正确的�? * A: 运行 npm run verify:build 检�? */
-
 export default defineConfig({
-  // 不设�?root，使用默认当前目�?  build: {
-    outDir: 'dist',
+  root: 'public',
+  build: {
+    outDir: '../dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
@@ -56,7 +21,7 @@ export default defineConfig({
       }
     },
     assetsDir: 'assets',
-    copyPublicDir: false  // 不自动复�?public 目录
+    copyPublicDir: false
   },
   server: {
     port: 3737,
@@ -66,7 +31,7 @@ export default defineConfig({
       '/api': {
         target: 'https://rualive.itycon.cn',
         changeOrigin: true,
-        secure: true,
+        secure: true
       }
     }
   },
@@ -116,28 +81,8 @@ export default defineConfig({
       }
     },
     {
-      name: 'copy-showcase',
-      closeBundle() {
-        const { copyFileSync, existsSync, mkdirSync, readdirSync } = require('fs');
-        const showcaseSrc = path.resolve(__dirname, 'public/assets/showcase');
-        const showcaseDest = path.resolve(__dirname, 'dist/assets/showcase');
-
-        if (existsSync(showcaseSrc)) {
-          mkdirSync(showcaseDest, { recursive: true });
-          const files = readdirSync(showcaseSrc);
-          files.forEach(file => {
-            const srcPath = path.join(showcaseSrc, file);
-            const destPath = path.join(showcaseDest, file);
-            copyFileSync(srcPath, destPath);
-          });
-          console.log(`[copy-showcase] Copied ${files.length} showcase images to dist/assets/showcase/`);
-        }
-      }
-    },
-    {
       name: 'move-html-files',
       closeBundle() {
-        // Vite �?HTML 文件放在 dist/public/，我们需要将它们复制�?dist/ 根目�?        // 这样 wrangler 可以正确找到这些文件
         const { copyFileSync, existsSync } = require('fs');
         const publicDir = path.resolve(__dirname, 'dist/public');
         const distDir = path.resolve(__dirname, 'dist');
@@ -157,7 +102,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'public'),
+      '@': path.resolve(__dirname, 'public')
     }
   },
   assetsInclude: ['**/*.svg']
