@@ -50,6 +50,7 @@ export interface EffectItem {
 export interface LayerItem {
   project: string;
   name: string;
+  count?: number;
 }
 
 /**

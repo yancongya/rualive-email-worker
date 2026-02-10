@@ -292,6 +292,16 @@ export function workLogToProjectData(workLog: WorkLog): ProjectData[] {
       Object.keys(project.details.effectCounts).length === 0;
 
     if (isDetailsEmpty) {
+      // 🔍 添加调试日志
+      console.warn('[DataTransform] 项目详情为空，使用默认数据:', {
+        projectName: project.name,
+        projectId: project.projectId,
+        statistics: project.statistics,
+        compositionsJson: compositionsJson.length,
+        layersJson: layersJson.length,
+        keyframesJson: keyframesJson.length,
+        effectsJson: effectsJson.length
+      });
 
       // 创建默认的合成列表（合成数来自统计字段）
       for (let i = 1; i <= project.statistics.compositions; i++) {

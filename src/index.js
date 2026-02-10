@@ -3259,7 +3259,8 @@ async function saveWorkData(userId, workData, env, date) {
             if (typeof layerName === 'string') {
               allLayers.push({
                 project: project.name,
-                name: layerName
+                name: layerName,
+                count: 1  // 🔍 添加 count 字段
               });
             }
           });
