@@ -783,10 +783,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     const { id: projectId } = deleteConfirmProject;
     setDeleteConfirmProject(null);
 
-    if (!window.confirm('确定要删除这个项目吗？此操作不可恢复。')) {
-      return;
-    }
-    
     try {
       const token = localStorage.getItem('rualive_token');
       if (!token) {
@@ -803,8 +799,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
       });
 
       if (response.ok) {
-        alert('项目已删除');
-        window.location.reload();
+        // 删除成功，重新加载数据
+        await handleRefresh();
       } else {
         const result = await response.json();
         alert(`删除失败: ${result.error || '未知错误'}`);

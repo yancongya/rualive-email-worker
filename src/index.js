@@ -2935,12 +2935,44 @@ async function handleDeleteProject(request, env) {
       return Response.json({ error: '项目不存在或无权访问' }, { status: 404 });
     }
 
-    // 删除项目（级联删除 project_daily_stats）
+    // 删除项目（级联删除 project_daily_stats 和清理 work_logs）
     const projectDbId = project.id;
     
     // 先删除日统计
     await DB.prepare('DELETE FROM project_daily_stats WHERE project_id = ?')
       .bind(projectDbId).run();
+    
+    // 清理 work_logs 表中的项目数据
+    const workLogs = await DB.prepare(
+      'SELECT id, projects_json FROM work_logs WHERE user_id = ? AND projects_json IS NOT NULL'
+    ).bind(userId).all();
+    
+    if (workLogs.results && workLogs.results.length > 0) {
+      for (const log of workLogs.results) {
+        try {
+          const projects = JSON.parse(log.projects_json);
+          if (Array.isArray(projects)) {
+            // 过滤掉要删除的项目
+            const filteredProjects = projects.filter(p => p.projectId !== projectId);
+            
+            // 更新 work_logs 表
+            if (filteredProjects.length > 0) {
+              // 还有其他项目，更新 projects_json
+              await DB.prepare('UPDATE work_logs SET projects_json = ? WHERE id = ?')
+                .bind(JSON.stringify(filteredProjects), log.id)
+                .run();
+            } else {
+              // 没有其他项目了，删除这条 work_logs 记录
+              await DB.prepare('DELETE FROM work_logs WHERE id = ?')
+                .bind(log.id)
+                .run();
+            }
+          }
+        } catch (e) {
+          console.error('[handleDeleteProject] 清理 work_logs 失败:', log.id, e);
+        }
+      }
+    }
     
     // 再删除项目
     await DB.prepare('DELETE FROM projects WHERE id = ?')
