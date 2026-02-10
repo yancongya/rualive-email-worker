@@ -1149,18 +1149,14 @@ const moveSlideToIndex = useCallback((index: number) => {
                   <span className="text-white/60 text-sm font-bold">{t('userCount.title')}</span>
                   <span className="text-primary text-lg font-black">{userCount}</span>
                   <span className="text-white/60 text-sm font-bold">{t('userCount.unit')}</span>
-                  {userCount >= 10 && (
-                    <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">
-                      {t('userCount.openSource')}
-                    </span>
-                  )}
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">
+                    {t('userCount.openSource')}
+                  </span>
                 </div>
                 {/* Tooltip */}
-                {userCount >= 10 && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white/80 text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
-                    {t('userCount.openSourceTooltip')}
-                  </div>
-                )}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white/80 text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
+                  {t('userCount.openSourceTooltip')}
+                </div>
               </div>
             </div>
           </section>
