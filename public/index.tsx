@@ -94,10 +94,11 @@ const TRANSLATIONS = {
       title: "实时生存看板",
       subtitle: "正在实时监测全网动画师存活体征",
       items: [
-        { label: "累计搬砖时间", value: "99K+", unit: "小时" },
-        { label: "在线受难同胞", value: "1,234", unit: "位" },
-        { label: "虚假好评率", value: "4.9/5", unit: "分" },
-        { label: "预测生还率", value: "10.01%", unit: "🔥" }
+        { label: "合成数", value: "99K+", unit: "个" },
+        { label: "图层数", value: "1,234", unit: "个" },
+        { label: "关键帧数", value: "4.9/5", unit: "个" },
+        { label: "效果数", value: "10.01%", unit: "个" },
+        { label: "运行时长", value: "99K+", unit: "小时" }
       ]
     },
     features: {
@@ -177,10 +178,11 @@ const TRANSLATIONS = {
       title: "VITAL DASHBOARD",
       subtitle: "Monitoring real-time animator vitals worldwide",
       items: [
-        { label: "Working Time", value: "99K+", unit: "Hrs" },
-        { label: "Sufferers", value: "1,234", unit: "Users" },
-        { label: "Fake Ratings", value: "4.9/5", unit: "Pts" },
-        { label: "Survival Odds", value: "10%", unit: "🔥" }
+        { label: "Compositions", value: "99K+", unit: "" },
+        { label: "Layers", value: "1,234", unit: "" },
+        { label: "Keyframes", value: "4.9/5", unit: "" },
+        { label: "Effects", value: "10.01%", unit: "" },
+        { label: "Runtime", value: "99K+", unit: "Hrs" }
       ]
     },
     features: {
@@ -1109,7 +1111,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               <h2 className="text-4xl sm:text-7xl font-black italic uppercase mb-2 tracking-tighter leading-tight">{t('stats.title')}</h2>
               <p className="text-white/40 text-[10px] sm:text-lg font-bold italic uppercase tracking-widest">{t('stats.subtitle')}</p>
             </div>
-            <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
+            <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-8">
               {getArray('stats.items').map((s: any, i: number) => (
                 <div key={i} className="text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px]">
                   <div className="text-3xl sm:text-5xl md:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-3 py-4 overflow-visible h-auto flex items-center justify-center">
