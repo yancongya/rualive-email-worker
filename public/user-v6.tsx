@@ -116,6 +116,7 @@ export type ViewMode = 'week' | 'month' | 'quarter' | 'year' | 'all';
 // 默认翻译（作为备用，防止异步加载时出现 null 错误）
 const DEFAULT_USER_TRANS: any = {
   EN: {
+    pageTitle: "RuAlive@烟囱鸭 - Are you still animating? - User Dashboard",
     subtitle: "SYSTEM ONLINE // MONITORED",
     compositions: "COMPOSITIONS",
     totalLayers: "TOTAL LAYERS",
@@ -194,6 +195,7 @@ const DEFAULT_USER_TRANS: any = {
     loadHistory: "Load History"
   },
   ZH: {
+    pageTitle: "RuAlive@烟囱鸭 - 你还在做动画嘛 - 用户页",
     subtitle: "",
     compositions: "合成数量",
     totalLayers: "图层总数",
@@ -2813,6 +2815,14 @@ const App = () => {
     };
     loadTranslations();
   }, [lang]);
+
+  // 动态修改页面标题
+  useEffect(() => {
+    const titleElement = document.getElementById('page-title');
+    if (titleElement && trans.pageTitle) {
+      titleElement.textContent = trans.pageTitle;
+    }
+  }, [trans]);
 
   const [anonymizeMode, setAnonymizeMode] = useState<boolean>(false);
 

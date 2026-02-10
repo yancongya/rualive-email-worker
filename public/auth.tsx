@@ -52,6 +52,7 @@ interface Popup { id: number; x: number; y: number; text: string; }
 // 默认翻译（用于fallback）
 const DEFAULT_TRANS = {
   EN: {
+    pageTitle: "Join RuAlive - Animation Survival Verification",
     navBackToHome: "BACK TO HOME",
     welcomeBack: "WELCOME BACK",
     startSurviving: "START SURVIVING",
@@ -90,6 +91,7 @@ const DEFAULT_TRANS = {
     }
   },
   ZH: {
+    pageTitle: "加入 RuAlive - 动画师生存确认",
     navBackToHome: "返回首页",
     welcomeBack: "欢迎回来",
     startSurviving: "开始存活",
@@ -195,6 +197,14 @@ const AuthPage = () => {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // 动态修改页面标题
+  useEffect(() => {
+    const titleElement = document.getElementById('page-title');
+    if (titleElement && trans.pageTitle) {
+      titleElement.textContent = trans.pageTitle;
+    }
+  }, [trans]);
 
   const handleClick = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;

@@ -75,15 +75,15 @@ function UserView() {
 const TRANSLATIONS = {
   zh: {
     nav: { 
-      stats: "生存看板", 
-      features: "动画搭子", 
-      pain: "加班共鸣",
-      faq: "疑难杂症", 
-      showcase: "界面展示", 
-      start: "立即开始" 
-    },
-    hero: {
-      tag: "专为 AE 动画师打造",
+          stats: "生存看板", 
+          features: "动画搭子", 
+          pain: "加班共鸣",
+          faq: "疑难杂症", 
+          showcase: "界面展示", 
+          start: "立即开始"
+        },
+        pageTitle: "RuAlive@烟囱鸭 - 你还在做动画嘛",
+        hero: {      tag: "专为 AE 动画师打造",
       title: "Ru",
       titleAlive: "Alive",
       subtitle: "你还Alive吗？",
@@ -173,6 +173,7 @@ const TRANSLATIONS = {
       showcase: "Showcase", 
       start: "Start" 
     },
+    pageTitle: "RuAlive@烟囱鸭 - Are you still animating?",
     hero: {
       tag: "Built for AE Animators",
       title: "Ru",
@@ -891,6 +892,14 @@ const App = () => {
 
     fetchUserCount();
   }, []);
+
+  // 动态修改页面标题
+  useEffect(() => {
+    const titleElement = document.getElementById('page-title');
+    if (titleElement && trans.pageTitle) {
+      titleElement.textContent = trans.pageTitle;
+    }
+  }, [trans, lang]);
 
   useEffect(() => {
     window.addEventListener('click', handleClick);
