@@ -896,10 +896,10 @@ const App = () => {
   // 动态修改页面标题
   useEffect(() => {
     const titleElement = document.getElementById('page-title');
-    if (titleElement && trans.pageTitle) {
-      titleElement.textContent = trans.pageTitle;
+    if (titleElement && TRANSLATIONS[lang].pageTitle) {
+      titleElement.textContent = TRANSLATIONS[lang].pageTitle;
     }
-  }, [trans, lang]);
+  }, [lang]);
 
   useEffect(() => {
     window.addEventListener('click', handleClick);
