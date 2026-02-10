@@ -60,6 +60,7 @@ const DEFAULT_TRANS = {
     usernameLabel: "Username",
     emailLabel: "Email",
     passwordLabel: "Password",
+    inviteCodeLabel: "Invite Code",
     forgotPassword: "Forgot password?",
     loginBtn: "LOGIN",
     registerBtn: "CREATE ACCOUNT",
@@ -80,6 +81,7 @@ const DEFAULT_TRANS = {
     placeholderUsername: "Keyframe Master",
     placeholderEmail: "animator@rualive.com",
     placeholderPassword: "•••••••••",
+    placeholderInviteCode: "ABCD-1234",
     footerCopy: "© 2026 RuAlive@烟囱鸭. Living for animation.",
     toast: {
       loginSuccess: "Login successful! Redirecting...",
@@ -96,6 +98,7 @@ const DEFAULT_TRANS = {
     usernameLabel: "用户名",
     emailLabel: "邮箱",
     passwordLabel: "密码",
+    inviteCodeLabel: "邀请码",
     forgotPassword: "忘记密码？",
     loginBtn: "登录",
     registerBtn: "创建账户",
@@ -116,6 +119,7 @@ const DEFAULT_TRANS = {
     placeholderUsername: "K帧高手",
     placeholderEmail: "animator@rualive.com",
     placeholderPassword: "•••••••••",
+    placeholderInviteCode: "ABCD-1234",
     footerCopy: "© 2026 RuAlive@烟囱鸭. 活着，为了做动画.",
     toast: {
       loginSuccess: "登录成功！正在跳转...",
@@ -235,12 +239,20 @@ const AuthPage = () => {
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       password: (form.elements.namedItem('password') as HTMLInputElement).value,
       ...(!isLogin ? {
-        username: (form.elements.namedItem('username') as HTMLInputElement).value
+        username: (form.elements.namedItem('username') as HTMLInputElement).value,
+        inviteCode: (form.elements.namedItem('inviteCode') as HTMLInputElement).value
       } : {})
     };
 
     // 简单验证
     if (!formData.email || !formData.password) {
+      setError(trans.fillAllFields);
+      setIsLoading(false);
+      return;
+    }
+
+    // 注册时验证邀请码
+    if (!isLogin && !formData.inviteCode) {
       setError(trans.fillAllFields);
       setIsLoading(false);
       return;
@@ -392,6 +404,20 @@ const AuthPage = () => {
                 disabled={isLoading}
               />
             </div>
+
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">{trans.inviteCodeLabel}</label>
+                <input
+                  type="text"
+                  name="inviteCode"
+                  placeholder={trans.placeholderInviteCode || 'ABCD-1234'}
+                  className="input-field w-full h-12 px-4 rounded-xl font-bold text-sm uppercase"
+                  autoComplete="off"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             <button
               type="submit"
