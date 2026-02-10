@@ -1113,7 +1113,7 @@ const moveSlideToIndex = useCallback((index: number) => {
             </div>
             <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-8">
               {getArray('stats.items').map((s: any, i: number) => (
-                <div key={i} className="text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px]">
+                <div key={i} className={`text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px] ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
                   <div className="text-3xl sm:text-5xl md:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-3 py-4 overflow-visible h-auto flex items-center justify-center">
                     <span className="block">{s.value}</span>
                   </div>
