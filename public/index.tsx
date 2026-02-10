@@ -457,7 +457,7 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-dark">
       <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }}></div>
       <div className="absolute inset-0 flex items-center justify-center overflow-visible">
-        <svg ref={svgRef} viewBox="0 0 800 800" className="w-[80vw] h-[80vw] sm:w-[60vw] sm:h-[60vw] text-primary" style={{ transformOrigin: 'center center', opacity: 0.25 }}>
+        <svg ref={svgRef} viewBox="0 0 800 800" className="w-[140vw] h-[140vw] sm:w-[60vw] sm:h-[60vw] text-primary" style={{ transformOrigin: 'center center', opacity: 0.25 }}>
           <path ref={pathRef} fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="16 16" strokeLinecap="round" className="animate-marching-ants" />
         </svg>
       </div>
