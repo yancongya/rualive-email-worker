@@ -65,8 +65,26 @@ useEffect(() => {
 ### 问题 2: 缺少 Favicon 文件
 
 **原因**:
-- `public/` 目录下没有 `favicon.svg` 文件
-- HTML 文件中没有 `<link rel="icon">` 标签
+- `public/` 目录下没有 `favicon.svg` 文件（初始状态）
+- HTML 文件中没有 `<link rel="icon">` 标签（初始状态）
+- **构建配置问题**: `vite.config.ts` 中设置 `copyPublicDir: false`，导致 Vite 不会自动复制 public 目录下的静态文件到 dist 目录
+- **资源引用问题**: favicon.svg 只通过 `<link rel="icon">` 引用，不被 Vite 自动处理为构建依赖
+- **结果**: 虽然 favicon.svg 在 `public/` 目录，但不会被复制到构建输出的 `dist/` 目录
+
+**代码问题**:
+```javascript
+// vite.config.ts
+build: {
+  copyPublicDir: false  // ❌ 这导致 public 目录下的静态文件不会被复制
+}
+```
+
+**构建输出分析**:
+- `dist/admin.html` - 存在
+- `dist/auth.html` - 存在
+- `dist/index.html` - 存在
+- `dist/user-v6.html` - 存在
+- `dist/favicon.svg` - **不存在** ❌
 
 ---
 
@@ -210,6 +228,39 @@ useEffect(() => {
 <title id="page-title">RuAlive@烟囱鸭 - 你还在做动画嘛 - 管理后台</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 ```
+
+#### 步骤 3: 配置 Vite 构建插件复制 favicon
+
+**文件**: `vite.config.ts`
+
+**问题**: 由于 `copyPublicDir: false` 配置，Vite 不会自动复制 public 目录下的静态文件到 dist 目录。
+
+**解决方案**: 添加 `copy-favicon` 插件，在构建时自动复制 favicon.svg。
+
+```javascript
+plugins: [
+  react(),
+  {
+    name: 'copy-favicon',
+    generateBundle() {
+      const { copyFileSync, existsSync } = require('fs');
+      const faviconSrc = path.resolve(__dirname, 'public/favicon.svg');
+      const faviconDest = path.resolve(__dirname, 'dist/favicon.svg');
+
+      if (existsSync(faviconSrc)) {
+        copyFileSync(faviconSrc, faviconDest);
+        console.log('[copy-favicon] Copied favicon.svg to dist/');
+      }
+    }
+  },
+  // 其他插件...
+],
+```
+
+**说明**:
+- 使用 Vite 的 `generateBundle` 钩子，在生成 bundle 时复制文件
+- 检查源文件是否存在，避免报错
+- 复制到 dist 根目录，与 HTML 文件同级
 
 ---
 
