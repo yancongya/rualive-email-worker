@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 
 # Assets 配置 - 用于部署静态文件（React 应用和管理后台）
 [assets]
-directory = "dist"
+directory = "dist/public"
 binding = "ASSETS"
 # 强制每次部署都重新上传所有文件
 # 避免CDN缓存导致文件不更新的问题
