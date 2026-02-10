@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { RuaLogo } from './LogoAnimation';
+import { useToast, ToastContainer } from './src/components';
 
 // Global GSAP declarations
 declare global {
@@ -79,7 +80,12 @@ const DEFAULT_TRANS = {
     placeholderUsername: "Keyframe Master",
     placeholderEmail: "animator@rualive.com",
     placeholderPassword: "•••••••••",
-    footerCopy: "© 2026 RuAlive@烟囱鸭. Living for animation."
+    footerCopy: "© 2026 RuAlive@烟囱鸭. Living for animation.",
+    toast: {
+      loginSuccess: "Login successful! Redirecting...",
+      registerSuccess: "Registration successful! Redirecting...",
+      copySuccess: "Email copied to clipboard"
+    }
   },
   ZH: {
     navBackToHome: "返回首页",
@@ -110,7 +116,12 @@ const DEFAULT_TRANS = {
     placeholderUsername: "K帧高手",
     placeholderEmail: "animator@rualive.com",
     placeholderPassword: "•••••••••",
-    footerCopy: "© 2026 RuAlive@烟囱鸭. 活着，为了做动画."
+    footerCopy: "© 2026 RuAlive@烟囱鸭. 活着，为了做动画.",
+    toast: {
+      loginSuccess: "登录成功！正在跳转...",
+      registerSuccess: "注册成功！正在跳转...",
+      copySuccess: "邮箱已复制到剪贴板"
+    }
   }
 };
 
@@ -148,6 +159,7 @@ const AuthPage = () => {
   const [trans, setTrans] = useState<any>(DEFAULT_TRANS[lang]);
   const popupId = useRef(0);
   const formRef = useRef<HTMLDivElement>(null);
+  const { success } = useToast();
 
   // 加载翻译
   useEffect(() => {
@@ -255,7 +267,9 @@ const AuthPage = () => {
           localStorage.setItem('rualive_user', JSON.stringify(data.user));
         }
 
-        alert(isLogin ? trans.loginSuccess : trans.registerSuccess);
+        // 确保 trans.toast 存在
+        const toastMessage = trans.toast?.loginSuccess || trans.loginSuccess || '登录成功！';
+        success(isLogin ? toastMessage : (trans.toast?.registerSuccess || trans.registerSuccess || '注册成功！'));
 
         // 跳转到管理后台或用户页面
         if (data.user && data.user.role === 'admin') {
@@ -468,6 +482,7 @@ const AuthPage = () => {
           </div>
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 };

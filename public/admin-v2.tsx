@@ -13,6 +13,7 @@ import {
   PieChart, Pie, Cell 
 } from 'recharts';
 import gsap from 'gsap';
+import { useToast, ToastContainer, useConfirm, ConfirmComponent } from './src/components';
 
 // --- INLINED COMPONENTS (Previously external) ---
 
@@ -921,31 +922,41 @@ const LogsView = ({ t, setModalConfig, closeModal }: any) => {
   const handleDeleteSelected = async () => {
     if (selectedLogs.size === 0) return;
     
-    if (!confirm(`确定要删除选中的 ${selectedLogs.size} 条日志吗？`)) return;
-    
-    try {
-      // 调用后端 API 删除日志
-      const deletePromises = Array.from(selectedLogs).map(id => 
-        apiClient(`/logs/${id}`, { method: 'DELETE' })
-      );
-      
-      const results = await Promise.all(deletePromises);
-      
-      // 检查是否所有删除都成功
-      const allSuccess = results.every(result => result.success);
-      
-      if (allSuccess) {
-        // 从本地状态中删除
-        setLogs(prev => prev.filter(log => !selectedLogs.has(log.id)));
-        setSelectedLogs(new Set());
-        setCurrentPage(1);
-      } else {
-        alert('部分日志删除失败，请重试');
+    // 使用拟态确认对话框
+    confirm(
+      t('messages.confirmTitle') || '确认删除',
+      `确定要删除选中的 ${selectedLogs.size} 条日志吗？`,
+      async () => {
+        try {
+          // 调用后端 API 删除日志
+          const deletePromises = Array.from(selectedLogs).map(id => 
+            apiClient(`/logs/${id}`, { method: 'DELETE' })
+          );
+          
+          const results = await Promise.all(deletePromises);
+          
+          // 检查是否所有删除都成功
+          const allSuccess = results.every(result => result.success);
+          
+          if (allSuccess) {
+            // 从本地状态中删除
+            setLogs(prev => prev.filter(log => !selectedLogs.has(log.id)));
+            setSelectedLogs(new Set());
+            setCurrentPage(1);
+            toastSuccess(t('messages.logsDeleted') || '日志已删除');
+          } else {
+            toastError(t('messages.logsDeleteFailed') || '部分日志删除失败，请重试');
+          }
+        } catch (error) {
+          console.error('删除日志失败:', error);
+          toastError(t('messages.logsDeleteFailed') || '删除日志失败，请重试');
+        }
+      },
+      'danger',
+      () => {
+        // 取消删除
       }
-    } catch (error) {
-      console.error('删除日志失败:', error);
-      alert('删除日志失败，请重试');
-    }
+    );
   };
 
   if (loading) return <div className="h-64 flex items-center justify-center animate-pulse text-primary font-black italic">{t('logs.messages.loading')}</div>;
@@ -1197,7 +1208,11 @@ function AdminDashboard() {
   const [isLangLoading, setIsLangLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{msg: string | null, type: 'success' | 'error'}>({ msg: null, type: 'success' });
-  const [sidebarWidth, setSidebarWidth] = useState(80); 
+  const [sidebarWidth, setSidebarWidth] = useState(80);
+  
+  // Toast and Confirm hooks for morphological modals
+  const { success: toastSuccess, error: toastError } = useToast();
+  const { confirm } = useConfirm(); 
   const [isResizing, setIsResizing] = useState(false);
   const minSidebarWidth = 80;
   const maxSidebarWidth = 480;
@@ -1412,6 +1427,8 @@ function AdminDashboard() {
 
       <Modal isOpen={!!modalConfig} onClose={closeModal} title={modalConfig?.title || ''}>{modalConfig?.content}</Modal>
       <Toast msg={toast.msg} type={toast.type} />
+      <ToastContainer />
+      <ConfirmComponent />
     </div>
   );
 }

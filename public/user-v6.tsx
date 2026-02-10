@@ -18,6 +18,12 @@ import {
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { RuaLogo } from './LogoAnimation';
+import { useConfirm, ConfirmComponent, useToast, ToastContainer } from './src/components';
+
+// 强制 Vite 保留 ConfirmComponent
+if (false) {
+  console.log('Force keep ConfirmComponent:', ConfirmComponent);
+}
 import { getWorkLogs, getWorkLogsByRange, clearAllCache, clearCacheByType, getSystemInfo } from './src/api';
 import { workLogToDailyData, aggregateWorkLogsByDate } from './src/dataTransform';
 import { getAnalyticsData, getDateRange, aggregateWorkLogs } from './src/analyticsData';
@@ -335,6 +341,8 @@ export const Sidebar = ({
     isCollapsed: boolean,
     onToggleCollapse: () => void,
 }) => {
+    const { confirm } = useConfirm();
+
     const navItems = [
         { id: 'dashboard' as ViewType, label: trans.dashboard, icon: LayoutDashboard },
         { id: 'analytics' as ViewType, label: trans.analytics, icon: BarChartIcon2 },
@@ -346,11 +354,21 @@ export const Sidebar = ({
     };
 
     const handleLogout = () => {
-        if (confirm(trans.logoutConfirm || '确定要登出吗？')) {
-            localStorage.removeItem('rualive_token');
-            localStorage.removeItem('rualive_user');
-            window.location.href = '/login';
-        }
+        confirm(
+            trans.logoutTitle || '登出确认',
+            trans.logoutConfirm || '确定要登出吗？',
+            () => {
+                localStorage.removeItem('rualive_token');
+                localStorage.removeItem('rualive_user');
+                window.location.href = '/login';
+            },
+            'warning',
+            undefined,
+            {
+                confirmText: trans.logoutConfirmButton || '确认',
+                cancelText: trans.logoutCancelButton || '取消'
+            }
+        );
     };
 
     return (
@@ -2693,6 +2711,9 @@ export const AnalyticsView = ({
 // --- MAIN APP ---
 
 const App = () => {
+  const { confirm } = useConfirm();
+  const { success, error: errorToast, info, warning } = useToast();
+
   // 认证检查
   useEffect(() => {
     const token = localStorage.getItem('rualive_token');
@@ -3384,6 +3405,8 @@ const App = () => {
         </div>
       )}
       </div>
+      <ToastContainer />
+      <ConfirmComponent />
     </div>
   );
 };

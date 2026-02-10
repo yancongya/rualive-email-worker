@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
+import { useToast, ToastContainer } from './src/components';
 
 // Global GSAP declarations
 declare global {
@@ -543,7 +544,7 @@ const AuthView = ({ isLogin, setIsLogin, onBack, goToSection, onAuthSuccess }: {
         }
 
         // 显示成功消息
-        alert(isLogin ? '登录成功！' : '注册成功！');
+        success(isLogin ? '登录成功！' : '注册成功！');
 
         // 根据用户角色跳转到不同页面
         console.log('[Auth] User data:', data);
@@ -701,6 +702,8 @@ const App = () => {
     }
     return 'landing';
   });
+
+  const { success } = useToast();
 
   // 强制更新视图以确保路由正确 - v4 with admin support
   useEffect(() => {
@@ -1227,7 +1230,7 @@ const moveSlideToIndex = useCallback((index: number) => {
                   <div>{t('footer.rights')}</div>
                   <div className="flex gap-6 items-center">
                     <span>{t('footer.copy')}</span>
-                    <button onClick={() => { navigator.clipboard.writeText('2655283737@qq.com'); alert('Email copied to clipboard'); }} className="flex items-center gap-2 hover:text-black transition-colors group">
+                    <button onClick={() => { navigator.clipboard.writeText('2655283737@qq.com'); success('邮箱已复制到剪贴板'); }} className="flex items-center gap-2 hover:text-black transition-colors group">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                         <polyline points="22,6 12,13 2,6"></polyline>
@@ -1253,6 +1256,7 @@ const moveSlideToIndex = useCallback((index: number) => {
           }}
         />
       )}
+      <ToastContainer />
     </div>
   );
 };

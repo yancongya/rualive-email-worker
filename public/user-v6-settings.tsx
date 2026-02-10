@@ -4,6 +4,7 @@ import {
   RefreshCw, Clock, Calendar, ToggleLeft, ToggleRight, Activity,
   Lock, Power, Smartphone, Globe, ChevronUp, ChevronDown
 } from 'lucide-react';
+import { useConfirm, ConfirmComponent } from './src/components';
 
 type LangType = 'EN' | 'ZH';
 
@@ -505,6 +506,7 @@ async function logoutUser() {
 
 export const SettingsView = ({ lang }: { lang: LangType }) => {
   const t = S_TRANS[lang];
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -525,9 +527,17 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   const handleLogout = async () => {
-    if (confirm(lang === 'ZH' ? '确定要登出吗？' : 'Are you sure you want to logout?')) {
-      await logoutUser();
-    }
+    confirm(
+      lang === 'ZH' ? '登出确认' : 'Logout Confirmation',
+      lang === 'ZH' ? '确定要登出吗？' : 'Are you sure you want to logout?',
+      logoutUser,
+      'warning',
+      undefined,
+      {
+        confirmText: t.logoutConfirmButton || (lang === 'ZH' ? '确认' : 'Confirm'),
+        cancelText: t.logoutCancelButton || (lang === 'ZH' ? '取消' : 'Cancel')
+      }
+    );
   };
 
   const handleChangePassword = async () => {
@@ -1129,6 +1139,7 @@ export const SettingsView = ({ lang }: { lang: LangType }) => {
           </div>
         </div>
       )}
+      <ConfirmComponent />
     </div>
   );
 };
