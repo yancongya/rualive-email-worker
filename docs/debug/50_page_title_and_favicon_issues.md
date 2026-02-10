@@ -358,6 +358,76 @@ plugins: [
 
 ---
 
-**文档版本**: 1.0
+## 后续优化：使用 Data URI
+
+### 问题
+
+即使 favicon.svg 文件正确部署到 dist 目录，某些浏览器仍然无法正确显示 favicon。可能的原因包括：
+
+1. **浏览器缓存问题**: Favicon 被浏览器缓存，需要强制刷新才能看到更改
+2. **CDN 缓存问题**: Cloudflare CDN 缓存导致旧版本的 favicon 被缓存
+3. **文件加载延迟**: 外部文件加载延迟导致 favicon 不及时显示
+4. **跨域问题**: 某些浏览器对外部资源有跨域限制
+
+### 解决方案：使用 Data URI
+
+将 favicon.svg 转换为 base64 编码的 data URI，直接嵌入到 HTML 文件中，避免外部文件加载的问题。
+
+#### 步骤 1: 转换 SVG 为 Base64
+
+```powershell
+$content = Get-Content "public/favicon.svg" -Raw
+$base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($content))
+```
+
+#### 步骤 2: 在 HTML 中使用 Data URI
+
+```html
+<!-- 旧方式 -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- 新方式 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMTUwIj4KICA8cGF0aCBkPSJNNTUgMTMwIEw5MCAzNSBRMTAwIDEwIDExMCAzNSBMMTQ1IDEzMCIgc3Ryb2tlPSIjRkY2QjM1IiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNMTAgOTUgSCA0NSBMIDYwIDY1IEwgODAgMTE1IEwgMTAwIDU1IEwgMTE1IDk1IEggMTkwIiBzdHJva2U9IiNGRjZCMzUiIHN0cm9rZS13aWR0aD0iMTQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgo8L3N2Zz4=">
+```
+
+#### 步骤 3: 优化 SVG 设计
+
+移除深色背景，使用透明背景：
+
+```xml
+<!-- 旧版本 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150">
+  <rect width="200" height="150" fill="#050505"/>
+  <path d="..." stroke="#FF6B35" .../>
+</svg>
+
+<!-- 新版本 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150">
+  <path d="..." stroke="#FF6B35" .../>
+</svg>
+```
+
+### 优点
+
+1. **无需外部文件**: Favicon 直接嵌入 HTML，无需额外的 HTTP 请求
+2. **避免缓存问题**: Data URI 不会被缓存，每次加载都会使用最新的内容
+3. **跨域友好**: 不存在跨域问题
+4. **即时显示**: 页面加载时 favicon 立即显示，无需等待外部文件加载
+
+### 缺点
+
+1. **HTML 文件大小增加**: Base64 编码会使文件大小增加约 33%
+2. **不易维护**: 如果需要修改 favicon，需要重新编码并更新所有 HTML 文件
+3. **不支持动画**: Data URI 不支持 SVG 动画
+
+### 适用场景
+
+- **小型项目**: HTML 文件较少，维护成本较低
+- **快速迭代**: 需要频繁修改 favicon
+- **避免缓存**: 需要确保 favicon 总是最新的
+
+---
+
+**文档版本**: 1.1
 **最后更新**: 2026-02-10
 **作者**: iFlow CLI
