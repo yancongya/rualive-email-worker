@@ -200,6 +200,98 @@ const handleCopyEmail = () => {
 
 ---
 
+### 10. 翻译文件覆盖导致数据更新无效
+
+**问题描述：**
+更新 `public/index.tsx` 中的 `TRANSLATIONS` 对象后，落地页统计数据仍然显示旧数据（4个面板），而不是更新后的数据（5个面板）。
+
+**根本原因：**
+应用使用运行时加载机制：
+1. `index.tsx` 中的 `TRANSLATIONS` 对象只是初始数据（fallback）
+2. 实际生效的数据来自 `public/locals/landing/zh.json` 和 `en.json`
+3. 这些 JSON 文件在运行时通过 `fetch()` 动态加载并覆盖 TRANSLATIONS 对象
+
+**代码示例：**
+```typescript
+// index.tsx 中的加载逻辑
+const loadTranslations = async (lang: 'zh' | 'en') => {
+  const response = await fetch(`/locals/landing/${lang}.json`);
+  const json = await response.json();
+  // 这里的 JSON 数据会覆盖上面的 TRANSLATIONS 对象！
+  setTranslations(json);
+};
+```
+
+**解决方案：**
+同时更新以下文件：
+1. `public/index.tsx` - 更新 TRANSLATIONS 对象（源代码）
+2. `public/locals/landing/zh.json` - 更新中文翻译
+3. `public/locals/landing/en.json` - 更新英文翻译
+
+**更新内容：**
+```json
+// zh.json
+"stats.items.0.label": "合成数", "stats.items.0.value": "125",
+"stats.items.1.label": "图层数", "stats.items.1.value": "1,234",
+"stats.items.2.label": "关键帧数", "stats.items.2.value": "5,872",
+"stats.items.3.label": "效果数", "stats.items.3.value": "89",
+"stats.items.4.label": "运行时长", "stats.items.4.value": "128",
+```
+
+**验证方法：**
+- 检查 `dist/locals/landing/zh.json` 和 `en.json` 是否包含最新数据
+- 使用 Ctrl+Shift+R 强制刷新浏览器清除缓存
+- 确认部署日志显示 `+ /locals/landing/zh.json` 和 `+ /locals/landing/en.json`
+
+**教训：**
+- React 应用的翻译系统通常会从外部 JSON 文件加载数据
+- 必须同时更新源代码和翻译文件才能生效
+- 不能只依赖 TRANSLATIONS 对象的静态数据
+
+---
+
+### 11. 统计数据格式不合理
+
+**问题描述：**
+落地页统计数据使用了不合理的格式和虚假数据：
+- 合成数：`99K+`（夸张的数量级）
+- 关键帧：`4.9/5`（评分格式，应该是数量）
+- 效果数：`10.01%`（百分比，应该是数量）
+- 单位混乱：`99K+个`、`4.9/5个`、`10.01%个`
+
+**根本原因：**
+从旧的生存主题直接复制了数据，没有根据 AE 动画师的实际使用场景进行调整。
+
+**解决方案：**
+使用合理的演示数据：
+```json
+// 修正后的数据格式
+"stats.items.0.label": "合成数", "stats.items.0.value": "125", "stats.items.0.unit": "个",
+"stats.items.1.label": "图层数", "stats.items.1.value": "1,234", "stats.items.1.unit": "个",
+"stats.items.2.label": "关键帧数", "stats.items.2.value": "5,872", "stats.items.2.unit": "个",
+"stats.items.3.label": "效果数", "stats.items.3.value": "89", "stats.items.3.unit": "个",
+"stats.items.4.label": "运行时长", "stats.items.4.value": "128", "stats.items.4.unit": "小时",
+```
+
+**数据合理性分析：**
+- **合成数 125**：中等项目的合成数量
+- **图层数 1,234**：多个合成总计的图层数量
+- **关键帧 5,872**：合理的关键帧密度（平均每个图层约 5 个关键帧）
+- **效果数 89**：多种效果类型的使用数量
+- **运行时长 128 小时**：一个大型项目或多个项目的累计时长
+
+**验证方法：**
+- 检查所有数量都使用整数格式
+- 确保没有混合使用评分、百分比等不合适的格式
+- 数据应该在一个合理的范围内，既不太小也不夸张
+
+**更新文件：**
+- `public/index.tsx` - TRANSLATIONS 对象
+- `public/locals/landing/zh.json` - 中文翻译
+- `public/locals/landing/en.json` - 英文翻译
+
+---
+
 ## 技术要点总结
 
 ### Vite 开发服务器配置
