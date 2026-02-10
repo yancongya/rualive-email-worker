@@ -46,11 +46,12 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      root: '.',
-      publicDir: 'locals', // 复制 locals 目录中的文件
+      // 修改 root 为上级目录，确保输出路径清晰
+      root: path.resolve(__dirname, '..'),
+      publicDir: 'public/locals', // 复制 locals 目录中的文件
       build: {
         outDir: 'dist',
-        emptyOutDir: true,
+        emptyOutDir: true, // 每次构建前清空 dist 目录
         rollupOptions: {
           input: {
             main: path.resolve(__dirname, 'index.html'),
@@ -133,6 +134,29 @@ export default defineConfig(({ mode }) => {
             copyFileSync(srcPath, destPath);
           });
           console.log(`[copy-showcase] Copied ${files.length} showcase images to dist/assets/showcase/`);
+        }
+      }
+    },
+    {
+      name: 'move-html-files',
+      closeBundle() {
+        // 将编译后的 HTML 文件从 dist/public/ 移动到 dist/
+        // 这会覆盖 dist/ 中可能有错误的 HTML 文件
+        const publicDir = path.resolve(__dirname, 'dist/public');
+        const distDir = path.resolve(__dirname, 'dist');
+
+        if (existsSync(publicDir)) {
+          const htmlFiles = ['index.html', 'auth.html', 'user-v6.html', 'admin.html'];
+          
+          htmlFiles.forEach(file => {
+            const srcPath = path.join(publicDir, file);
+            const destPath = path.join(distDir, file);
+            
+            if (existsSync(srcPath)) {
+              copyFileSync(srcPath, destPath);
+              console.log(`[move-html-files] Moved ${file} from dist/public/ to dist/`);
+            }
+          });
         }
       }
     }

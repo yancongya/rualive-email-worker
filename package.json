@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
-    "dev:frontend": "vite",
-    "build:frontend": "vite build",
+    "dev:frontend": "vite --config vite.config.ts",
+    "build:frontend": "vite build --config vite.config.ts",
     "predeploy": "node scripts/force-update.js",
     "deploy": "npm run predeploy && wrangler deploy",
     "deploy:landing": "wrangler deploy",
