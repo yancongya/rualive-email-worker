@@ -738,12 +738,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
   const [actionMenuProject, setActionMenuProject] = useState<string | null>(null);
 
   const handleCardClick = (e: React.MouseEvent | React.TouchEvent, projectId: string, projectName: string) => {
-    // 移动端：单击直接打开历史
-    if ('ontouchstart' in window) {
-      if (onProjectClick) onProjectClick(projectId, projectName);
-      return;
-    }
-
     // 桌面端：双击打开历史
     const existingTimeout = clickTimeouts.get(projectId);
     
@@ -759,7 +753,10 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     } else {
       // 这是第一次点击，设置超时
       const timeout = setTimeout(() => {
-        // 超时后，这是单击（不执行任何操作）
+        // 超时后，这是单击（移动端打开历史，桌面端不操作）
+        if ('ontouchstart' in window) {
+          if (onProjectClick) onProjectClick(projectId, projectName);
+        }
         const newTimeouts = new Map(clickTimeouts);
         newTimeouts.delete(projectId);
         setClickTimeouts(newTimeouts);
@@ -775,20 +772,30 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
   const handleLongPressStart = (projectId: string) => {
     const timeout = setTimeout(() => {
       setActionMenuProject(projectId);
-    }, 800); // 800ms 长按触发
+    }, 500); // 500ms 长按触发（缩短时间）
     
     const newTimeouts = new Map(longPressTimeouts);
     newTimeouts.set(projectId, timeout);
     setLongPressTimeouts(newTimeouts);
   };
 
-  const handleLongPressEnd = (projectId: string) => {
+  const handleLongPressEnd = (projectId: string, e: React.TouchEvent) => {
     const timeout = longPressTimeouts.get(projectId);
     if (timeout) {
       clearTimeout(timeout);
       const newTimeouts = new Map(longPressTimeouts);
       newTimeouts.delete(projectId);
       setLongPressTimeouts(newTimeouts);
+      
+      // 移动端：如果是快速松开，触发单击（打开历史）
+      if ('ontouchstart' in window && onProjectClick && !actionMenuProject) {
+        // 延迟一点执行，避免和长按冲突
+        setTimeout(() => {
+          if (!actionMenuProject) {
+            handleCardClick(e, projectId, '');
+          }
+        }, 50);
+      }
     }
   };
 
