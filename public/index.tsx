@@ -305,7 +305,8 @@ const useTranslation = (lang: 'zh' | 'en') => {
         }
         const data = await response.json();
         if (data && Object.keys(data).length > 0) {
-          setTranslations(data);
+          // 扁平化翻译数据，与内嵌 TRANSLATIONS 的格式保持一致
+          setTranslations(flattenObject(data));
         }
       } catch (error) {
         // 静默处理错误，继续使用内嵌的 TRANSLATIONS
