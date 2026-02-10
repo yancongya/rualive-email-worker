@@ -447,8 +447,8 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
         const config = transforms[currentSection] || transforms[0];
         const tl = window.gsap.timeline();
         tl.to(svgRef.current, { scale: config.scale * 1.3, opacity: 0.1, duration: 0.5, ease: "power2.in" })
-          .to(pathRef.current, { attr: { d: paths[currentSection] || paths[0] }, duration: 1.1, ease: "power3.inOut" }, "-=0.3")
-          .to(svgRef.current, { x: config.x, y: config.y, scale: config.scale, rotation: config.rotate, opacity: config.opacity, duration: 1.2, ease: "elastic.out(1, 0.85)" }, "-=0.4");
+          .to(pathRef.current, { attr: { d: paths[currentSection] || paths[0] }, duration: 1.1, ease: "sine.out" }, "-=0.3")
+          .to(svgRef.current, { x: config.x, y: config.y, scale: config.scale, rotation: config.rotate, opacity: config.opacity, duration: 1.2, ease: "sine.out" }, "-=0.4");
       }
     }
   }, [currentSection, view]);
@@ -774,7 +774,7 @@ const App = () => {
     currentSectionRef.current = index;
     setCurrentSection(index);
     if (window.gsap && wrapperRef.current) {
-      window.gsap.to(wrapperRef.current, { y: -index * 100 + "%", duration: 1.2, ease: "power4.inOut", onComplete: () => { isAnimating.current = false; } });
+      window.gsap.to(wrapperRef.current, { y: -index * 100 + "%", duration: 1.2, ease: "sine.out", onComplete: () => { isAnimating.current = false; } });
     }
   }, []);
 
