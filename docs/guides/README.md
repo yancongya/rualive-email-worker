@@ -2,14 +2,12 @@
 
 ## 指南分类
 
-### 1. 快速开始
-**文档**: [quick-start.md](quick-start.md)
+### 1. 快速开�?**文档**: [quick-start.md](quick-start.md)
 
 **内容**:
 - 环境准备
 - 依赖安装
-- 项目初始化
-- 第一个 API 测试
+- 项目初始�?- 第一�?API 测试
 
 **前置要求**:
 - Cloudflare 账号
@@ -30,18 +28,15 @@
 - 密钥配置
 
 **部署方式**:
-- 自动化部署脚本（推荐）
-- 手动分步部署
+- 自动化部署脚本（推荐�?- 手动分步部署
 - 环境配置
 
 **预计时间**: 15 分钟
 
-### 3. 数据库迁移
-**文档**: [database-migration.md](database-migration.md)
+### 3. 数据库迁�?**文档**: [database-migration.md](database-migration.md)
 
 **内容**:
-- 数据库创建
-- 架构变更
+- 数据库创�?- 架构变更
 - 迁移脚本
 - 数据备份
 - 数据恢复
@@ -59,43 +54,31 @@
 **文档**: [troubleshooting.md](troubleshooting.md)
 
 **内容**:
-- 常见错误和解决方案
-- 日志分析
+- 常见错误和解决方�?- 日志分析
 - 性能优化
-- 安全检查
-
+- 安全检�?
 **常见问题**:
 - 部署失败
-- 数据库连接失败
-- 邮件发送失败
-- 前端加载失败
+- 数据库连接失�?- 邮件发送失�?- 前端加载失败
 - API 调用失败
 
 ---
 
-## 快速链接
-
+## 快速链�?
 ### 新手入门
-1. [快速开始](quick-start.md) - 30 分钟快速上手
-2. [部署指南](deployment.md) - 15 分钟完成部署
+1. [快速开始](quick-start.md) - 30 分钟快速上�?2. [部署指南](deployment.md) - 15 分钟完成部署
 3. [常见问题](troubleshooting.md) - 解决常见问题
 
-### 开发人员
-1. [项目结构](../PHASE1_PROJECT_STRUCTURE.md) - 了解项目结构
+### 开发人�?1. [项目结构](../PHASE1_PROJECT_STRUCTURE.md) - 了解项目结构
 2. [API 文档](../modules/api/README.md) - 查看 API 接口
-3. [数据库架构](../modules/database/README.md) - 了解数据库结构
-
+3. [数据库架构](../modules/database/README.md) - 了解数据库结�?
 ### 运维人员
-1. [部署指南](deployment.md) - 部署和更新
-2. [数据库迁移](database-migration.md) - 数据库管理
-3. [故障排除](troubleshooting.md) - 问题诊断
+1. [部署指南](deployment.md) - 部署和更�?2. [数据库迁移](database-migration.md) - 数据库管�?3. [故障排除](troubleshooting.md) - 问题诊断
 
 ---
 
-## 开发环境配置
-
-### 本地开发
-```bash
+## 开发环境配�?
+### 本地开�?```bash
 # 1. 克隆项目
 git clone <repo-url>
 cd rualive-email-worker
@@ -122,10 +105,8 @@ wrangler secret put RESEND_API_KEY
 wrangler secret put JWT_SECRET
 ```
 
-### 数据库配置
-```bash
-# 创建 D1 数据库
-npm run db:create
+### 数据库配�?```bash
+# 创建 D1 数据�?npm run db:create
 
 # 执行架构迁移
 npm run db:migrate
@@ -144,14 +125,12 @@ cd tests
 
 # 运行单个测试
 .\test-simple.ps1           # 基本登录测试
-.\test-send-email.ps1       # 邮件发送测试
-.\test-admin-login.ps1      # 管理员认证测试
-```
+.\test-send-email.ps1       # 邮件发送测�?.\test-admin-login.ps1      # 管理员认证测�?```
 
 ### API 测试
 ```bash
 # 测试用户注册
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/register \
+curl -X POST https://rualive.itycon.cn/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -160,7 +139,7 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/registe
   }'
 
 # 测试用户登录
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/login \
+curl -X POST https://rualive.itycon.cn/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -173,17 +152,15 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/login \
 # 构建前端
 npm run build:frontend
 
-# 部署到本地测试
-npm run deploy
+# 部署到本地测�?npm run deploy
 
 # 访问测试地址
-https://rualive-email-worker.cubetan57.workers.dev
+https://rualive.itycon.cn
 ```
 
 ---
 
-## 监控和调试
-
+## 监控和调�?
 ### 实时日志
 ```bash
 # 查看 Worker 实时日志
@@ -193,8 +170,7 @@ npx wrangler tail
 npx wrangler tail --format pretty
 ```
 
-### 数据库查询
-```bash
+### 数据库查�?```bash
 # 查询用户列表
 wrangler d1 execute rualive --remote --command "SELECT id, email, username FROM users LIMIT 10"
 
@@ -210,23 +186,18 @@ wrangler d1 execute rualive --remote --command "SELECT * FROM email_logs WHERE s
 # 列出所有键
 wrangler kv:key list KV --namespace-id="2ab9c0f8a4be4e56a30097fcd349befb"
 
-# 获取键值
-wrangler kv:key get KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd349befb"
+# 获取键�?wrangler kv:key get KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd349befb"
 
-# 删除键
-wrangler kv:key delete KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd349befb"
+# 删除�?wrangler kv:key delete KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd349befb"
 ```
 
 ---
 
 ## 性能优化
 
-### 数据库优化
-- 为常用查询字段添加索引
-- 避免全表扫描
+### 数据库优�?- 为常用查询字段添加索�?- 避免全表扫描
 - 使用 LIMIT 限制结果数量
-- 使用缓存减少数据库访问
-
+- 使用缓存减少数据库访�?
 ### API 优化
 - 实现速率限制
 - 启用压缩
@@ -235,14 +206,11 @@ wrangler kv:key delete KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd34
 
 ### 前端优化
 - 使用代码分割
-- 实现懒加载
-- 优化图片资源
-- 启用浏览器缓存
-
+- 实现懒加�?- 优化图片资源
+- 启用浏览器缓�?
 ---
 
-## 安全检查清单
-
+## 安全检查清�?
 ### 数据安全
 - [ ] 密码使用哈希存储
 - [ ] 敏感信息使用 Secrets 存储
@@ -255,18 +223,15 @@ wrangler kv:key delete KV "user_123" --namespace-id="2ab9c0f8a4be4e56a30097fcd34
 - [ ] 权限验证
 - [ ] 速率限制
 - [ ] 输入验证
-- [ ] 错误处理不泄露敏感信息
-
+- [ ] 错误处理不泄露敏感信�?
 ### 邮件安全
 - [ ] 邮件地址验证
 - [ ] 防止邮件滥用
 - [ ] 邮件内容验证
-- [ ] 发送频率限制
-
+- [ ] 发送频率限�?
 ---
 
-## 更新和维护
-
+## 更新和维�?
 ### 版本更新
 ```bash
 # 更新依赖
@@ -282,8 +247,7 @@ npm run test
 
 ### 部署更新
 ```bash
-# 自动化部署
-.\deploy.ps1
+# 自动化部�?.\deploy.ps1
 
 # 手动部署
 npm run build:frontend
@@ -291,15 +255,14 @@ npm run deploy
 ```
 
 ### 监控更新
-- 检查 Worker 日志
+- 检�?Worker 日志
 - 监控 API 响应时间
 - 检查数据库性能
 - 监控邮件发送成功率
 
 ---
 
-## 社区和支持
-
+## 社区和支�?
 ### 文档
 - [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
 - [D1 数据库文档](https://developers.cloudflare.com/d1/)
@@ -314,5 +277,5 @@ npm run deploy
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-07
-**作者**: iFlow CLI
+**最后更�?*: 2026-02-07
+**作�?*: iFlow CLI

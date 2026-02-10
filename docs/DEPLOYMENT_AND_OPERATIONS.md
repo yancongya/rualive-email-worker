@@ -1,7 +1,6 @@
-# 部署和运维指南
-
+# 部署和运维指�?
 ## 文档信息
-- **最后更新**: 2026-02-07
+- **最后更�?*: 2026-02-07
 
 ---
 
@@ -9,28 +8,22 @@
 
 ### 1.1 部署架构
 ```
-本地开发环境
-  ↓
-Git 仓库
-  ↓
-CI/CD Pipeline (可选)
-  ↓
-Cloudflare Workers
-  ↓
-全球边缘网络
+本地开发环�?  �?Git 仓库
+  �?CI/CD Pipeline (可�?
+  �?Cloudflare Workers
+  �?全球边缘网络
 ```
 
 ### 1.2 部署环境
-| 环境 | URL | 用途 |
+| 环境 | URL | 用�?|
 |------|-----|------|
-| 开发环境 | http://localhost:5173 | 本地开发 |
+| 开发环�?| http://localhost:5173 | 本地开�?|
 | 预览环境 | https://rualive-email-worker.preview.workers.dev | 测试验证 |
-| 生产环境 | https://rualive-email-worker.cubetan57.workers.dev | 正式运行 |
+| 生产环境 | https://rualive.itycon.cn | 正式运行 |
 
 ---
 
-## 2. 快速部署
-
+## 2. 快速部�?
 ### 2.1 前置要求
 - Node.js 18+
 - Wrangler CLI
@@ -54,11 +47,9 @@ npm install
 
 ### 2.3 配置环境
 ```bash
-# 创建 D1 数据库
-npm run db:create
+# 创建 D1 数据�?npm run db:create
 
-# 执行数据库迁移
-npm run db:migrate
+# 执行数据库迁�?npm run db:migrate
 
 # 创建 KV 命名空间
 npm run kv:create
@@ -74,17 +65,14 @@ wrangler secret put JWT_SECRET
 
 ### 2.4 部署 Worker
 ```bash
-# 使用自动化部署脚本
-.\deploy.ps1
+# 使用自动化部署脚�?.\deploy.ps1
 
-# 或手动部署（完整流程）
-# 步骤1：构建前端
-cd public
+# 或手动部署（完整流程�?# 步骤1：构建前�?cd public
 npm run build
 
-# 步骤2：复制构建产物到根目录 dist
-# 重要：wrangler.toml 配置的 assets.directory 是根目录的 dist
-# Vite 构建输出到 public/dist，需要复制到根目录 dist
+# 步骤2：复制构建产物到根目�?dist
+# 重要：wrangler.toml 配置�?assets.directory 是根目录�?dist
+# Vite 构建输出�?public/dist，需要复制到根目�?dist
 cd ..
 Remove-Item -Recurse -Force dist
 Copy-Item -Recurse -Force public\dist dist
@@ -95,58 +83,46 @@ npm run deploy
 
 #### 📌 重要注意事项
 
-**构建目录结构说明**：
-- `public/vite.config.ts` 配置输出目录为 `dist`
-- Vite 构建输出到 `public/dist/` 目录
-- `wrangler.toml` 配置 `assets.directory = "dist"`（根目录）
-- **必须将 `public/dist` 复制到根目录 `dist` 才能正确部署**
+**构建目录结构说明**�?- `public/vite.config.ts` 配置输出目录�?`dist`
+- Vite 构建输出�?`public/dist/` 目录
+- `wrangler.toml` 配置 `assets.directory = "dist"`（根目录�?- **必须�?`public/dist` 复制到根目录 `dist` 才能正确部署**
 
-**为什么需要复制 dist 目录**：
-1. Vite 构建工具默认输出到 `public/dist` 目录
-2. Cloudflare Wrangler 的 Assets 绑定配置指向根目录的 `dist`
-3. 如果不复制，部署的将是旧版本的静态文件
-4. 复制确保最新的前端代码被部署到 Cloudflare Workers
+**为什么需要复�?dist 目录**�?1. Vite 构建工具默认输出�?`public/dist` 目录
+2. Cloudflare Wrangler �?Assets 绑定配置指向根目录的 `dist`
+3. 如果不复制，部署的将是旧版本的静态文�?4. 复制确保最新的前端代码被部署到 Cloudflare Workers
 
-**常见问题**：
-- **问题**：部署后前端代码没有更新
-- **原因**：只构建了 `public/dist`，没有复制到根目录 `dist`
-- **解决**：执行 `Remove-Item -Recurse -Force dist; Copy-Item -Recurse -Force public\dist dist`
-- **验证**：检查 `dist/user-v6.html` 中的 JS 文件引用是否是最新的哈希值
-
-**文件哈希验证**：
-```bash
-# 检查构建输出
-cd public/dist
+**常见问题**�?- **问题**：部署后前端代码没有更新
+- **原因**：只构建�?`public/dist`，没有复制到根目�?`dist`
+- **解决**：执�?`Remove-Item -Recurse -Force dist; Copy-Item -Recurse -Force public\dist dist`
+- **验证**：检�?`dist/user-v6.html` 中的 JS 文件引用是否是最新的哈希�?
+**文件哈希验证**�?```bash
+# 检查构建输�?cd public/dist
 cat user-v6.html | grep userV6
 # 输出示例：src="/assets/userV6-KJ6OtQ4y.js"
 
-# 检查部署输出
-cd ../dist
+# 检查部署输�?cd ../dist
 cat user-v6.html | grep userV6
-# 应该与构建输出一致
-```
+# 应该与构建输出一�?```
 
 ### 2.5 验证部署
 ```bash
-# 健康检查
-curl https://rualive-email-worker.cubetan57.workers.dev/health
+# 健康检�?curl https://rualive.itycon.cn/health
 
 # 测试登录
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/login \
+curl -X POST https://rualive.itycon.cn/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 ```
 
 ---
 
-## 3. 监控和日志
-
+## 3. 监控和日�?
 ### 3.1 实时日志
 ```bash
 # 查看实时日志
 npm run tail
 
-# 或使用 wrangler
+# 或使�?wrangler
 wrangler tail
 ```
 
@@ -166,52 +142,43 @@ wrangler tail | grep ERROR
 # 过滤特定用户日志
 wrangler tail | grep "user_123"
 
-# 导出日志到文件
-wrangler tail > logs.txt
+# 导出日志到文�?wrangler tail > logs.txt
 ```
 
 ### 3.4 监控指标
-- **请求量**: 每小时请求数
+- **请求�?*: 每小时请求数
 - **响应时间**: 平均响应时间
-- **错误率**: 错误请求占比
-- **CPU 使用率**: Worker CPU 使用情况
+- **错误�?*: 错误请求占比
+- **CPU 使用�?*: Worker CPU 使用情况
 
 ---
 
-## 4. 数据库管理
-
-### 4.1 数据库备份
-```bash
-# 导出数据库
-wrangler d1 export rualive --remote --output=backup_$(date +%Y%m%d).sql
+## 4. 数据库管�?
+### 4.1 数据库备�?```bash
+# 导出数据�?wrangler d1 export rualive --remote --output=backup_$(date +%Y%m%d).sql
 
 # 查看备份文件
 cat backup_20260207.sql
 ```
 
-### 4.2 数据库恢复
-```bash
-# 导入数据库
-wrangler d1 execute rualive --remote --file=backup_20260207.sql
+### 4.2 数据库恢�?```bash
+# 导入数据�?wrangler d1 execute rualive --remote --file=backup_20260207.sql
 
 # 验证恢复
 wrangler d1 execute rualive --remote --command="SELECT COUNT(*) FROM users"
 ```
 
-### 4.3 数据库查询
-```bash
+### 4.3 数据库查�?```bash
 # 查询用户统计
 wrangler d1 execute rualive --remote --command="SELECT COUNT(*) as total_users FROM users"
 
 # 查询今日工作数据
 wrangler d1 execute rualive --remote --command="SELECT * FROM work_data WHERE date = '2026-02-07'"
 
-# 查询邮件发送状态
-wrangler d1 execute rualive --remote --command="SELECT status, COUNT(*) as count FROM email_logs GROUP BY status"
+# 查询邮件发送状�?wrangler d1 execute rualive --remote --command="SELECT status, COUNT(*) as count FROM email_logs GROUP BY status"
 ```
 
-### 4.4 数据库优化
-```sql
+### 4.4 数据库优�?```sql
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_work_data_user_date ON work_data(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_email_logs_user_created ON email_logs(user_id, created_at);
@@ -290,8 +257,7 @@ wrangler secret delete RESEND_API_KEY
 
 ### 6.2 访问控制
 ```javascript
-// IP 白名单
-const allowedIPs = ['192.168.1.1', '10.0.0.1'];
+// IP 白名�?const allowedIPs = ['192.168.1.1', '10.0.0.1'];
 const clientIP = request.headers.get('CF-Connecting-IP');
 
 if (!allowedIPs.includes(clientIP)) {
@@ -340,40 +306,33 @@ const encrypted = await crypto.subtle.encrypt(
 
 **解决方案**:
 ```bash
-# 检查登录状态
-wrangler whoami
+# 检查登录状�?wrangler whoami
 
 # 重新登录
 wrangler login
 
-# 检查配置
-wrangler deploy --dry-run
+# 检查配�?wrangler deploy --dry-run
 
 # 查看详细日志
 wrangler deploy --verbose
 ```
 
-#### 问题2: 数据库连接失败
-**症状**: 数据库查询失败
-
+#### 问题2: 数据库连接失�?**症状**: 数据库查询失�?
 **解决方案**:
 ```bash
 # 检查数据库 ID
 wrangler d1 list
 
 # 更新 wrangler.toml
-# 确保数据库 ID 正确
+# 确保数据�?ID 正确
 
-# 测试数据库连接
-wrangler d1 execute rualive --remote --command="SELECT 1"
+# 测试数据库连�?wrangler d1 execute rualive --remote --command="SELECT 1"
 ```
 
-#### 问题3: 邮件发送失败
-**症状**: 邮件无法发送
-
+#### 问题3: 邮件发送失�?**症状**: 邮件无法发�?
 **解决方案**:
 ```bash
-# 检查 API 密钥
+# 检�?API 密钥
 wrangler secret list
 
 # 测试邮件 API
@@ -387,19 +346,16 @@ wrangler d1 execute rualive --remote --command="SELECT * FROM email_logs WHERE s
 ```
 
 #### 问题4: 项目历史 API 返回 404 错误
-**症状**: 点击项目查看历史时返回 404 错误
+**症状**: 点击项目查看历史时返�?404 错误
 
 **原因**: 
-- 项目不在 `projects` 表中（旧数据）
-- 项目不在 `work_logs` 表中
-- 项目 ID 不匹配
-
+- 项目不在 `projects` 表中（旧数据�?- 项目不在 `work_logs` 表中
+- 项目 ID 不匹�?
 **解决方案**:
 
 系统已内置自动修复机制：
 - API 会自动从 `work_logs` 表中提取项目信息
-- 自动创建 `projects` 表记录
-- 自动聚合 `project_daily_stats` 数据
+- 自动创建 `projects` 表记�?- 自动聚合 `project_daily_stats` 数据
 
 **验证修复**:
 
@@ -407,11 +363,10 @@ wrangler d1 execute rualive --remote --command="SELECT * FROM email_logs WHERE s
 # 1. 查看日志
 wrangler tail | grep "handleGetProjectHistory"
 
-# 2. 检查项目记录
-wrangler d1 execute rualive --remote --command="SELECT * FROM projects WHERE project_id = 'your-project-id'"
+# 2. 检查项目记�?wrangler d1 execute rualive --remote --command="SELECT * FROM projects WHERE project_id = 'your-project-id'"
 
 # 3. 测试 API
-curl "https://rualive-email-worker.cubetan57.workers.dev/api/projects/history?projectId=your-project-id" \
+curl "https://rualive.itycon.cn/api/projects/history?projectId=your-project-id" \
   -H "Authorization: Bearer your-token"
 ```
 
@@ -420,16 +375,14 @@ curl "https://rualive-email-worker.cubetan57.workers.dev/api/projects/history?pr
 
 **解决方案**:
 ```bash
-# 分析慢查询
-wrangler tail | grep "DB query"
+# 分析慢查�?wrangler tail | grep "DB query"
 
 # 添加索引
 CREATE INDEX idx_work_data_user_date ON work_data(user_id, date);
 
 # 优化代码
 // 使用缓存
-// 减少数据库查询
-// 批量操作
+// 减少数据库查�?// 批量操作
 ```
 
 ### 7.2 日志分析
@@ -440,8 +393,7 @@ wrangler tail | grep ERROR
 # 统计错误类型
 wrangler tail | grep ERROR | awk '{print $NF}' | sort | uniq -c
 
-# 查看特定时间段日志
-wrangler tail --format pretty | grep "2026-02-07 14:00"
+# 查看特定时间段日�?wrangler tail --format pretty | grep "2026-02-07 14:00"
 ```
 
 ---
@@ -451,18 +403,14 @@ wrangler tail --format pretty | grep "2026-02-07 14:00"
 ### 8.1 定期维护
 
 #### 每日任务
-- 检查错误日志
-- 监控系统性能
-- 验证邮件发送
-
+- 检查错误日�?- 监控系统性能
+- 验证邮件发�?
 #### 每周任务
 - 清理过期会话
-- 备份数据库
-- 分析用户数据
+- 备份数据�?- 分析用户数据
 
 #### 每月任务
-- 清理旧日志
-- 更新依赖
+- 清理旧日�?- 更新依赖
 - 审查安全日志
 
 ### 8.2 清理脚本
@@ -479,8 +427,7 @@ async function cleanupSessions(env) {
   console.log(`[Cleanup] Removed ${result.meta.changes} expired sessions`);
 }
 
-// 清理旧日志
-async function cleanupLogs(env, daysToKeep = 90) {
+// 清理旧日�?async function cleanupLogs(env, daysToKeep = 90) {
   const DB = env.DB || env.rualive;
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
@@ -496,22 +443,19 @@ async function cleanupLogs(env, daysToKeep = 90) {
 
 ---
 
-## 9. 升级和迁移
-
+## 9. 升级和迁�?
 ### 9.1 代码升级
 ```bash
 # 更新依赖
 npm update
 
-# 检查过时依赖
-npm outdated
+# 检查过时依�?npm outdated
 
 # 安装特定版本
 npm install react@19.2.4
 ```
 
-### 9.2 数据库迁移
-```bash
+### 9.2 数据库迁�?```bash
 # 创建迁移文件
 cat > migrations/migration_add_new_column.sql << EOF
 ALTER TABLE work_data ADD COLUMN new_field TEXT;
@@ -529,18 +473,16 @@ wrangler d1 execute rualive --remote --command="PRAGMA table_info(work_data)"
 # 查看部署历史
 wrangler deployments list
 
-# 回滚到特定版本
-wrangler rollback --version <version-id>
+# 回滚到特定版�?wrangler rollback --version <version-id>
 
-# 或使用 Git
+# 或使�?Git
 git checkout <commit-hash>
 npm run deploy
 ```
 
 ---
 
-## 10. 备份和恢复
-
+## 10. 备份和恢�?
 ### 10.1 自动备份
 ```bash
 # 创建备份脚本
@@ -552,8 +494,7 @@ BACKUP_DIR="/backup/rualive"
 # 创建备份目录
 mkdir -p $BACKUP_DIR
 
-# 备份数据库
-wrangler d1 export rualive --remote --output=$BACKUP_DIR/db_$DATE.sql
+# 备份数据�?wrangler d1 export rualive --remote --output=$BACKUP_DIR/db_$DATE.sql
 
 # 备份配置
 cp wrangler.toml $BACKUP_DIR/wrangler_$DATE.toml
@@ -566,7 +507,7 @@ EOF
 
 chmod +x backup.sh
 
-# 添加到 cron
+# 添加�?cron
 # 0 2 * * * /path/to/backup.sh
 ```
 
@@ -575,8 +516,7 @@ chmod +x backup.sh
 # 停止服务（可选）
 # wrangler delete
 
-# 恢复数据库
-wrangler d1 execute rualive --remote --file=/backup/rualive/db_20260207.sql
+# 恢复数据�?wrangler d1 execute rualive --remote --file=/backup/rualive/db_20260207.sql
 
 # 恢复配置
 cp /backup/rualive/wrangler_20260207.toml wrangler.toml
@@ -587,14 +527,12 @@ npm run deploy
 
 ---
 
-## 11. 监控和告警
-
+## 11. 监控和告�?
 ### 11.1 监控指标
-- **可用性**: Worker 在线时间
+- **可用�?*: Worker 在线时间
 - **响应时间**: 平均响应时间
-- **错误率**: 错误请求占比
-- **吞吐量**: 每秒请求数
-
+- **错误�?*: 错误请求占比
+- **吞吐�?*: 每秒请求�?
 ### 11.2 告警配置
 ```javascript
 // 检查错误率
@@ -613,36 +551,26 @@ async function checkErrorRate(env) {
   const errorRate = (errors.count / total.count) * 100;
   
   if (errorRate > 10) {
-    // 发送告警
-    await sendAlert(env, `错误率过高: ${errorRate}%`);
+    // 发送告�?    await sendAlert(env, `错误率过�? ${errorRate}%`);
   }
 }
 ```
 
 ---
 
-## 12. 最佳实践
-
-### 12.1 部署前检查
-- [ ] 代码已提交到 Git
+## 12. 最佳实�?
+### 12.1 部署前检�?- [ ] 代码已提交到 Git
 - [ ] 本地测试通过
 - [ ] 数据库迁移已准备
-- [ ] 环境变量已配置
-- [ ] Secrets 已设置
-- [ ] 备份已完成
-
-### 12.2 部署后验证
-- [ ] Worker URL 可访问
-- [ ] 健康检查通过
+- [ ] 环境变量已配�?- [ ] Secrets 已设�?- [ ] 备份已完�?
+### 12.2 部署后验�?- [ ] Worker URL 可访�?- [ ] 健康检查通过
 - [ ] 前端页面正常加载
 - [ ] API 端点正常工作
-- [ ] 数据库连接正常
-- [ ] 日志输出正常
+- [ ] 数据库连接正�?- [ ] 日志输出正常
 
 ### 12.3 安全建议
 - [ ] 定期更新依赖
-- [ ] 使用强密码
-- [ ] 定期审查 Secrets
+- [ ] 使用强密�?- [ ] 定期审查 Secrets
 - [ ] 启用 HTTPS
 - [ ] 实施 CORS 策略
 - [ ] 定期备份数据
@@ -650,8 +578,7 @@ async function checkErrorRate(env) {
 
 ### 12.4 性能建议
 - [ ] 使用缓存
-- [ ] 优化数据库查询
-- [ ] 压缩响应
+- [ ] 优化数据库查�?- [ ] 压缩响应
 - [ ] 使用 CDN
 - [ ] 批量操作
 - [ ] 异步处理
@@ -660,11 +587,9 @@ async function checkErrorRate(env) {
 
 ## 13. 故障恢复
 
-### 13.1 故障检测
-```bash
-# 健康检查脚本
-#!/bin/bash
-HEALTH_URL="https://rualive-email-worker.cubetan57.workers.dev/health"
+### 13.1 故障检�?```bash
+# 健康检查脚�?#!/bin/bash
+HEALTH_URL="https://rualive.itycon.cn/health"
 ALERT_EMAIL="admin@example.com"
 
 HEALTH_CHECK=$(curl -s $HEALTH_URL)
@@ -675,8 +600,7 @@ fi
 ```
 
 ### 13.2 故障恢复流程
-1. **检测故障**: 健康检查失败
-2. **分析日志**: 查看错误日志
+1. **检测故�?*: 健康检查失�?2. **分析日志**: 查看错误日志
 3. **诊断问题**: 确定故障原因
 4. **修复问题**: 应用修复方案
 5. **验证修复**: 确认问题解决
@@ -686,6 +610,6 @@ fi
 ---
 
 **文档版本**: 1.1
-**最后更新**: 2026-02-09
-**作者**: iFlow CLI
-**状态**: ✅ 完成
+**最后更�?*: 2026-02-09
+**作�?*: iFlow CLI
+**状�?*: �?完成

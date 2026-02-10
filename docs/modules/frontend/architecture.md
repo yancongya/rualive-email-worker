@@ -4,31 +4,29 @@
 - **框架**: React 19.2.4
 - **构建工具**: Vite 5.0.0
 - **语言**: TypeScript 5.3.0
-- **最后更新**: 2026-02-07
+- **最后更�?*: 2026-02-07
 
 ---
 
 ## 1. 前端技术栈
 
 ### 1.1 核心框架
-| 技术 | 版本 | 用途 |
+| 技�?| 版本 | 用�?|
 |------|------|------|
 | React | 19.2.4 | UI 框架 |
 | React DOM | 19.2.4 | DOM 渲染 |
 | TypeScript | 5.3.0 | 类型安全 |
 | Vite | 5.0.0 | 构建工具 |
 
-### 1.2 路由和状态
-| 技术 | 版本 | 用途 |
+### 1.2 路由和状�?| 技�?| 版本 | 用�?|
 |------|------|------|
 | React Router DOM | 7.13.0 | 路由管理 |
 
-### 1.3 UI 和动画
-| 技术 | 版本 | 用途 |
+### 1.3 UI 和动�?| 技�?| 版本 | 用�?|
 |------|------|------|
-| Lucide React | 0.563.0 | 图标库 |
-| Recharts | 3.7.0 | 图表库 |
-| GSAP | 3.14.2 | 动画库 |
+| Lucide React | 0.563.0 | 图标�?|
+| Recharts | 3.7.0 | 图表�?|
+| GSAP | 3.14.2 | 动画�?|
 
 ---
 
@@ -38,30 +36,23 @@
 ```
 public/
 ├── index.html          # 首页入口
-├── auth.html           # 登录页入口
-├── user-v6.html        # 用户仪表板入口
-├── admin.html          # 管理后台入口
-├── src/                # 源代码目录
-│   ├── index.tsx       # 首页组件
-│   ├── auth.tsx        # 登录页组件
-│   ├── user-v6.tsx     # 用户仪表板组件
-│   ├── admin.tsx       # 管理后台组件
-│   └── components/     # 共享组件
-│       ├── ChartView.tsx      # 图表视图
-│       ├── LogsTable.tsx      # 日志表格
-│       ├── StatsGrid.tsx      # 统计网格
-│       ├── TabManager.tsx     # 标签管理器
-│       └── TimeSelector.tsx   # 时间选择器
-├── package.json        # 依赖配置
+├── auth.html           # 登录页入�?├── user-v6.html        # 用户仪表板入�?├── admin.html          # 管理后台入口
+├── src/                # 源代码目�?�?  ├── index.tsx       # 首页组件
+�?  ├── auth.tsx        # 登录页组�?�?  ├── user-v6.tsx     # 用户仪表板组�?�?  ├── admin.tsx       # 管理后台组件
+�?  └── components/     # 共享组件
+�?      ├── ChartView.tsx      # 图表视图
+�?      ├── LogsTable.tsx      # 日志表格
+�?      ├── StatsGrid.tsx      # 统计网格
+�?      ├── TabManager.tsx     # 标签管理�?�?      └── TimeSelector.tsx   # 时间选择�?├── package.json        # 依赖配置
 └── vite.config.ts      # Vite 配置
 ```
 
 ### 2.2 入口文件
 | 入口文件 | 路由 | 组件 | 说明 |
 |---------|------|------|------|
-| `index.html` | `/` | `index.tsx` | 产品介绍页 |
-| `auth.html` | `/login` | `auth.tsx` | 用户登录页 |
-| `user-v6.html` | `/user` | `user-v6.tsx` | 用户仪表板 |
+| `index.html` | `/` | `index.tsx` | 产品介绍�?|
+| `auth.html` | `/login` | `auth.tsx` | 用户登录�?|
+| `user-v6.html` | `/user` | `user-v6.tsx` | 用户仪表�?|
 | `admin.html` | `/admin` | `admin.tsx` | 管理后台 |
 
 ---
@@ -115,25 +106,14 @@ dist/
 
 ### 3.3 构建流程
 ```
-源代码修改
-  ↓
-npm run build
-  ↓
-Vite 解析配置
-  ↓
-编译 TypeScript
-  ↓
-转换 JSX
-  ↓
-模块打包
-  ↓
-代码分割
-  ↓
-生成哈希文件名
-  ↓
-输出到 dist/
-  ↓
-部署到 Cloudflare Workers
+源代码修�?  �?npm run build
+  �?Vite 解析配置
+  �?编译 TypeScript
+  �?转换 JSX
+  �?模块打包
+  �?代码分割
+  �?生成哈希文件�?  �?输出�?dist/
+  �?部署�?Cloudflare Workers
 ```
 
 ---
@@ -145,10 +125,10 @@ Vite 解析配置
 
 **路由结构**:
 ```
-/                           → 首页 (index.tsx)
-/login                      → 登录页 (auth.tsx)
-/user                       → 用户仪表板 (user-v6.tsx)
-/admin                      → 管理后台 (admin.tsx)
+/                           �?首页 (index.tsx)
+/login                      �?登录�?(auth.tsx)
+/user                       �?用户仪表�?(user-v6.tsx)
+/admin                      �?管理后台 (admin.tsx)
 ```
 
 ### 4.2 路由实现
@@ -182,8 +162,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// 管理员守卫
-function AdminRoute({ children }) {
+// 管理员守�?function AdminRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   if (user.role !== 'admin') {
@@ -211,19 +190,19 @@ function AdminRoute({ children }) {
 ```
 App
 ├── IndexPage (首页)
-├── AuthPage (登录页)
-├── UserDashboard (用户仪表板)
-│   ├── Header (头部)
-│   ├── StatsGrid (统计网格)
-│   ├── ChartView (图表视图)
-│   ├── LogsTable (日志表格)
-│   └── TabManager (标签管理器)
+├── AuthPage (登录�?
+├── UserDashboard (用户仪表�?
+�?  ├── Header (头部)
+�?  ├── StatsGrid (统计网格)
+�?  ├── ChartView (图表视图)
+�?  ├── LogsTable (日志表格)
+�?  └── TabManager (标签管理�?
 └── AdminDashboard (管理后台)
     ├── Header (头部)
     ├── StatsGrid (统计网格)
     ├── ChartView (图表视图)
     ├── LogsTable (日志表格)
-    └── TabManager (标签管理器)
+    └── TabManager (标签管理�?
 ```
 
 ### 5.2 共享组件
@@ -256,8 +235,7 @@ export function ChartView({ data, type }: ChartViewProps) {
 
 **功能**:
 - 显示日志列表
-- 支持排序和过滤
-- 分页功能
+- 支持排序和过�?- 分页功能
 
 ```typescript
 interface LogsTableProps {
@@ -289,13 +267,11 @@ export function StatsGrid({ stats }: StatsGridProps) {
 }
 ```
 
-#### TabManager - 标签管理器
-**文件**: `components/TabManager.tsx`
+#### TabManager - 标签管理�?**文件**: `components/TabManager.tsx`
 
 **功能**:
 - 标签切换
-- 标签状态管理
-- 动画过渡
+- 标签状态管�?- 动画过渡
 
 ```typescript
 interface Tab {
@@ -313,14 +289,12 @@ export function TabManager({ tabs }: TabManagerProps) {
 }
 ```
 
-#### TimeSelector - 时间选择器
-**文件**: `components/TimeSelector.tsx`
+#### TimeSelector - 时间选择�?**文件**: `components/TimeSelector.tsx`
 
 **功能**:
 - 时间范围选择
 - 快捷选项
-- 自定义范围
-
+- 自定义范�?
 ```typescript
 interface TimeSelectorProps {
   onRangeChange: (range: TimeRange) => void;
@@ -333,10 +307,8 @@ export function TimeSelector({ onRangeChange }: TimeSelectorProps) {
 
 ---
 
-## 6. 状态管理
-
-### 6.1 本地状态
-```typescript
+## 6. 状态管�?
+### 6.1 本地状�?```typescript
 import { useState, useEffect } from 'react';
 
 function Component() {
@@ -352,8 +324,7 @@ function Component() {
 }
 ```
 
-### 6.2 上下文状态
-```typescript
+### 6.2 上下文状�?```typescript
 import { createContext, useContext } from 'react';
 
 interface UserContextType {
@@ -392,8 +363,7 @@ export function useUser() {
 }
 ```
 
-### 6.3 持久化状态
-```typescript
+### 6.3 持久化状�?```typescript
 // localStorage
 localStorage.setItem('token', token);
 const token = localStorage.getItem('token');
@@ -409,7 +379,7 @@ const data = sessionStorage.getItem('tempData');
 
 ### 7.1 API 基础配置
 ```typescript
-const API_BASE_URL = 'https://rualive-email-worker.cubetan57.workers.dev';
+const API_BASE_URL = 'https://rualive.itycon.cn';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -477,8 +447,7 @@ export async function getWorkLogs(userId: string, limit = 10) {
   return apiRequest<WorkLog[]>(`/api/work-logs?userId=${userId}&limit=${limit}`);
 }
 
-// 获取项目汇总
-export async function getProjectSummary(userId: string) {
+// 获取项目汇�?export async function getProjectSummary(userId: string) {
   return apiRequest<ProjectSummary[]>(`/api/projects/summary?userId=${userId}`);
 }
 ```
@@ -548,8 +517,7 @@ function UserDashboard() {
 }
 ```
 
-### 8.3 响应式设计
-```css
+### 8.3 响应式设�?```css
 @media (max-width: 768px) {
   .stats {
     grid-template-columns: 1fr;
@@ -613,8 +581,7 @@ function AnimatedComponent({ in: inProp }) {
 
 ### 10.1 代码分割
 ```typescript
-// 懒加载组件
-const LazyChartView = lazy(() => import('./components/ChartView'));
+// 懒加载组�?const LazyChartView = lazy(() => import('./components/ChartView'));
 
 function Dashboard() {
   return (
@@ -625,21 +592,18 @@ function Dashboard() {
 }
 ```
 
-### 10.2 记忆化
-```typescript
+### 10.2 记忆�?```typescript
 import { useMemo, useCallback } from 'react';
 
 function Component({ data }) {
-  // 记忆化计算结果
-  const processedData = useMemo(() => {
+  // 记忆化计算结�?  const processedData = useMemo(() => {
     return data.map(item => ({
       ...item,
       value: item.value * 2,
     }));
   }, [data]);
 
-  // 记忆化回调函数
-  const handleClick = useCallback(() => {
+  // 记忆化回调函�?  const handleClick = useCallback(() => {
     console.log('Clicked');
   }, []);
 
@@ -760,6 +724,6 @@ test('user can login', async () => {
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-07
-**作者**: iFlow CLI
-**状态**: ✅ 完成
+**最后更�?*: 2026-02-07
+**作�?*: iFlow CLI
+**状�?*: �?完成

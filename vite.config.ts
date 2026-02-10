@@ -8,31 +8,21 @@ import react from '@vitejs/plugin-react';
  * ==================== 目录结构说明 ====================
  *
  * 源代码结构：
- * - public/ - 前端源代码
- *   - index.html - 落地页
- *   - auth.html - 登录/注册页
- *   - user-v6.html - 用户面板
+ * - public/ - 前端源代�? *   - index.html - 落地�? *   - auth.html - 登录/注册�? *   - user-v6.html - 用户面板
  *   - admin.html - 管理后台
- *   - locals/ - 国际化文件
- *   - assets/ - 静态资源
- *   - *.tsx - React 组件
+ *   - locals/ - 国际化文�? *   - assets/ - 静态资�? *   - *.tsx - React 组件
  *
- * 构建产物：
- * - dist/ - 构建输出目录
- *   - index.html - 编译后的落地页
- *   - auth.html - 编译后的登录页
- *   - user-v6.html - 编译后的用户面板
+ * 构建产物�? * - dist/ - 构建输出目录
+ *   - index.html - 编译后的落地�? *   - auth.html - 编译后的登录�? *   - user-v6.html - 编译后的用户面板
  *   - admin.html - 编译后的管理后台
  *   - assets/ - 编译后的 JS/CSS 文件
- *   - locals/ - 国际化文件（复制）
- *
+ *   - locals/ - 国际化文件（复制�? *
  * ==================== 构建流程 ====================
  *
  * 1. 清空 dist/ 目录
- * 2. 编译 React 组件到 assets/
- * 3. 生成优化的 HTML 文件
- * 4. 复制静态资源
- *
+ * 2. 编译 React 组件�?assets/
+ * 3. 生成优化�?HTML 文件
+ * 4. 复制静态资�? *
  * ==================== 部署配置 ====================
  *
  * wrangler.toml:
@@ -40,23 +30,16 @@ import react from '@vitejs/plugin-react';
  * directory = "dist"
  * binding = "ASSETS"
  *
- * 这会部署 dist/ 目录到 Cloudflare Assets
+ * 这会部署 dist/ 目录�?Cloudflare Assets
  *
  * ==================== 常见问题 ====================
  *
- * Q: 为什么 HTML 文件在 dist/ 而不是 dist/public/？
- * A: 通过配置 root 和 outDir 确保所有文件直接在 dist/ 中
- *
- * Q: 为什么构建后 HTML 引用的是编译后的 JS 而不是 .tsx？
- * A: Vite 会自动替换 HTML 中的入口点引用
- *
- * Q: 如何确保构建产物是正确的？
- * A: 运行 npm run verify:build 检查
- */
+ * Q: 为什�?HTML 文件�?dist/ 而不�?dist/public/�? * A: 通过配置 root �?outDir 确保所有文件直接在 dist/ �? *
+ * Q: 为什么构建后 HTML 引用的是编译后的 JS 而不�?.tsx�? * A: Vite 会自动替�?HTML 中的入口点引�? *
+ * Q: 如何确保构建产物是正确的�? * A: 运行 npm run verify:build 检�? */
 
 export default defineConfig({
-  // 不设置 root，使用默认当前目录
-  build: {
+  // 不设�?root，使用默认当前目�?  build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
@@ -73,7 +56,7 @@ export default defineConfig({
       }
     },
     assetsDir: 'assets',
-    copyPublicDir: false  // 不自动复制 public 目录
+    copyPublicDir: false  // 不自动复�?public 目录
   },
   server: {
     port: 3737,
@@ -81,7 +64,7 @@ export default defineConfig({
     historyApiFallback: true,
     proxy: {
       '/api': {
-        target: 'https://rualive-email-worker.cubetan57.workers.dev',
+        target: 'https://rualive.itycon.cn',
         changeOrigin: true,
         secure: true,
       }
@@ -154,8 +137,7 @@ export default defineConfig({
     {
       name: 'move-html-files',
       closeBundle() {
-        // Vite 将 HTML 文件放在 dist/public/，我们需要将它们复制到 dist/ 根目录
-        // 这样 wrangler 可以正确找到这些文件
+        // Vite �?HTML 文件放在 dist/public/，我们需要将它们复制�?dist/ 根目�?        // 这样 wrangler 可以正确找到这些文件
         const { copyFileSync, existsSync } = require('fs');
         const publicDir = path.resolve(__dirname, 'dist/public');
         const distDir = path.resolve(__dirname, 'dist');

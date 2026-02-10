@@ -2,8 +2,7 @@
 
 ## 概述
 
-日志 API 提供工作日志、邮件发送日志的查询功能，支持按日期范围、用户等条件过滤，用于数据分析和问题排查。
-
+日志 API 提供工作日志、邮件发送日志的查询功能，支持按日期范围、用户等条件过滤，用于数据分析和问题排查�?
 ## 基础信息
 
 - **基础路径**: `/api`
@@ -14,14 +13,11 @@
 
 ## API 端点
 
-### 1. 获取邮件发送日志
-
+### 1. 获取邮件发送日�?
 **端点**: `/api/logs`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -30,17 +26,17 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| userId | string | 否 | 用户 ID（管理员可查询其他用户） |
-| limit | number | 否 | 返回数量限制（默认 50，最大 1000） |
-| status | string | 否 | 邮件状态（"success"、"failed"） |
-| startDate | string | 否 | 开始日期（YYYY-MM-DD 格式） |
-| endDate | string | 否 | 结束日期（YYYY-MM-DD 格式） |
+| userId | string | �?| 用户 ID（管理员可查询其他用户） |
+| limit | number | �?| 返回数量限制（默�?50，最�?1000�?|
+| status | string | �?| 邮件状态（"success"�?failed"�?|
+| startDate | string | �?| 开始日期（YYYY-MM-DD 格式�?|
+| endDate | string | �?| 结束日期（YYYY-MM-DD 格式�?|
 
 #### 请求示例
 
 ```http
 GET /api/logs?userId=user_123&limit=50&status=success&startDate=2026-02-01&endDate=2026-02-07 HTTP/1.1
-Host: rualive-email-worker.cubetan57.workers.dev
+Host: rualive.itycon.cn
 Authorization: Bearer <token>
 ```
 
@@ -82,7 +78,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "未授权",
+  "error": "未授�?,
   "code": "UNAUTHORIZED"
 }
 ```
@@ -93,10 +89,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/work-logs/range`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -120,7 +114,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "无工作日志",
+  "error": "无工作日�?,
   "code": "NO_WORK_LOGS"
 }
 ```
@@ -131,10 +125,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/work-logs`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -143,16 +135,16 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| startDate | string | 否 | 开始日期（YYYY-MM-DD 格式） |
-| endDate | string | 否 | 结束日期（YYYY-MM-DD 格式） |
-| userId | string | 否 | 用户 ID（管理员可查询其他用户） |
-| limit | number | 否 | 返回数量限制（默认 100，最大 1000） |
+| startDate | string | �?| 开始日期（YYYY-MM-DD 格式�?|
+| endDate | string | �?| 结束日期（YYYY-MM-DD 格式�?|
+| userId | string | �?| 用户 ID（管理员可查询其他用户） |
+| limit | number | �?| 返回数量限制（默�?100，最�?1000�?|
 
 #### 请求示例
 
 ```http
 GET /api/work-logs?startDate=2026-02-01&endDate=2026-02-07&limit=100 HTTP/1.1
-Host: rualive-email-worker.cubetan57.workers.dev
+Host: rualive.itycon.cn
 Authorization: Bearer <token>
 ```
 
@@ -210,7 +202,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "无效的日期范围",
+  "error": "无效的日期范�?,
   "code": "INVALID_DATE_RANGE"
 }
 ```
@@ -219,19 +211,14 @@ Authorization: Bearer <token>
 
 ## 数据结构说明
 
-### 邮件发送日志对象 (Send Log)
+### 邮件发送日志对�?(Send Log)
 
 ```typescript
 {
   id: number;              // 日志 ID
   userId: string;          // 用户 ID
-  email: string;           // 接收邮件的邮箱
-  workDate: string;        // 工作日期（YYYY-MM-DD）
-  subject: string;         // 邮件主题
-  sentAt: string;          // 发送时间（ISO 8601）
-  status: string;          // 发送状态（"success"、"failed"）
-  errorMessage: string | null; // 错误信息（如果有）
-}
+  email: string;           // 接收邮件的邮�?  workDate: string;        // 工作日期（YYYY-MM-DD�?  subject: string;         // 邮件主题
+  sentAt: string;          // 发送时间（ISO 8601�?  status: string;          // 发送状态（"success"�?failed"�?  errorMessage: string | null; // 错误信息（如果有�?}
 ```
 
 ### 工作日志对象 (Work Log)
@@ -240,10 +227,8 @@ Authorization: Bearer <token>
 {
   id: number;              // 日志 ID
   userId: string;          // 用户 ID
-  workDate: string;        // 工作日期（YYYY-MM-DD）
-  workHours: number;       // 工作时长（小时）
-  keyframeCount: number;   // 关键帧数量
-  compositionCount: number;// 合成数量
+  workDate: string;        // 工作日期（YYYY-MM-DD�?  workHours: number;       // 工作时长（小时）
+  keyframeCount: number;   // 关键帧数�?  compositionCount: number;// 合成数量
   layerCount: number;      // 图层数量
   effectCount: number;     // 效果数量
   projectCount: number;    // 项目数量
@@ -253,33 +238,27 @@ Authorization: Bearer <token>
   layersJson: string;      // 图层数据（JSON 字符串）
   keyframesJson: string;   // 关键帧数据（JSON 字符串）
   projectsJson: string;    // 项目数据（JSON 字符串）
-  createdAt: string;       // 创建时间（ISO 8601）
-}
+  createdAt: string;       // 创建时间（ISO 8601�?}
 ```
 
 ---
 
 ## 使用示例
 
-### 获取邮件发送日志
-
+### 获取邮件发送日�?
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# 获取当前用户的所有邮件发送日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs" \
+# 获取当前用户的所有邮件发送日�?curl -X GET "https://rualive.itycon.cn/api/logs" \
   -H "Authorization: Bearer $TOKEN"
 
-# 获取本月成功的邮件发送日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?status=success&startDate=2026-02-01&endDate=2026-02-28" \
+# 获取本月成功的邮件发送日�?curl -X GET "https://rualive.itycon.cn/api/logs?status=success&startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN"
 
-# 获取失败的邮件发送日志（用于排查问题）
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?status=failed" \
+# 获取失败的邮件发送日志（用于排查问题�?curl -X GET "https://rualive.itycon.cn/api/logs?status=failed" \
   -H "Authorization: Bearer $TOKEN"
 
-# 管理员查询指定用户的邮件发送日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?userId=user_456" \
+# 管理员查询指定用户的邮件发送日�?curl -X GET "https://rualive.itycon.cn/api/logs?userId=user_456" \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
@@ -288,19 +267,18 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?userId=
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# 获取所有工作日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs" \
+# 获取所有工作日�?curl -X GET "https://rualive.itycon.cn/api/work-logs" \
   -H "Authorization: Bearer $TOKEN"
 
 # 获取本月工作日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN"
 
-# 获取最近 7 天的工作日志
+# 获取最�?7 天的工作日志
 END_DATE=$(date +%Y-%m-%d)
 START_DATE=$(date -d "7 days ago" +%Y-%m-%d)
 
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=$START_DATE&endDate=$END_DATE" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=$START_DATE&endDate=$END_DATE" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -309,8 +287,7 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?st
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# 获取工作日志的日期范围
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs/range" \
+# 获取工作日志的日期范�?curl -X GET "https://rualive.itycon.cn/api/work-logs/range" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -318,49 +295,42 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs/ra
 
 ## 日志查询场景
 
-### 场景 1：检查邮件发送状态
-
+### 场景 1：检查邮件发送状�?
 ```bash
-# 查看最近 7 天的邮件发送情况
-END_DATE=$(date +%Y-%m-%d)
+# 查看最�?7 天的邮件发送情�?END_DATE=$(date +%Y-%m-%d)
 START_DATE=$(date -d "7 days ago" +%Y-%m-%d)
 
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?startDate=$START_DATE&endDate=$END_DATE" \
+curl -X GET "https://rualive.itycon.cn/api/logs?startDate=$START_DATE&endDate=$END_DATE" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[] | {date: .workDate, status: .status, email: .email}'
 ```
 
 ### 场景 2：排查失败的邮件
 
 ```bash
-# 获取所有失败的邮件发送日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?status=failed" \
+# 获取所有失败的邮件发送日�?curl -X GET "https://rualive.itycon.cn/api/logs?status=failed" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[] | {date: .workDate, error: .errorMessage}'
 ```
 
-### 场景 3：统计工作时长
-
+### 场景 3：统计工作时�?
 ```bash
-# 获取本月工作日志并计算总工作时长
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
+# 获取本月工作日志并计算总工作时�?curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN" | jq '[.data[].workHours] | add'
 ```
 
 ### 场景 4：分析关键帧趋势
 
 ```bash
-# 获取最近 30 天的关键帧数量趋势
-END_DATE=$(date +%Y-%m-%d)
+# 获取最�?30 天的关键帧数量趋�?END_DATE=$(date +%Y-%m-%d)
 START_DATE=$(date -d "30 days ago" +%Y-%m-%d)
 
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=$START_DATE&endDate=$END_DATE" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=$START_DATE&endDate=$END_DATE" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[] | {date: .workDate, keyframes: .keyframeCount}'
 ```
 
 ### 场景 5：检查项目活跃度
 
 ```bash
-# 获取每天的项目数量
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
+# 获取每天的项目数�?curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[] | {date: .workDate, projects: .projectCount}'
 ```
 
@@ -372,8 +342,8 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?st
 
 ```bash
 # 计算邮件发送成功率
-TOTAL=$(curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs" -H "Authorization: Bearer $TOKEN" | jq '.total')
-SUCCESS=$(curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?status=success" -H "Authorization: Bearer $TOKEN" | jq '.total')
+TOTAL=$(curl -X GET "https://rualive.itycon.cn/api/logs" -H "Authorization: Bearer $TOKEN" | jq '.total')
+SUCCESS=$(curl -X GET "https://rualive.itycon.cn/api/logs?status=success" -H "Authorization: Bearer $TOKEN" | jq '.total')
 
 SUCCESS_RATE=$(echo "scale=2; $SUCCESS * 100 / $TOTAL" | bc)
 echo "邮件发送成功率: $SUCCESS_RATE%"
@@ -383,27 +353,24 @@ echo "邮件发送成功率: $SUCCESS_RATE%"
 
 ```bash
 # 计算平均工作时长
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs" \
   -H "Authorization: Bearer $TOKEN" | jq '[.data[].workHours] | add / length'
 ```
 
-### 3. 关键帧统计
-
+### 3. 关键帧统�?
 ```bash
 # 计算总关键帧数量
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs" \
   -H "Authorization: Bearer $TOKEN" | jq '[.data[].keyframeCount] | add'
 
-# 计算平均关键帧数量
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs" \
+# 计算平均关键帧数�?curl -X GET "https://rualive.itycon.cn/api/work-logs" \
   -H "Authorization: Bearer $TOKEN" | jq '[.data[].keyframeCount] | add / length'
 ```
 
 ### 4. 工作天数统计
 
 ```bash
-# 计算总工作天数
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs/range" \
+# 计算总工作天�?curl -X GET "https://rualive.itycon.cn/api/work-logs/range" \
   -H "Authorization: Bearer $TOKEN" | jq '.data.totalDays'
 ```
 
@@ -414,48 +381,42 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs/ra
 ### 1. 使用日期范围过滤
 
 ```bash
-# ✅ 好的做法：使用日期范围过滤
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-07" \
+# �?好的做法：使用日期范围过�?curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-07" \
   -H "Authorization: Bearer $TOKEN"
 
-# ❌ 不好的做法：获取所有数据后客户端过滤
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs" \
+# �?不好的做法：获取所有数据后客户端过�?curl -X GET "https://rualive.itycon.cn/api/work-logs" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[] | select(.workDate >= "2026-02-01" and .workDate <= "2026-02-07")'
 ```
 
 ### 2. 限制返回数量
 
 ```bash
-# ✅ 好的做法：使用 limit 参数
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs?limit=10" \
+# �?好的做法：使�?limit 参数
+curl -X GET "https://rualive.itycon.cn/api/logs?limit=10" \
   -H "Authorization: Bearer $TOKEN"
 
-# ❌ 不好的做法：获取所有数据后客户端截取
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/logs" \
+# �?不好的做法：获取所有数据后客户端截�?curl -X GET "https://rualive.itycon.cn/api/logs" \
   -H "Authorization: Bearer $TOKEN" | jq '.data[:10]'
 ```
 
 ### 3. 分页查询
 
 ```bash
-# 第一页（1-50）
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?limit=50&offset=0" \
+# 第一页（1-50�?curl -X GET "https://rualive.itycon.cn/api/work-logs?limit=50&offset=0" \
   -H "Authorization: Bearer $TOKEN"
 
-# 第二页（51-100）
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?limit=50&offset=50" \
+# 第二页（51-100�?curl -X GET "https://rualive.itycon.cn/api/work-logs?limit=50&offset=50" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## 错误码说明
-
-| 错误码 | HTTP 状态码 | 说明 |
+## 错误码说�?
+| 错误�?| HTTP 状态码 | 说明 |
 |--------|-------------|------|
-| INVALID_DATE_RANGE | 400 | 无效的日期范围 |
-| NO_WORK_LOGS | 404 | 无工作日志 |
-| UNAUTHORIZED | 401 | 未授权 |
+| INVALID_DATE_RANGE | 400 | 无效的日期范�?|
+| NO_WORK_LOGS | 404 | 无工作日�?|
+| UNAUTHORIZED | 401 | 未授�?|
 | FORBIDDEN | 403 | 权限不足 |
 
 ---
@@ -464,25 +425,21 @@ curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?li
 
 ### 自动清理策略
 
-当前版本未实施自动清理，建议未来实施：
-
+当前版本未实施自动清理，建议未来实施�?
 ```sql
--- 保留最近 90 天的工作日志
+-- 保留最�?90 天的工作日志
 DELETE FROM work_logs
 WHERE created_at < datetime('now', '-90 days');
 
--- 保留最近 180 天的邮件发送日志
-DELETE FROM send_logs
+-- 保留最�?180 天的邮件发送日�?DELETE FROM send_logs
 WHERE sent_at < datetime('now', '-180 days');
 ```
 
 ### 手动清理
 
-管理员可以手动清理旧日志：
-
+管理员可以手动清理旧日志�?
 ```bash
-# 删除 2025 年的所有工作日志
-curl -X POST "https://rualive-email-worker.cubetan57.workers.dev/api/admin/cleanup-logs" \
+# 删除 2025 年的所有工作日�?curl -X POST "https://rualive.itycon.cn/api/admin/cleanup-logs" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -495,24 +452,24 @@ curl -X POST "https://rualive-email-worker.cubetan57.workers.dev/api/admin/clean
 
 ## 日志导出
 
-### 导出为 CSV
+### 导出�?CSV
 
 ```bash
-# 导出工作日志为 CSV
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
+# 导出工作日志�?CSV
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN" | jq -r '.data[] | [.workDate, .workHours, .keyframeCount, .compositionCount] | @csv' > work-logs-2026-02.csv
 ```
 
-### 导出为 JSON
+### 导出�?JSON
 
 ```bash
-# 导出工作日志为 JSON
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
+# 导出工作日志�?JSON
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-28" \
   -H "Authorization: Bearer $TOKEN" | jq '.data' > work-logs-2026-02.json
 ```
 
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-08
-**作者**: iFlow CLI
+**最后更�?*: 2026-02-08
+**作�?*: iFlow CLI

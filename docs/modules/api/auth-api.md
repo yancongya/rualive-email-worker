@@ -2,14 +2,12 @@
 
 ## 概述
 
-认证 API 提供用户注册、登录、登出、获取当前用户信息、修改密码等功能。
-
+认证 API 提供用户注册、登录、登出、获取当前用户信息、修改密码等功能�?
 ## 基础信息
 
 - **基础路径**: `/api/auth`
 - **认证方式**: JWT Token
-- **Token 有效期**: 30 天
-
+- **Token 有效�?*: 30 �?
 ---
 
 ## API 端点
@@ -18,16 +16,15 @@
 
 **端点**: `/api/auth/register`
 **方法**: `POST`
-**认证**: 不需要
-
+**认证**: 不需�?
 #### 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| email | string | 是 | 用户邮箱 |
-| username | string | 是 | 用户名 |
-| password | string | 是 | 密码（最少6个字符） |
-| inviteCode | string | 是 | 邀请码 |
+| email | string | �?| 用户邮箱 |
+| username | string | �?| 用户�?|
+| password | string | �?| 密码（最�?个字符） |
+| inviteCode | string | �?| 邀请码 |
 
 #### 请求示例
 
@@ -83,14 +80,13 @@
 
 **端点**: `/api/auth/login`
 **方法**: `POST`
-**认证**: 不需要
-
+**认证**: 不需�?
 #### 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| email | string | 是 | 用户邮箱 |
-| password | string | 是 | 密码 |
+| email | string | �?| 用户邮箱 |
+| password | string | �?| 密码 |
 
 #### 请求示例
 
@@ -125,7 +121,7 @@
 ```json
 {
   "success": false,
-  "error": "邮箱或密码错误",
+  "error": "邮箱或密码错�?,
   "code": "INVALID_CREDENTIALS"
 }
 ```
@@ -136,10 +132,8 @@
 
 **端点**: `/api/auth/logout`
 **方法**: `POST`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -158,7 +152,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "未授权",
+  "error": "未授�?,
   "code": "UNAUTHORIZED"
 }
 ```
@@ -169,10 +163,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/auth/me`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -200,7 +192,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "Token 过期或无效",
+  "error": "Token 过期或无�?,
   "code": "UNAUTHORIZED"
 }
 ```
@@ -211,10 +203,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/auth/me`
 **方法**: `PUT`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -223,8 +213,8 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| username | string | 否 | 新用户名 |
-| email | string | 否 | 新邮箱 |
+| username | string | �?| 新用户名 |
+| email | string | �?| 新邮�?|
 
 #### 请求示例
 
@@ -254,7 +244,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "用户名已被使用",
+  "error": "用户名已被使�?,
   "code": "USERNAME_EXISTS"
 }
 ```
@@ -265,10 +255,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/auth/change-password`
 **方法**: `POST`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -277,8 +265,8 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| currentPassword | string | 是 | 当前密码 |
-| newPassword | string | 是 | 新密码（最少6个字符） |
+| currentPassword | string | �?| 当前密码 |
+| newPassword | string | �?| 新密码（最�?个字符） |
 
 #### 请求示例
 
@@ -303,7 +291,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "当前密码不正确",
+  "error": "当前密码不正�?,
   "code": "INVALID_CURRENT_PASSWORD"
 }
 ```
@@ -312,7 +300,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "新密码长度不能少于6个字符",
+  "error": "新密码长度不能少�?个字�?,
   "code": "PASSWORD_TOO_SHORT"
 }
 ```
@@ -323,15 +311,14 @@ Authorization: Bearer <token>
 
 **端点**: `/api/auth/init`
 **方法**: `POST`
-**认证**: 不需要
-
+**认证**: 不需�?
 #### 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| email | string | 是 | 管理员邮箱 |
-| username | string | 是 | 管理员用户名 |
-| password | string | 是 | 密码（最少6个字符） |
+| email | string | �?| 管理员邮�?|
+| username | string | �?| 管理员用户名 |
+| password | string | �?| 密码（最�?个字符） |
 
 #### 请求示例
 
@@ -373,14 +360,11 @@ Authorization: Bearer <token>
 
 ---
 
-### 8. 重置管理员密码
-
+### 8. 重置管理员密�?
 **端点**: `/api/auth/reset-admin-password`
 **方法**: `POST`
-**认证**: 需要（仅管理员）
-
-#### 请求头
-
+**认证**: 需要（仅管理员�?
+#### 请求�?
 ```
 Authorization: Bearer <admin_token>
 ```
@@ -389,11 +373,11 @@ Authorization: Bearer <admin_token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| newPassword | string | 否 | 新密码（如果不提供则自动生成12位随机密码） |
+| newPassword | string | �?| 新密码（如果不提供则自动生成12位随机密码） |
 
 #### 请求示例
 
-**自定义密码**:
+**自定义密�?*:
 ```json
 {
   "newPassword": "newAdminPassword123"
@@ -407,7 +391,7 @@ Authorization: Bearer <admin_token>
 
 #### 响应示例
 
-**成功响应** (200) - 自定义密码:
+**成功响应** (200) - 自定义密�?
 ```json
 {
   "success": true,
@@ -435,8 +419,7 @@ Authorization: Bearer <admin_token>
 
 ---
 
-### 9. 调试管理员信息
-
+### 9. 调试管理员信�?
 **端点**: `/api/auth/debug-admin`
 **方法**: `GET`
 **认证**: 不需要（仅用于调试）
@@ -473,16 +456,15 @@ Authorization: Bearer <admin_token>
 
 ---
 
-## 错误码说明
-
-| 错误码 | HTTP 状态码 | 说明 |
+## 错误码说�?
+| 错误�?| HTTP 状态码 | 说明 |
 |--------|-------------|------|
 | INVALID_INVITE_CODE | 400 | 邀请码无效或已过期 |
-| INVALID_CREDENTIALS | 401 | 邮箱或密码错误 |
+| INVALID_CREDENTIALS | 401 | 邮箱或密码错�?|
 | UNAUTHORIZED | 401 | 未授权或 Token 过期 |
-| USERNAME_EXISTS | 409 | 用户名已被使用 |
+| USERNAME_EXISTS | 409 | 用户名已被使�?|
 | EMAIL_EXISTS | 409 | 邮箱已被注册 |
-| INVALID_CURRENT_PASSWORD | 400 | 当前密码不正确 |
+| INVALID_CURRENT_PASSWORD | 400 | 当前密码不正�?|
 | PASSWORD_TOO_SHORT | 400 | 密码长度不足 |
 | ALREADY_INITIALIZED | 409 | 系统已初始化 |
 | FORBIDDEN | 403 | 权限不足 |
@@ -491,11 +473,10 @@ Authorization: Bearer <admin_token>
 
 ## 使用示例
 
-### 用户注册并登录
-
+### 用户注册并登�?
 ```bash
 # 1. 用户注册
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/register \
+curl -X POST https://rualive.itycon.cn/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -505,7 +486,7 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/registe
   }'
 
 # 2. 用户登录
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/login \
+curl -X POST https://rualive.itycon.cn/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -514,11 +495,11 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/login \
 
 # 3. 使用 Token 获取用户信息
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-curl -X GET https://rualive-email-worker.cubetan57.workers.dev/api/auth/me \
+curl -X GET https://rualive.itycon.cn/api/auth/me \
   -H "Authorization: Bearer $TOKEN"
 
 # 4. 修改密码
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/change-password \
+curl -X POST https://rualive.itycon.cn/api/auth/change-password \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -527,7 +508,7 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/change-
   }'
 
 # 5. 登出
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/logout \
+curl -X POST https://rualive.itycon.cn/api/auth/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -536,19 +517,16 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/logout 
 ## 安全注意事项
 
 1. **密码安全**:
-   - 所有密码使用 bcrypt 哈希存储
-   - 最小密码长度：6 个字符
-   - 建议：使用强密码（包含大小写字母、数字、特殊字符）
+   - 所有密码使�?bcrypt 哈希存储
+   - 最小密码长度：6 个字�?   - 建议：使用强密码（包含大小写字母、数字、特殊字符）
 
 2. **Token 安全**:
-   - Token 有效期：30 天
-   - Token 存储：建议使用 localStorage 或 sessionStorage
+   - Token 有效期：30 �?   - Token 存储：建议使�?localStorage �?sessionStorage
    - Token 泄露：立即登出并重新登录
 
 3. **HTTPS**:
    - 生产环境必须使用 HTTPS
-   - 防止中间人攻击
-
+   - 防止中间人攻�?
 4. **输入验证**:
    - 邮箱格式验证
    - 用户名长度和格式验证
@@ -557,5 +535,5 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/auth/logout 
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-08
-**作者**: iFlow CLI
+**最后更�?*: 2026-02-08
+**作�?*: iFlow CLI

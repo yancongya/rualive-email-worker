@@ -1,27 +1,23 @@
-# 实施指南：具体的操作命令和代码示例
-
+# 实施指南：具体的操作命令和代码示�?
 ## 概述
 
-本文档提供了将 rualive-admin-v2.0 迁移到 admin-v2 路由的具体操作命令和代码示例。
-
+本文档提供了�?rualive-admin-v2.0 迁移�?admin-v2 路由的具体操作命令和代码示例�?
 ---
 
-## 一、环境准备
-
-### 1.1 检查环境
-
+## 一、环境准�?
+### 1.1 检查环�?
 ```bash
-# 检查 Node.js 版本
+# 检�?Node.js 版本
 node --version
-# 要求：>= 18.0.0
+# 要求�?= 18.0.0
 
-# 检查 npm 版本
+# 检�?npm 版本
 npm --version
-# 要求：>= 9.0.0
+# 要求�?= 9.0.0
 
-# 检查 Git 版本
+# 检�?Git 版本
 git --version
-# 要求：>= 2.0.0
+# 要求�?= 2.0.0
 ```
 
 ### 1.2 创建备份
@@ -37,21 +33,17 @@ git checkout -b backup-before-admin-v2-20260130
 git add .
 git commit -m "backup: snapshot before admin-v2 migration - 2026-01-30"
 
-# 推送备份分支
-git push -u origin backup-before-admin-v2-20260130
+# 推送备份分�?git push -u origin backup-before-admin-v2-20260130
 
 # 创建迁移分支
 git checkout -b feature/admin-v2-migration
 ```
 
-### 1.3 查看源代码结构
-
+### 1.3 查看源代码结�?
 ```bash
-# 查看源代码目录
-cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\reference\rualive-admin-v2.0
+# 查看源代码目�?cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\reference\rualive-admin-v2.0
 
-# 列出所有文件
-dir
+# 列出所有文�?dir
 
 # 查看依赖
 type package.json
@@ -65,29 +57,23 @@ type tsconfig.json
 
 ---
 
-## 二、文件迁移
-
-### 2.1 创建目标文件夹
-
+## 二、文件迁�?
+### 2.1 创建目标文件�?
 ```bash
 # 进入 public 目录
 cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\public
 
-# 创建 admin-v2 文件夹
-mkdir admin-v2
+# 创建 admin-v2 文件�?mkdir admin-v2
 
 # 创建 locals 子文件夹
 mkdir admin-v2\locals
 
-# 验证文件夹创建
-dir admin-v2
+# 验证文件夹创�?dir admin-v2
 ```
 
-### 2.2 复制源代码文件
-
+### 2.2 复制源代码文�?
 ```bash
-# 设置源代码路径
-set SOURCE=C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\reference\rualive-admin-v2.0
+# 设置源代码路�?set SOURCE=C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\reference\rualive-admin-v2.0
 set TARGET=C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\public\admin-v2
 
 # 复制 HTML 文件并重命名
@@ -123,9 +109,9 @@ echo {
 echo   "app": {
 echo     "title": "RuAlive 管理后台",
 echo     "subtitle": "ADMIN CONSOLE",
-echo     "loading": "加载中...",
+echo     "loading": "加载�?..",
 echo     "language": "语言",
-echo     "logout": "退出登录"
+echo     "logout": "退出登�?
 echo   },
 echo   "nav": {
 echo     "invites": "邀请码管理",
@@ -154,8 +140,8 @@ echo     "messages": {
 echo       "noKeys": "暂无邀请码",
 echo       "confirmTitle": "确认删除",
 echo       "confirmDesc": "确定要删除这个邀请码吗？",
-echo       "deleted": "邀请码已删除",
-echo       "ticketPrinted": "邀请码已创建"
+echo       "deleted": "邀请码已删�?,
+echo       "ticketPrinted": "邀请码已创�?
 echo     }
 echo   },
 echo   "users": {
@@ -163,7 +149,7 @@ echo     "headers": {
 echo       "users": "用户管理"
 echo     },
 echo     "subheaders": {
-echo       "users": "管理注册用户和权限"
+echo       "users": "管理注册用户和权�?
 echo     },
 echo     "actions": {
 echo       "edit": "编辑",
@@ -175,9 +161,9 @@ echo       "userIdentity": "用户信息",
 echo       "role": "角色"
 echo     },
 echo     "messages": {
-echo       "resetConfirm": "确定要重置 {username} 的密码吗？",
-echo       "passwordReset": "密码已重置",
-echo       "deleteUserConfirm": "确定要删除 {username} 吗？"
+echo       "resetConfirm": "确定要重�?{username} 的密码吗�?,
+echo       "passwordReset": "密码已重�?,
+echo       "deleteUserConfirm": "确定要删�?{username} 吗？"
 echo     }
 echo   },
 echo   "api": {
@@ -193,8 +179,8 @@ echo       "test": "测试密钥",
 echo       "delete": "删除密钥"
 echo     },
 echo     "messages": {
-echo       "keySet": "API密钥已设置",
-echo       "keyDeleted": "API密钥已删除",
+echo       "keySet": "API密钥已设�?,
+echo       "keyDeleted": "API密钥已删�?,
 echo       "keyTested": "API密钥测试成功"
 echo     }
 echo   },
@@ -203,7 +189,7 @@ echo     "headers": {
 echo       "logs": "邮件日志"
 echo     },
 echo     "subheaders": {
-echo       "logs": "查看邮件发送记录"
+echo       "logs": "查看邮件发送记�?
 echo     }
 echo   }
 echo }
@@ -311,17 +297,15 @@ dir
 
 ---
 
-## 三、代码调整
-
+## 三、代码调�?
 ### 3.1 修改 admin-v2.tsx - 禁用Mock数据
 
-找到 `apiClient` 函数，在文件顶部添加环境变量：
-
+找到 `apiClient` 函数，在文件顶部添加环境变量�?
 ```typescript
 // 在文件顶部添加（约第200行之前）
 const USE_MOCK = false; // 生产环境禁用Mock数据
 
-// 找到 apiClient 函数的 catch 块（约第260行）
+// 找到 apiClient 函数�?catch 块（约第260行）
 } catch (error: any) {
   console.error(`[API FAIL] ${endpoint}:`, error.message);
   
@@ -355,7 +339,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: '/', // 部署到根路径
     build: {
-      outDir: 'dist', // 输出到 dist 目录
+      outDir: 'dist', // 输出�?dist 目录
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'admin-v2.html')
@@ -377,8 +361,7 @@ export default defineConfig(({ mode }) => {
 
 ### 3.3 修改 src/index.js - 添加 admin-v2 路由
 
-在现有的 `/admin` 路由之前添加 `/admin-v2` 路由（约第213行）：
-
+在现有的 `/admin` 路由之前添加 `/admin-v2` 路由（约�?13行）�?
 ```javascript
 // 新增 /admin-v2 路由
 if (path === '/admin-v2' || path === '/admin-v2.html') {
@@ -394,7 +377,7 @@ if (path === '/admin-v2' || path === '/admin-v2.html') {
       });
     }
   }
-  return new Response('管理后台V2页面未找到', { status: 404 });
+  return new Response('管理后台V2页面未找�?, { status: 404 });
 }
 
 // 保留原有 /admin 路由（保持不变）
@@ -405,16 +388,14 @@ if (path === '/admin' || path === '/admin.html' || path === '/admin/') {
 
 ---
 
-## 四、本地测试
-
+## 四、本地测�?
 ### 4.1 安装依赖
 
 ```bash
 # 进入 admin-v2 目录
 cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker\public\admin-v2
 
-# 初始化 package.json（如果不存在）
-if not exist package.json (
+# 初始�?package.json（如果不存在�?if not exist package.json (
   echo {> package.json
   echo   "name": "admin-v2",>> package.json
   echo   "version": "1.0.0",>> package.json
@@ -450,7 +431,7 @@ npm install
 # 启动开发服务器
 npm run dev
 
-# 服务器将在 http://localhost:3000 启动
+# 服务器将�?http://localhost:3000 启动
 ```
 
 ### 4.3 测试功能清单
@@ -458,8 +439,7 @@ npm run dev
 #### 登录功能测试
 
 ```bash
-# 1. 访问登录页
-# 浏览器打开：http://localhost:3000/login
+# 1. 访问登录�?# 浏览器打开：http://localhost:3000/login
 
 # 2. 测试登录
 # 输入管理员账号：admin@rualive.com
@@ -467,7 +447,7 @@ npm run dev
 # 点击登录
 
 # 3. 验证跳转
-# 应该跳转到 http://localhost:3000/admin-v2
+# 应该跳转�?http://localhost:3000/admin-v2
 ```
 
 #### 邀请码管理测试
@@ -476,14 +456,13 @@ npm run dev
 # 1. 点击"邀请码管理"标签
 # 2. 创建邀请码
 #    - 设置最大使用次数：10
-#    - 设置过期天数：30
+#    - 设置过期天数�?0
 #    - 点击"创建"按钮
 # 3. 验证邀请码显示在列表中
 # 4. 删除邀请码
 #    - 点击删除按钮
 #    - 确认删除
-# 5. 验证邀请码已删除
-```
+# 5. 验证邀请码已删�?```
 
 #### 用户管理测试
 
@@ -494,17 +473,14 @@ npm run dev
 #    - 点击重置密码按钮
 #    - 选择自动生成
 #    - 确认重置
-# 4. 验证密码已重置
-```
+# 4. 验证密码已重�?```
 
 #### API密钥管理测试
 
 ```bash
 # 1. 点击"API密钥"标签
 # 2. 查看当前API密钥（脱敏）
-# 3. 测试设置新密钥
-#    - 输入新密钥
-#    - 点击"设置密钥"
+# 3. 测试设置新密�?#    - 输入新密�?#    - 点击"设置密钥"
 # 4. 测试密钥
 #    - 点击"测试密钥"
 # 5. 验证测试成功
@@ -514,18 +490,14 @@ npm run dev
 
 ```bash
 # 1. 点击"邮件日志"标签
-# 2. 查看邮件发送记录
-# 3. 验证数据显示正确
+# 2. 查看邮件发送记�?# 3. 验证数据显示正确
 ```
 
-#### 旧版本测试
-
+#### 旧版本测�?
 ```bash
-# 1. 访问旧版本
-# 浏览器打开：http://localhost:3000/admin
+# 1. 访问旧版�?# 浏览器打开：http://localhost:3000/admin
 
-# 2. 测试所有功能
-#    - 邀请码管理
+# 2. 测试所有功�?#    - 邀请码管理
 #    - 用户管理
 #    - API密钥管理
 #    - 邮件日志
@@ -557,14 +529,12 @@ npm run preview
 ### 5.1 提交代码
 
 ```bash
-# 进入项目根目录
-cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker
+# 进入项目根目�?cd C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\RUAlive\rualive-email-worker
 
 # 查看修改
 git status
 
-# 添加所有修改
-git add .
+# 添加所有修�?git add .
 
 # 提交代码
 git commit -m "feat: add admin-v2 route with React dashboard
@@ -585,141 +555,115 @@ git push -u origin feature/admin-v2-migration
 ### 5.2 创建 Pull Request
 
 ```bash
-# 1. 在 GitHub 创建 Pull Request
+# 1. �?GitHub 创建 Pull Request
 #    - 源分支：feature/admin-v2-migration
 #    - 目标分支：main
 #    - 标题：feat: add admin-v2 route with React dashboard
-#    - 描述：参考 commit message
+#    - 描述：参�?commit message
 
 # 2. 请求代码审查
 # 3. 等待审查通过
-# 4. 合并到 main 分支
+# 4. 合并�?main 分支
 ```
 
-### 5.3 部署到测试环境
-
+### 5.3 部署到测试环�?
 ```bash
-# 1. 合并到 main 后，拉取最新代码
-git checkout main
+# 1. 合并�?main 后，拉取最新代�?git checkout main
 git pull origin main
 
-# 2. 部署到 Cloudflare
+# 2. 部署�?Cloudflare
 npm run deploy
 
 # 3. 验证部署成功
 # 访问测试环境URL
-# 测试所有功能
-```
+# 测试所有功�?```
 
-### 5.4 部署到生产环境
-
+### 5.4 部署到生产环�?
 ```bash
-# 1. 确认测试环境无问题
-# 2. 部署到生产环境
-npm run deploy
+# 1. 确认测试环境无问�?# 2. 部署到生产环�?npm run deploy
 
 # 3. 验证生产环境
 # 访问生产环境URL
-# https://rualive-email-worker.cubetan57.workers.dev/admin-v2
+# https://rualive.itycon.cn/admin-v2
 
-# 4. 测试所有功能
-#    - 登录功能
+# 4. 测试所有功�?#    - 登录功能
 #    - 邀请码管理
 #    - 用户管理
 #    - API密钥管理
 #    - 邮件日志
 
-# 5. 验证旧版本仍然可用
-# 访问 https://rualive-email-worker.cubetan57.workers.dev/admin
-# 测试所有功能
-```
+# 5. 验证旧版本仍然可�?# 访问 https://rualive.itycon.cn/admin
+# 测试所有功�?```
 
 ---
 
-## 六、故障排查
-
+## 六、故障排�?
 ### 6.1 常见问题
 
-#### 问题1：页面无法加载
-
+#### 问题1：页面无法加�?
 ```bash
-# 检查路由配置
-# 查看 src/index.js 中是否正确配置了 /admin-v2 路由
+# 检查路由配�?# 查看 src/index.js 中是否正确配置了 /admin-v2 路由
 
-# 检查文件路径
-# 确认 admin-v2.html 在正确的位置
-# 确认文件没有被 gitignore
+# 检查文件路�?# 确认 admin-v2.html 在正确的位置
+# 确认文件没有�?gitignore
 
-# 检查构建输出
-# 确认 dist 目录包含所有必要文件
-```
+# 检查构建输�?# 确认 dist 目录包含所有必要文�?```
 
 #### 问题2：登录后跳转失败
 
 ```bash
-# 检查 ProtectedRoute 组件
+# 检�?ProtectedRoute 组件
 # 确认 token 检查逻辑正确
 
-# 检查 localStorage
+# 检�?localStorage
 # 在浏览器控制台执行：
 # localStorage.getItem('rualive_token')
 
-# 检查 API 认证
-# 查看网络请求，确认 Authorization header 正确
+# 检�?API 认证
+# 查看网络请求，确�?Authorization header 正确
 ```
 
 #### 问题3：API请求失败
 
 ```bash
-# 检查 API_BASE 配置
+# 检�?API_BASE 配置
 # 确认指向正确的后端地址
 
-# 检查 Mock 数据
-# 确认 USE_MOCK 设置为 false
+# 检�?Mock 数据
+# 确认 USE_MOCK 设置�?false
 
-# 检查网络请求
-# 在浏览器控制台查看 Network 面板
-# 确认请求URL和参数正确
-```
+# 检查网络请�?# 在浏览器控制台查�?Network 面板
+# 确认请求URL和参数正�?```
 
-#### 问题4：翻译文件加载失败
-
+#### 问题4：翻译文件加载失�?
 ```bash
-# 检查文件路径
-# 确认 locals/zh.json 和 locals/en.json 存在
+# 检查文件路�?# 确认 locals/zh.json �?locals/en.json 存在
 
-# 检查文件格式
-# 确认 JSON 格式正确，无语法错误
+# 检查文件格�?# 确认 JSON 格式正确，无语法错误
 
 # 检查加载逻辑
 # 查看控制台是否有加载错误
 ```
 
-### 6.2 调试技巧
-
+### 6.2 调试技�?
 #### 启用详细日志
 
 ```typescript
-// 在 admin-v2.tsx 中添加日志
-console.log('[DEBUG] Current path:', window.location.pathname);
+// �?admin-v2.tsx 中添加日�?console.log('[DEBUG] Current path:', window.location.pathname);
 console.log('[DEBUG] Token:', localStorage.getItem('rualive_token'));
 console.log('[DEBUG] API_BASE:', API_BASE);
 ```
 
-#### 使用浏览器开发者工具
-
+#### 使用浏览器开发者工�?
 ```bash
-# 1. 打开浏览器开发者工具
-#    F12 或 Ctrl+Shift+I
+# 1. 打开浏览器开发者工�?#    F12 �?Ctrl+Shift+I
 
-# 2. 查看控制台
-#    - 查看错误信息
+# 2. 查看控制�?#    - 查看错误信息
 #    - 查看日志输出
 
 # 3. 查看网络请求
 #    - Network 面板
-#    - 查看 API 请求和响应
-
+#    - 查看 API 请求和响�?
 # 4. 查看本地存储
 #    - Application 面板
 #    - Local Storage
@@ -733,8 +677,7 @@ console.log('[DEBUG] API_BASE:', API_BASE);
 ### 7.1 代码分割
 
 ```typescript
-// 在 vite.config.ts 中添加代码分割
-build: {
+// �?vite.config.ts 中添加代码分�?build: {
   rollupOptions: {
     output: {
       manualChunks: {
@@ -747,11 +690,9 @@ build: {
 }
 ```
 
-### 7.2 懒加载组件
-
+### 7.2 懒加载组�?
 ```typescript
-// 懒加载大型组件
-const ChartView = React.lazy(() => import('./components/ChartView'));
+// 懒加载大型组�?const ChartView = React.lazy(() => import('./components/ChartView'));
 
 // 使用 Suspense
 <Suspense fallback={<div>Loading...</div>}>
@@ -762,7 +703,7 @@ const ChartView = React.lazy(() => import('./components/ChartView'));
 ### 7.3 缓存策略
 
 ```javascript
-// 在 src/index.js 中添加缓存头
+// �?src/index.js 中添加缓存头
 const newHeaders = new Headers(assetResponse.headers);
 newHeaders.set('Cache-Control', 'public, max-age=3600'); // 1小时缓存
 ```
@@ -774,7 +715,7 @@ newHeaders.set('Cache-Control', 'public, max-age=3600'); // 1小时缓存
 ### 8.1 添加错误监控
 
 ```typescript
-// 在 admin-v2.tsx 中添加全局错误处理
+// �?admin-v2.tsx 中添加全局错误处理
 window.addEventListener('error', (event) => {
   console.error('[Global Error]', event.error);
   // 发送到监控服务
@@ -792,8 +733,7 @@ window.addEventListener('unhandledrejection', (event) => {
 // 添加性能监控
 const startTime = performance.now();
 
-// 页面加载完成后
-window.addEventListener('load', () => {
+// 页面加载完成�?window.addEventListener('load', () => {
   const loadTime = performance.now() - startTime;
   console.log(`[Performance] Page loaded in ${loadTime}ms`);
   // 发送到监控服务
@@ -815,8 +755,7 @@ git push -u origin backup-before-admin-v2
 # 创建迁移分支
 git checkout -b feature/admin-v2-migration
 
-# 创建文件夹
-cd public
+# 创建文件�?cd public
 mkdir admin-v2\locals
 
 # 复制文件
@@ -829,8 +768,7 @@ copy ..\reference\rualive-admin-v2.0\BrickLoader.tsx admin-v2\
 cd admin-v2
 npm install
 
-# 开发
-npm run dev
+# 开�?npm run dev
 
 # 构建
 npm run build
@@ -850,24 +788,19 @@ git push -u origin feature/admin-v2-migration
 ```
 rualive-email-worker/
 ├── public/
-│   ├── admin-v2/
-│   │   ├── admin-v2.html      # 主页面
-│   │   ├── admin-v2.tsx       # 主应用
-│   │   ├── LogoAnimation.tsx  # Logo组件
-│   │   ├── BrickLoader.tsx    # 加载器组件
-│   │   ├── locals/
-│   │   │   ├── zh.json        # 中文翻译
-│   │   │   └── en.json        # 英文翻译
-│   │   ├── vite.config.ts     # 构建配置
-│   │   └── tsconfig.json      # TS配置
-│   └── admin.html             # 旧版本（保持不变）
-└── src/
-    └── index.js               # 后端路由（添加 /admin-v2 路由）
-```
+�?  ├── admin-v2/
+�?  �?  ├── admin-v2.html      # 主页�?�?  �?  ├── admin-v2.tsx       # 主应�?�?  �?  ├── LogoAnimation.tsx  # Logo组件
+�?  �?  ├── BrickLoader.tsx    # 加载器组�?�?  �?  ├── locals/
+�?  �?  �?  ├── zh.json        # 中文翻译
+�?  �?  �?  └── en.json        # 英文翻译
+�?  �?  ├── vite.config.ts     # 构建配置
+�?  �?  └── tsconfig.json      # TS配置
+�?  └── admin.html             # 旧版本（保持不变�?└── src/
+    └── index.js               # 后端路由（添�?/admin-v2 路由�?```
 
 ---
 
 **文档版本**: 1.0  
 **创建日期**: 2026-01-30  
-**最后更新**: 2026-01-30  
-**维护者**: iFlow CLI
+**最后更�?*: 2026-01-30  
+**维护�?*: iFlow CLI

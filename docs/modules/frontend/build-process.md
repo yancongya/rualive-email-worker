@@ -2,20 +2,19 @@
 
 ## 文档信息
 - **构建工具**: Vite 5.0.0
-- **最后更新**: 2026-02-07
+- **最后更�?*: 2026-02-07
 
 ---
 
 ## 1. 构建概述
 
 ### 1.1 构建目标
-- 将 TypeScript/JSX 编译为 JavaScript
-- 代码分割和优化
-- 生成生产环境代码
+- �?TypeScript/JSX 编译�?JavaScript
+- 代码分割和优�?- 生成生产环境代码
 - 压缩和哈希化文件
 
 ### 1.2 构建环境
-- **开发环境**: `npm run dev`
+- **开发环�?*: `npm run dev`
 - **预览环境**: `npm run preview`
 - **生产环境**: `npm run build`
 
@@ -54,40 +53,32 @@ export default defineConfig({
 ```
 
 ### 2.2 构建选项说明
-| 选项 | 值 | 说明 |
+| 选项 | �?| 说明 |
 |------|-----|------|
 | `outDir` | `'dist'` | 输出目录 |
 | `emptyOutDir` | `true` | 清空输出目录 |
-| `entryFileNames` | `'assets/[name]-[hash].js'` | 入口文件名格式 |
+| `entryFileNames` | `'assets/[name]-[hash].js'` | 入口文件名格�?|
 | `chunkFileNames` | `'assets/[name]-[hash].js'` | 代码块文件名格式 |
-| `assetFileNames` | `'assets/[name]-[hash].[ext]'` | 资源文件名格式 |
+| `assetFileNames` | `'assets/[name]-[hash].[ext]'` | 资源文件名格�?|
 | `manualChunks` | `undefined` | 手动代码分割 |
 
 ---
 
 ## 3. 构建流程
 
-### 3.1 开发构建
-```bash
+### 3.1 开发构�?```bash
 npm run dev
 ```
 
 **流程**:
 ```
 启动开发服务器
-  ↓
-监听文件变化
-  ↓
-热模块替换（HMR）
-  ↓
-浏览器实时更新
-```
+  �?监听文件变化
+  �?热模块替换（HMR�?  �?浏览器实时更�?```
 
 **特点**:
-- 快速启动
-- 实时预览
-- 热更新
-- Source Maps
+- 快速启�?- 实时预览
+- 热更�?- Source Maps
 
 ### 3.2 生产构建
 ```bash
@@ -97,24 +88,14 @@ npm run build
 **流程**:
 ```
 读取配置
-  ↓
-解析入口文件
-  ↓
-编译 TypeScript
-  ↓
-转换 JSX
-  ↓
-依赖分析
-  ↓
-代码分割
-  ↓
-Tree Shaking
-  ↓
-代码压缩
-  ↓
-生成哈希文件名
-  ↓
-输出到 dist/
+  �?解析入口文件
+  �?编译 TypeScript
+  �?转换 JSX
+  �?依赖分析
+  �?代码分割
+  �?Tree Shaking
+  �?代码压缩
+  �?生成哈希文件�?  �?输出�?dist/
 ```
 
 **步骤详解**:
@@ -170,10 +151,7 @@ user-v6.html
 #### 步骤5: 代码分割
 ```
 dist/
-├── user-v6-abc123.js        # 主入口
-├── ChartView-def456.js      # 懒加载组件
-├── LogsTable-ghi789.js      # 懒加载组件
-└── vendor-jkl012.js         # 第三方库
+├── user-v6-abc123.js        # 主入�?├── ChartView-def456.js      # 懒加载组�?├── LogsTable-ghi789.js      # 懒加载组�?└── vendor-jkl012.js         # 第三方库
 ```
 
 #### 步骤6: Tree Shaking
@@ -184,9 +162,7 @@ import { chart } from 'recharts';
 
 // 使用
 const [data, setData] = useState(null);
-// useEffect 未使用
-// chart 未使用
-
+// useEffect 未使�?// chart 未使�?
 // 输出（只包含实际使用的代码）
 import { useState } from 'react';
 ```
@@ -202,9 +178,8 @@ function hello(name) {
 function hello(n){console.log("Hello, "+n+"!")}
 ```
 
-#### 步骤8: 生成哈希文件名
-```
-user-v6.js → user-v6-abc123def456.js
+#### 步骤8: 生成哈希文件�?```
+user-v6.js �?user-v6-abc123def456.js
 ```
 
 **哈希作用**:
@@ -238,11 +213,11 @@ dist/
 | 文件 | 大小 | 说明 |
 |------|------|------|
 | `index.html` | ~2KB | 首页入口 |
-| `auth.html` | ~2KB | 登录页入口 |
-| `user-v6.html` | ~2KB | 用户仪表板入口 |
+| `auth.html` | ~2KB | 登录页入�?|
+| `user-v6.html` | ~2KB | 用户仪表板入�?|
 | `admin.html` | ~2KB | 管理后台入口 |
 | `user-v6-*.js` | ~200KB | 用户仪表板主文件 |
-| `admin-*.js` | ~180KB | 管理后台主文件 |
+| `admin-*.js` | ~180KB | 管理后台主文�?|
 | `vendor-*.js` | ~500KB | 第三方库 |
 
 ---
@@ -274,8 +249,8 @@ npm run dev
 ```
   VITE v5.0.0  ready in 234 ms
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
+  �? Local:   http://localhost:5173/
+  �? Network: use --host to expose
 ```
 
 #### `npm run build`
@@ -288,12 +263,12 @@ npm run build
 **输出**:
 ```
 vite v5.0.0 building for production...
-✓ 17 modules transformed.
-dist/index.html                    0.45 kB │ gzip:  0.30 kB
-dist/assets/index-abc123.js      45.23 kB │ gzip: 15.67 kB
-dist/assets/auth-def456.js       38.12 kB │ gzip: 13.45 kB
-dist/assets/user-v6-ghi789.js   123.45 kB │ gzip: 42.34 kB
-dist/assets/admin-jkl012.js     110.23 kB │ gzip: 38.12 kB
+�?17 modules transformed.
+dist/index.html                    0.45 kB �?gzip:  0.30 kB
+dist/assets/index-abc123.js      45.23 kB �?gzip: 15.67 kB
+dist/assets/auth-def456.js       38.12 kB �?gzip: 13.45 kB
+dist/assets/user-v6-ghi789.js   123.45 kB �?gzip: 42.34 kB
+dist/assets/admin-jkl012.js     110.23 kB �?gzip: 38.12 kB
 ```
 
 #### `npm run preview`
@@ -307,20 +282,18 @@ npm run preview
 ```
   VITE v5.0.0  ready in 56 ms
 
-  ➜  Local:   http://localhost:4173/
+  �? Local:   http://localhost:4173/
 ```
 
 #### `npm run deploy`
-构建并部署
-
+构建并部�?
 ```bash
 npm run deploy
 ```
 
 **流程**:
 1. 执行 `npm run build`
-2. 切换到上级目录
-3. 执行 `npx wrangler deploy`
+2. 切换到上级目�?3. 执行 `npx wrangler deploy`
 
 **⚠️ 重要：dist 目录复制说明**
 
@@ -329,15 +302,12 @@ npm run deploy
 "deploy": "npm run build && cd .. && npx wrangler deploy"
 ```
 
-但这个脚本**缺少 dist 目录复制步骤**，会导致部署的是旧版本的静态文件。
-
-**正确的手动部署流程**：
-```bash
+但这个脚�?*缺少 dist 目录复制步骤**，会导致部署的是旧版本的静态文件�?
+**正确的手动部署流�?*�?```bash
 # 1. 进入 public 目录
 cd public
 
-# 2. 构建前端（输出到 public/dist）
-npm run build
+# 2. 构建前端（输出到 public/dist�?npm run build
 
 # 3. 切换到根目录
 cd ..
@@ -346,17 +316,14 @@ cd ..
 Remove-Item -Recurse -Force dist
 Copy-Item -Recurse -Force public\dist dist
 
-# 5. 部署到 Cloudflare
+# 5. 部署�?Cloudflare
 npm run deploy
 ```
 
-**为什么需要复制**：
-- `wrangler.toml` 配置：`assets.directory = "dist"`（根目录）
-- Vite 构建输出：`public/dist` 目录
-- 不复制会导致部署旧的根目录 dist 文件
+**为什么需要复�?*�?- `wrangler.toml` 配置：`assets.directory = "dist"`（根目录�?- Vite 构建输出：`public/dist` 目录
+- 不复制会导致部署旧的根目�?dist 文件
 
-**建议修复 deploy 脚本**：
-```json
+**建议修复 deploy 脚本**�?```json
 {
   "scripts": {
     "deploy": "npm run build && cd .. && Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; Copy-Item -Recurse -Force public\\dist dist; npx wrangler deploy"
@@ -386,8 +353,7 @@ function Dashboard() {
 }
 ```
 
-### 6.2 依赖预构建
-```typescript
+### 6.2 依赖预构�?```typescript
 // vite.config.ts
 export default defineConfig({
   optimizeDeps: {
@@ -430,11 +396,11 @@ import './assets/main.css';
 ### 7.1 定义环境变量
 ```
 # .env
-VITE_API_BASE_URL=https://rualive-email-worker.cubetan57.workers.dev
+VITE_API_BASE_URL=https://rualive.itycon.cn
 VITE_APP_NAME=RuAlive
 
 # .env.production
-VITE_API_BASE_URL=https://rualive-email-worker.cubetan57.workers.dev
+VITE_API_BASE_URL=https://rualive.itycon.cn
 
 # .env.development
 VITE_API_BASE_URL=http://localhost:8787
@@ -471,8 +437,7 @@ npm run build
 ```
 
 #### 问题2: TypeScript 错误
-**症状**: 编译时出现类型错误
-
+**症状**: 编译时出现类型错�?
 **解决方案**:
 ```typescript
 // 添加类型声明
@@ -481,20 +446,17 @@ declare module '*.svg' {
   export default content;
 }
 
-// 或使用 any 类型（不推荐）
-const data: any = response.data;
+// 或使�?any 类型（不推荐�?const data: any = response.data;
 ```
 
 #### 问题3: 依赖冲突
-**症状**: 运行时出现模块错误
-
+**症状**: 运行时出现模块错�?
 **解决方案**:
 ```bash
 # 更新依赖
 npm update
 
-# 或重新安装
-rm -rf node_modules package-lock.json
+# 或重新安�?rm -rf node_modules package-lock.json
 npm install
 ```
 
@@ -544,8 +506,7 @@ jobs:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-### 9.2 自动化部署
-```bash
+### 9.2 自动化部�?```bash
 # deploy.sh
 #!/bin/bash
 
@@ -560,15 +521,11 @@ fi
 
 ---
 
-## 10. 最佳实践
+## 10. 最佳实�?
+### 10.1 构建前检�?```bash
+# 检查代码风�?npm run lint
 
-### 10.1 构建前检查
-```bash
-# 检查代码风格
-npm run lint
-
-# 检查类型
-npm run type-check
+# 检查类�?npm run type-check
 
 # 运行测试
 npm run test
@@ -579,10 +536,9 @@ npm run build
 
 ### 10.2 版本管理
 ```bash
-# 使用语义化版本
-npm version patch  # 1.0.0 → 1.0.1
-npm version minor  # 1.0.0 → 1.1.0
-npm version major  # 1.0.0 → 2.0.0
+# 使用语义化版�?npm version patch  # 1.0.0 �?1.0.1
+npm version minor  # 1.0.0 �?1.1.0
+npm version major  # 1.0.0 �?2.0.0
 ```
 
 ### 10.3 构建缓存
@@ -599,6 +555,6 @@ RUN npm run build
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-07
-**作者**: iFlow CLI
-**状态**: ✅ 完成
+**最后更�?*: 2026-02-07
+**作�?*: iFlow CLI
+**状�?*: �?完成

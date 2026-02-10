@@ -149,7 +149,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Deployment process completed!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "URL: https://rualive-email-worker.cubetan57.workers.dev" -ForegroundColor Cyan
+Write-Host "URL: https://rualive.itycon.cn" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "Usage:" -ForegroundColor Cyan

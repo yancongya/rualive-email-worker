@@ -2,8 +2,7 @@
 
 ## 概述
 
-工作数据 API 负责处理 AE 扩展上传的工作数据，包括工作日志、项目数据、运行时间统计等。同时提供心跳检测和 AE 状态管理功能。
-
+工作数据 API 负责处理 AE 扩展上传的工作数据，包括工作日志、项目数据、运行时间统计等。同时提供心跳检测和 AE 状态管理功能�?
 ## 基础信息
 
 - **基础路径**: `/api`
@@ -18,10 +17,8 @@
 
 **端点**: `/api/work-data`
 **方法**: `POST`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -31,31 +28,31 @@ Content-Type: application/json
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| userId | string | 是 | 用户 ID |
-| workDate | string | 是 | 工作日期（YYYY-MM-DD 格式） |
-| workData | object | 是 | 工作数据对象 |
-| workData.work_hours | number | 是 | 工作时长（小时） |
-| workData.accumulated_work_hours | number | 是 | 累积工作时长（小时） |
-| workData.keyframe_count | number | 是 | 关键帧数量 |
-| workData.composition_count | number | 是 | 合成数量 |
-| workData.layer_count | number | 是 | 图层数量 |
-| workData.effect_count | number | 是 | 效果数量 |
-| workData.projects | array | 是 | 项目列表 |
-| workData.projects[].id | string | 是 | 项目 ID |
-| workData.projects[].name | string | 是 | 项目名称 |
-| workData.projects[].path | string | 是 | 项目路径 |
-| workData.projects[].runtime | number | 是 | 运行时长（秒） |
-| workData.projects[].statistics | object | 是 | 项目统计 |
-| workData.projects[].statistics.compositions | number | 是 | 合成数量 |
-| workData.projects[].statistics.layers | number | 是 | 图层数量 |
-| workData.projects[].statistics.keyframes | number | 是 | 关键帧数量 |
-| workData.projects[].statistics.effects | number | 是 | 效果数量 |
-| workData.projects[].details | object | 否 | 项目详情 |
-| workData.projects[].details.layers | object | 否 | 图层分类统计 |
-| workData.projects[].details.keyframes | object | 否 | 关键帧详情 |
-| workData.projects[].details.effectCounts | object | 否 | 效果使用统计 |
-| aeVersion | string | 否 | AE 版本 |
-| osInfo | string | 否 | 操作系统信息 |
+| userId | string | �?| 用户 ID |
+| workDate | string | �?| 工作日期（YYYY-MM-DD 格式�?|
+| workData | object | �?| 工作数据对象 |
+| workData.work_hours | number | �?| 工作时长（小时） |
+| workData.accumulated_work_hours | number | �?| 累积工作时长（小时） |
+| workData.keyframe_count | number | �?| 关键帧数�?|
+| workData.composition_count | number | �?| 合成数量 |
+| workData.layer_count | number | �?| 图层数量 |
+| workData.effect_count | number | �?| 效果数量 |
+| workData.projects | array | �?| 项目列表 |
+| workData.projects[].id | string | �?| 项目 ID |
+| workData.projects[].name | string | �?| 项目名称 |
+| workData.projects[].path | string | �?| 项目路径 |
+| workData.projects[].runtime | number | �?| 运行时长（秒�?|
+| workData.projects[].statistics | object | �?| 项目统计 |
+| workData.projects[].statistics.compositions | number | �?| 合成数量 |
+| workData.projects[].statistics.layers | number | �?| 图层数量 |
+| workData.projects[].statistics.keyframes | number | �?| 关键帧数�?|
+| workData.projects[].statistics.effects | number | �?| 效果数量 |
+| workData.projects[].details | object | �?| 项目详情 |
+| workData.projects[].details.layers | object | �?| 图层分类统计 |
+| workData.projects[].details.keyframes | object | �?| 关键帧详�?|
+| workData.projects[].details.effectCounts | object | �?| 效果使用统计 |
+| aeVersion | string | �?| AE 版本 |
+| osInfo | string | �?| 操作系统信息 |
 
 #### 请求示例
 
@@ -125,7 +122,7 @@ Content-Type: application/json
 ```json
 {
   "success": false,
-  "error": "无效的工作日期格式",
+  "error": "无效的工作日期格�?,
   "code": "INVALID_DATE_FORMAT"
 }
 ```
@@ -141,18 +138,16 @@ Content-Type: application/json
 
 ---
 
-### 2. 心跳检测
-
+### 2. 心跳检�?
 **端点**: `/api/heartbeat`
 **方法**: `POST`
-**认证**: 不需要
-
+**认证**: 不需�?
 #### 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| status | string | 否 | 状态（"online"、"offline"） |
-| userId | string | 否 | 用户 ID |
+| status | string | �?| 状态（"online"�?offline"�?|
+| userId | string | �?| 用户 ID |
 
 #### 请求示例
 
@@ -176,14 +171,11 @@ Content-Type: application/json
 
 ---
 
-### 3. 获取 AE 状态
-
+### 3. 获取 AE 状�?
 **端点**: `/api/ae-status`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -215,14 +207,11 @@ Authorization: Bearer <token>
 
 ---
 
-### 4. 更新 AE 状态
-
+### 4. 更新 AE 状�?
 **端点**: `/api/ae-status`
 **方法**: `POST`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -232,8 +221,8 @@ Content-Type: application/json
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| aeVersion | string | 是 | AE 版本 |
-| osInfo | string | 是 | 操作系统信息 |
+| aeVersion | string | �?| AE 版本 |
+| osInfo | string | �?| 操作系统信息 |
 
 #### 请求示例
 
@@ -250,7 +239,7 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "message": "AE 状态更新成功",
+  "message": "AE 状态更新成�?,
   "data": {
     "userId": "user_123",
     "aeVersion": "23.5x52",
@@ -262,14 +251,11 @@ Content-Type: application/json
 
 ---
 
-### 5. 立即发送邮件
-
+### 5. 立即发送邮�?
 **端点**: `/api/send-now`
 **方法**: `POST`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -278,7 +264,7 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| workDate | string | 否 | 工作日期（YYYY-MM-DD 格式，默认为今天） |
+| workDate | string | �?| 工作日期（YYYY-MM-DD 格式，默认为今天�?|
 
 #### 请求示例
 
@@ -294,7 +280,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": true,
-  "message": "邮件发送成功",
+  "message": "邮件发送成�?,
   "data": {
     "emailId": "msg_abc123def456",
     "toEmail": "user@example.com",
@@ -308,7 +294,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "指定日期无工作数据",
+  "error": "指定日期无工作数�?,
   "code": "NO_WORK_DATA"
 }
 ```
@@ -317,21 +303,18 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "error": "邮件发送失败",
+  "error": "邮件发送失�?,
   "code": "EMAIL_SEND_FAILED"
 }
 ```
 
 ---
 
-### 6. 获取发送日志
-
+### 6. 获取发送日�?
 **端点**: `/api/logs`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -340,14 +323,14 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| userId | string | 否 | 用户 ID |
-| limit | number | 否 | 返回数量限制（默认 50） |
+| userId | string | �?| 用户 ID |
+| limit | number | �?| 返回数量限制（默�?50�?|
 
 #### 请求示例
 
 ```http
 GET /api/logs?userId=user_123&limit=50 HTTP/1.1
-Host: rualive-email-worker.cubetan57.workers.dev
+Host: rualive.itycon.cn
 Authorization: Bearer <token>
 ```
 
@@ -386,10 +369,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/work-logs/range`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -414,10 +395,8 @@ Authorization: Bearer <token>
 
 **端点**: `/api/work-logs`
 **方法**: `GET`
-**认证**: 需要
-
-#### 请求头
-
+**认证**: 需�?
+#### 请求�?
 ```
 Authorization: Bearer <token>
 ```
@@ -426,14 +405,14 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| startDate | string | 否 | 开始日期（YYYY-MM-DD 格式） |
-| endDate | string | 否 | 结束日期（YYYY-MM-DD 格式） |
+| startDate | string | �?| 开始日期（YYYY-MM-DD 格式�?|
+| endDate | string | �?| 结束日期（YYYY-MM-DD 格式�?|
 
 #### 请求示例
 
 ```http
 GET /api/work-logs?startDate=2026-02-01&endDate=2026-02-07 HTTP/1.1
-Host: rualive-email-worker.cubetan57.workers.dev
+Host: rualive.itycon.cn
 Authorization: Bearer <token>
 ```
 
@@ -488,8 +467,7 @@ Authorization: Bearer <token>
 {
   compositions: number;  // 合成数量
   layers: number;        // 图层数量
-  keyframes: number;     // 关键帧数量
-  effects: number;       // 效果数量（唯一类型数）
+  keyframes: number;     // 关键帧数�?  effects: number;       // 效果数量（唯一类型数）
 }
 ```
 
@@ -506,8 +484,7 @@ Authorization: Bearer <token>
     // ... 其他图层类型
   };
   keyframes?: {
-    [layerName: string]: number;  // 按图层分组的关键帧数量
-  };
+    [layerName: string]: number;  // 按图层分组的关键帧数�?  };
   effectCounts?: {
     [effectName: string]: number; // 效果使用次数统计
   };
@@ -516,10 +493,8 @@ Authorization: Bearer <token>
 
 ### 运行时长
 
-- **单位**: 秒
-- **格式**: 整数
-- **示例**: 5400（1.5 小时）
-
+- **单位**: �?- **格式**: 整数
+- **示例**: 5400�?.5 小时�?
 ---
 
 ## 使用示例
@@ -529,7 +504,7 @@ Authorization: Bearer <token>
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/work-data \
+curl -X POST https://rualive.itycon.cn/api/work-data \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -562,12 +537,11 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/work-data \
   }'
 ```
 
-### 更新 AE 状态
-
+### 更新 AE 状�?
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/ae-status \
+curl -X POST https://rualive.itycon.cn/api/ae-status \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -576,13 +550,12 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/ae-status \
   }'
 ```
 
-### 立即发送邮件
-
+### 立即发送邮�?
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # 发送今天的工作日报
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/send-now \
+curl -X POST https://rualive.itycon.cn/api/send-now \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -596,14 +569,13 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/send-now \
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # 获取本月工作日志
-curl -X GET "https://rualive-email-worker.cubetan57.workers.dev/api/work-logs?startDate=2026-02-01&endDate=2026-02-07" \
+curl -X GET "https://rualive.itycon.cn/api/work-logs?startDate=2026-02-01&endDate=2026-02-07" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 心跳检测
-
+### 心跳检�?
 ```bash
-curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/heartbeat \
+curl -X POST https://rualive.itycon.cn/api/heartbeat \
   -H "Content-Type: application/json" \
   -d '{
     "status": "online",
@@ -619,48 +591,26 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/heartbeat \
 
 ```
 AE 扩展扫描项目
-    ↓
-生成工作数据 JSON
-    ↓
-调用 /api/work-data 上传
-    ↓
-验证数据格式
-    ↓
-保存到 D1 数据库
-    ↓
-更新项目累积数据
-    ↓
-返回成功响应
+    �?生成工作数据 JSON
+    �?调用 /api/work-data 上传
+    �?验证数据格式
+    �?保存�?D1 数据�?    �?更新项目累积数据
+    �?返回成功响应
 ```
 
 ### 2. 项目累积更新
 
 每次上传工作数据时，系统会自动更新项目累积数据：
 
-1. **检查项目是否存在**（基于 `project.id`）
-2. **如果不存在**：创建新项目记录
-3. **如果存在**：更新累积数据
-   - 累加工作时长
-   - 更新最后工作日期
-   - 增加工作天数计数
+1. **检查项目是否存�?*（基�?`project.id`�?2. **如果不存�?*：创建新项目记录
+3. **如果存在**：更新累积数�?   - 累加工作时长
+   - 更新最后工作日�?   - 增加工作天数计数
 
-### 3. 邮件发送流程
-
+### 3. 邮件发送流�?
 ```
 调用 /api/send-now
-    ↓
-获取指定日期的工作日志
-    ↓
-检查用户配置
-    ↓
-生成邮件内容
-    ↓
-调用 Resend API 发送邮件
-    ↓
-记录发送日志
-    ↓
-返回发送结果
-```
+    �?获取指定日期的工作日�?    �?检查用户配�?    �?生成邮件内容
+    �?调用 Resend API 发送邮�?    �?记录发送日�?    �?返回发送结�?```
 
 ---
 
@@ -673,16 +623,12 @@ AE 扩展扫描项目
 
 ### 工作时长
 
-- 单位：小时
-- 格式：浮点数
-- 示例：`8.5`（8小时30分钟）
-
+- 单位：小�?- 格式：浮点数
+- 示例：`8.5`�?小时30分钟�?
 ### 运行时长
 
 - 单位：秒
-- 格式：整数
-- 示例：`5400`（1.5小时）
-
+- 格式：整�?- 示例：`5400`�?.5小时�?
 ### 统计数据
 
 - 所有统计数据必须为非负整数
@@ -690,16 +636,15 @@ AE 扩展扫描项目
 
 ---
 
-## 错误码说明
-
-| 错误码 | HTTP 状态码 | 说明 |
+## 错误码说�?
+| 错误�?| HTTP 状态码 | 说明 |
 |--------|-------------|------|
-| INVALID_DATE_FORMAT | 400 | 无效的日期格式 |
+| INVALID_DATE_FORMAT | 400 | 无效的日期格�?|
 | INVALID_WORK_DATA | 400 | 工作数据格式错误 |
-| NO_WORK_DATA | 400 | 指定日期无工作数据 |
-| EMAIL_SEND_FAILED | 500 | 邮件发送失败 |
+| NO_WORK_DATA | 400 | 指定日期无工作数�?|
+| EMAIL_SEND_FAILED | 500 | 邮件发送失�?|
 | AE_STATUS_NOT_FOUND | 404 | AE 状态不存在 |
-| UNAUTHORIZED | 401 | 未授权 |
+| UNAUTHORIZED | 401 | 未授�?|
 
 ---
 
@@ -719,22 +664,19 @@ curl -X POST /api/work-data -d '{"workDate": "2026-02-02", ...}'
 
 ### 2. 数据缓存
 
-客户端可以缓存工作数据，避免重复上传：
-
+客户端可以缓存工作数据，避免重复上传�?
 ```javascript
 // 检查是否已上传
 const isUploaded = await checkWorkLogUploadStatus('2026-02-07');
 
 if (!isUploaded) {
-  // 上传新数据
-  await uploadWorkData(workData);
+  // 上传新数�?  await uploadWorkData(workData);
 }
 ```
 
 ### 3. 增量更新
 
-对于运行时长，使用增量更新而非每次上传完整数据：
-
+对于运行时长，使用增量更新而非每次上传完整数据�?
 ```json
 {
   "runtime": 3600  // 新增的运行时长（秒）
@@ -744,5 +686,5 @@ if (!isUploaded) {
 ---
 
 **文档版本**: 1.0
-**最后更新**: 2026-02-08
-**作者**: iFlow CLI
+**最后更�?*: 2026-02-08
+**作�?*: iFlow CLI
