@@ -2,6 +2,9 @@ name = "rualive-email-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
+# 自定义域名路由
+routes = ["rualive.itycon.cn/*"]
+
 # Assets 配置 - 用于部署静态文件（React 应用和管理后台）
 # 注意：Vite 构建将 HTML 文件放在 dist/public/，JS 文件放在 dist/assets/
 # wrangler 会部署 dist/ 目录，所以路径是正确的
