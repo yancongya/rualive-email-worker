@@ -39,7 +39,13 @@
 | 路由 | 类型 | 文件 | 说明 |
 |------|------|------|------|
 | `/login` | SPA | `auth.html` | 登录/注册页 |
-| `/register` | SPA | `auth.html` | 登录/注册页 |
+| `/login#register` | SPA | `auth.html` | 注册模式 |
+| `/register` | SPA | `auth.html` | 登录/注册页（兼容旧版） |
+
+**注意**:
+- 推荐使用 hash 路由 `/login#register` 切换到注册模式
+- `/register` 路由已废弃，但保留以兼容旧版本
+- 前端根据 URL hash 自动切换登录/注册模式
 
 ### 用户路由
 
