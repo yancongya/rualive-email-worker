@@ -292,6 +292,110 @@ const loadTranslations = async (lang: 'zh' | 'en') => {
 
 ---
 
+### 12. 页面滚动和背景动画回弹效果
+
+**问题描述：**
+滚动切换页面时，背景线条动画和整体滚动动画有明显的回弹效果，影响视觉体验。
+
+**根本原因：**
+使用了具有回弹效果的 GSAP 缓动函数：
+1. 页面滚动：`power4.inOut` - 有较强的回弹效果
+2. 背景路径变形：`power3.inOut` - 中等回弹效果
+3. 背景 SVG 变换：`elastic.out(1, 0.85)` - 明显的弹性回弹效果
+
+**解决方案：**
+将所有缓动函数改为 `sine.out`，提供平滑无回弹的动画效果：
+```typescript
+// 页面滚动动画
+window.gsap.to(wrapperRef.current, { 
+  y: -index * 100 + "%", 
+  duration: 1.2, 
+  ease: "sine.out",  // 从 power4.inOut 改为 sine.out
+  onComplete: () => { isAnimating.current = false; }
+});
+
+// 背景路径动画
+const tl = window.gsap.timeline();
+tl.to(svgRef.current, { scale: config.scale * 1.3, opacity: 0.1, duration: 0.5, ease: "power2.in" })
+  .to(pathRef.current, { attr: { d: paths[currentSection] || paths[0] }, duration: 1.1, ease: "sine.out" }, "-=0.3")  // 从 power3.inOut 改为 sine.out
+  .to(svgRef.current, { x: config.x, y: config.y, scale: config.scale, rotation: config.rotate, opacity: config.opacity, duration: 1.2, ease: "sine.out" }, "-=0.4");  // 从 elastic.out(1, 0.85) 改为 sine.out
+```
+
+**缓动函数对比**：
+- `power4.inOut`：强回弹，适合强调效果
+- `elastic.out(1, 0.85)`：明显弹性回弹，过激效果
+- `sine.out`：平滑减速，无回弹，适合滚动切换
+
+**验证方法：**
+- 滚动切换各个页面，观察动画是否平滑
+- 背景线条变换时应该没有回弹效果
+- 整体体验更加流畅自然
+
+---
+
+### 13. 手机模式下运行时长卡片布局问题
+
+**问题描述：**
+在手机竖屏模式下，5个统计卡片布局为 2 列网格，最后一行只有一个运行时长卡片，看起来突兀。
+
+**根本原因：**
+5 个卡片在 2 列网格中的排列：
+- 第一行：卡片 1, 2
+- 第二行：卡片 3, 4
+- 第三行：卡片 5（孤儿卡片）
+
+**解决方案：**
+让运行时长卡片（最后一个卡片）在手机模式下跨 2 列：
+```typescript
+{getArray('stats.items').map((s: any, i: number) => (
+  <div key={i} className={`text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px] ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
+```
+
+**布局效果**：
+- **手机模式**（grid-cols-2）：
+  - 第一行：卡片 1, 2
+  - 第二行：卡片 3, 4
+  - 第三行：卡片 5（跨 2 列，更宽）
+- **桌面模式**（lg:grid-cols-5）：
+  - 所有卡片各占 1 列（`lg:col-span-1`）
+
+**Tailwind CSS 说明**：
+- `col-span-2`：跨 2 列（手机）
+- `lg:col-span-1`：在大屏幕下跨 1 列（桌面）
+- 条件类只在最后一个卡片（i === 4）上生效
+
+---
+
+### 14. 手机竖屏模式背景线条尺寸过小
+
+**问题描述：**
+在手机竖屏模式下，背景的线条动画尺寸太小，视觉上不够明显。
+
+**根本原因：**
+背景 SVG 的尺寸设置为 `w-[80vw] h-[80vw]`，在手机竖屏上显得太小，无法充分发挥装饰作用。
+
+**解决方案：**
+增加手机模式下的背景 SVG 尺寸：
+```typescript
+<svg ref={svgRef} viewBox="0 0 800 800" className="w-[140vw] h-[140vw] sm:w-[60vw] sm:h-[60vw] text-primary" style={{ transformOrigin: 'center center', opacity: 0.25 }}>
+```
+
+**尺寸调整**：
+- **手机模式**：`w-[140vw] h-[140vw]` - 从 80vw 增加到 140vw
+- **桌面模式**（sm+）：`w-[60vw] h-[60vw]` - 保持不变
+
+**视觉效果**：
+- 背景线条在手机上更加醒目
+- 增强了页面的视觉层次感
+- 不影响桌面模式的显示效果
+
+**注意事项**：
+- 使用 `overflow-hidden` 防止大尺寸 SVG 产生滚动条
+- SVG 位于 `fixed inset-0` 层级，不影响内容层
+- `pointer-events-none` 确保不干扰用户交互
+
+---
+
 ## 技术要点总结
 
 ### Vite 开发服务器配置
