@@ -108,7 +108,7 @@
     "title": "已有",
     "count": "0",
     "unit": "位小伙伴加入打卡",
-    "openSource": "即将开源",
+    "openSource": "当用户稳定30人后即开源",
     "openSourceTooltip": "个人维护时间精力不够，开源后可用户自行部署管理"
   }
 }

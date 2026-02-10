@@ -95,7 +95,7 @@ const TRANSLATIONS = {
       title: "已有",
       count: "0",
       unit: "位小伙伴加入打卡",
-      openSource: "即将开源",
+      openSource: "当用户稳定30人后即开源",
       openSourceTooltip: "个人维护时间精力不够，开源后可用户自行部署管理"
     },
     stats: {
@@ -186,7 +186,7 @@ const TRANSLATIONS = {
       title: "Already",
       count: "0",
       unit: "buddies joined",
-      openSource: "Coming Soon: Open Source",
+      openSource: "Open source after 30 stable users",
       openSourceTooltip: "Personal maintenance is time-consuming, users can deploy and manage themselves after open source"
     },
     stats: {
