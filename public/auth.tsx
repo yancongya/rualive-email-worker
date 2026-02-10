@@ -177,13 +177,23 @@ const AuthPage = () => {
     loadTranslationsAsync();
   }, [lang]);
 
-  // 从URL参数读取mode，自动切换到注册模式
+  // 从URL hash读取mode，自动切换到注册模式
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    if (mode === 'register') {
-      setIsLogin(false);
-    }
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#register') {
+        setIsLogin(false);
+      } else {
+        setIsLogin(true);
+      }
+    };
+
+    // 初始化时检查 hash
+    handleHashChange();
+
+    // 监听 hash 变化
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const handleClick = useCallback((e: MouseEvent) => {
@@ -212,11 +222,15 @@ const AuthPage = () => {
 
   const toggleMode = () => {
     setError(null);
+    const newMode = !isLogin;
+
     if (window.gsap && formRef.current) {
       window.gsap.to(formRef.current,
         { opacity: 0, x: isLogin ? -20 : 20, duration: 0.3, ease: "power2.in",
           onComplete: () => {
-            setIsLogin(!isLogin);
+            // 更新 URL hash
+            window.location.hash = newMode ? '' : 'register';
+            setIsLogin(newMode);
             window.gsap.fromTo(formRef.current,
               { opacity: 0, x: isLogin ? 20 : -20 },
               { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }
@@ -225,7 +239,9 @@ const AuthPage = () => {
         }
       );
     } else {
-      setIsLogin(!isLogin);
+      // 更新 URL hash
+      window.location.hash = newMode ? '' : 'register';
+      setIsLogin(newMode);
     }
   };
 
