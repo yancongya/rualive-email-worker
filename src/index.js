@@ -317,6 +317,11 @@ export default {
       return handleDebugAdmin(request, env);
     }
 
+    // 公共 API - 用户统计（无需认证）
+    if (path === '/api/stats/users' && request.method === 'GET') {
+      return handleGetUserStats(request, env);
+    }
+
     // 管理员API
     if (path === '/api/admin/invite-codes' && request.method === 'GET') {
       return handleGetInviteCodes(request, env);
@@ -2843,6 +2848,32 @@ async function getAllUsers(env) {
   } catch (error) {
     console.error('Error in getAllUsers:', error);
     return [];
+  }
+}
+
+async function getUserCount(env) {
+  const DB = env.DB || env.rualive;
+  
+  if (!DB) {
+    console.error('Database not available in getUserCount');
+    return { count: 0 };
+  }
+  
+  try {
+    const result = await DB.prepare('SELECT COUNT(*) as count FROM users').first();
+    return { count: result?.count || 0 };
+  } catch (error) {
+    console.error('Error in getUserCount:', error);
+    return { count: 0 };
+  }
+}
+
+async function handleGetUserStats(request, env) {
+  try {
+    const stats = await getUserCount(env);
+    return Response.json({ success: true, ...stats });
+  } catch (error) {
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 

@@ -63,6 +63,13 @@ export const PAGE_ROUTES = {
 // 所有 API 路由都以 /api 开头
 
 export const API_ROUTES = {
+  // 公共 API - 统计（无需认证）
+  '/api/stats/users': {
+    method: 'GET',
+    handler: 'handleGetUserStats',
+    description: '获取用户数量统计'
+  },
+
   // 认证相关
   '/api/auth/register': {
     method: 'POST',

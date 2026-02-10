@@ -91,6 +91,13 @@ const TRANSLATIONS = {
       btnPrimary: "我还活着，去注册",
       btnSecondary: "登录确认呼吸"
     },
+    userCount: {
+      title: "已有",
+      count: "0",
+      unit: "位小伙伴加入打卡",
+      openSource: "即将开源",
+      openSourceTooltip: "个人维护时间精力不够，开源后可用户自行部署管理"
+    },
     stats: {
       title: "实时生存看板",
       subtitle: "正在实时监测全网动画师存活体征",
@@ -174,6 +181,13 @@ const TRANSLATIONS = {
       desc: "Hope you're still animating, but more importantly, you're alive.",
       btnPrimary: "I'm Alive, Register",
       btnSecondary: "Login to Confirm Pulse"
+    },
+    userCount: {
+      title: "Already",
+      count: "0",
+      unit: "buddies joined",
+      openSource: "Coming Soon: Open Source",
+      openSourceTooltip: "Personal maintenance is time-consuming, users can deploy and manage themselves after open source"
     },
     stats: {
       title: "VITAL DASHBOARD",
@@ -748,6 +762,7 @@ const App = () => {
   const [currentSection, setCurrentSection] = useState(0);
   const [shouldRedirectToStats, setShouldRedirectToStats] = useState(false);
   const [imageViewer, setImageViewer] = useState<{ isOpen: boolean; src: string; title: string }>({ isOpen: false, src: '', title: '' });
+  const [userCount, setUserCount] = useState(0);
   const currentSectionRef = useRef(0);
   const popupId = useRef(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -854,6 +869,25 @@ const App = () => {
       }, 500);
     }
   }, [goToSection]);
+
+  // 获取用户数量统计
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await fetch('/api/stats/users');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setUserCount(data.count || 0);
+          }
+        }
+      } catch (error) {
+        console.error('[App] Failed to fetch user count:', error);
+      }
+    };
+
+    fetchUserCount();
+  }, []);
 
   useEffect(() => {
     window.addEventListener('click', handleClick);
@@ -1105,6 +1139,26 @@ const moveSlideToIndex = useCallback((index: number) => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login?mode=register'); }}>{t('hero.btnPrimary')}</button>
                           <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login'); }}>{t('hero.btnSecondary')}</button>              </div>
+
+              {/* User Count Display */}
+              <div className="mt-8 group relative inline-block">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-help">
+                  <span className="text-white/60 text-sm font-bold">{t('userCount.title')}</span>
+                  <span className="text-primary text-lg font-black">{userCount}</span>
+                  <span className="text-white/60 text-sm font-bold">{t('userCount.unit')}</span>
+                  {userCount >= 30 && (
+                    <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">
+                      {t('userCount.openSource')}
+                    </span>
+                  )}
+                </div>
+                {/* Tooltip */}
+                {userCount >= 30 && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white/80 text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
+                    {t('userCount.openSourceTooltip')}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
