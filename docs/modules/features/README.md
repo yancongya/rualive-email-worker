@@ -163,7 +163,47 @@ project_daily_stats (
 - 徽章形式显示
 - 实时更新
 
-### 6. 数据统计和分析
+### 7. 用户统计
+**功能描述**:
+- 统计系统注册用户总数
+- 落地页实时显示用户数量
+- 展示社区规模
+
+**API 端点**:
+```
+GET /api/stats/users
+```
+
+**响应格式**:
+```json
+{
+  "success": true,
+  "count": 42
+}
+```
+
+**显示位置**:
+- 落地页 Hero 组件下方
+- 显示格式："已有 X 位小伙伴加入打卡"
+- 附带开源提示标签
+
+**前端实现**:
+```typescript
+// React Hook 示例
+function useUserCount() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/stats/users')
+      .then(res => res.json())
+      .then(data => setCount(data.count));
+  }, []);
+
+  return count;
+}
+```
+
+### 8. 数据统计和分析
 **文档**: [data-analytics.md](data-analytics.md)
 
 **功能描述**:
@@ -293,6 +333,6 @@ curl -X GET https://rualive-email-worker.cubetan57.workers.dev/api/projects/summ
 
 ---
 
-**文档版本**: 1.0
-**最后更新**: 2026-02-07
+**文档版本**: 1.1
+**最后更新**: 2026-02-10
 **作者**: iFlow CLI
