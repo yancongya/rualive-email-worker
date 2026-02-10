@@ -434,6 +434,18 @@ export default {
       return handleGetProjectHistory(request, env);
     }
 
+    // 修改项目运行时长 API
+    if (path.startsWith('/api/projects/') && path.includes('/daily-stats/') && request.method === 'PUT') {
+      console.log('[Router] 修改项目运行时长 API 被调用');
+      return handleUpdateProjectDailyStats(request, env);
+    }
+
+    // 删除项目 API
+    if (path.startsWith('/api/projects/') && request.method === 'DELETE') {
+      console.log('[Router] 删除项目 API 被调用');
+      return handleDeleteProject(request, env);
+    }
+
     // Cron触发器检测
     const userAgent = request.headers.get('User-Agent') || '';
     if (userAgent.includes('Cloudflare-Cron')) {
@@ -2828,6 +2840,121 @@ async function handleGetProjectHistory(request, env) {
     });
   } catch (error) {
     console.error('handleGetProjectHistory error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 修改项目运行时长
+async function handleUpdateProjectDailyStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 验证用户身份
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const projectId = pathParts[3]; // /api/projects/:projectId/daily-stats/:date
+    const workDate = pathParts[5];
+
+    if (!projectId || !workDate) {
+      return Response.json({ error: '缺少 projectId 或 date 参数' }, { status: 400 });
+    }
+
+    // 验证项目所有权
+    const project = await DB.prepare(
+      'SELECT id, project_id, user_id FROM projects WHERE user_id = ? AND project_id = ?'
+    ).bind(userId, projectId).first();
+
+    if (!project) {
+      return Response.json({ error: '项目不存在或无权访问' }, { status: 404 });
+    }
+
+    // 解析请求体
+    const body = await request.json();
+    const { work_hours } = body;
+
+    if (typeof work_hours !== 'number' || work_hours < 0) {
+      return Response.json({ error: '无效的 work_hours 值' }, { status: 400 });
+    }
+
+    // 更新或创建日统计记录
+    const accumulated_runtime = work_hours * 3600; // 转换为秒
+    const result = await DB.prepare(`
+      INSERT INTO project_daily_stats (project_id, work_date, work_hours, accumulated_runtime)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(project_id, work_date) DO UPDATE SET
+        work_hours = excluded.work_hours,
+        accumulated_runtime = excluded.accumulated_runtime
+    `).bind(project.id, workDate, work_hours, accumulated_runtime).run();
+
+    console.log('[handleUpdateProjectDailyStats] 更新成功:', {
+      projectId,
+      workDate,
+      work_hours,
+      accumulated_runtime
+    });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error('handleUpdateProjectDailyStats error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 删除项目
+async function handleDeleteProject(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 验证用户身份
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const projectId = pathParts[3]; // /api/projects/:projectId
+
+    if (!projectId) {
+      return Response.json({ error: '缺少 projectId 参数' }, { status: 400 });
+    }
+
+    // 验证项目所有权
+    const project = await DB.prepare(
+      'SELECT id, project_id, user_id FROM projects WHERE user_id = ? AND project_id = ?'
+    ).bind(userId, projectId).first();
+
+    if (!project) {
+      return Response.json({ error: '项目不存在或无权访问' }, { status: 404 });
+    }
+
+    // 删除项目（级联删除 project_daily_stats）
+    const projectDbId = project.id;
+    
+    // 先删除日统计
+    await DB.prepare('DELETE FROM project_daily_stats WHERE project_id = ?')
+      .bind(projectDbId).run();
+    
+    // 再删除项目
+    await DB.prepare('DELETE FROM projects WHERE id = ?')
+      .bind(projectDbId).run();
+
+    console.log('[handleDeleteProject] 删除成功:', {
+      projectId,
+      projectDbId,
+      userId
+    });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error('handleDeleteProject error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }

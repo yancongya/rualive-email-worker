@@ -732,6 +732,10 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
 
   // 用于检测移动端单击和桌面端双击
   const [clickTimeouts, setClickTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  
+  // 长按检测相关状态
+  const [longPressTimeouts, setLongPressTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  const [actionMenuProject, setActionMenuProject] = useState<string | null>(null);
 
   const handleCardClick = (e: React.MouseEvent | React.TouchEvent, projectId: string, projectName: string) => {
     // 移动端：单击直接打开历史
@@ -767,6 +771,69 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     }
   };
 
+  // 长按检测
+  const handleLongPressStart = (projectId: string) => {
+    const timeout = setTimeout(() => {
+      setActionMenuProject(projectId);
+    }, 800); // 800ms 长按触发
+    
+    const newTimeouts = new Map(longPressTimeouts);
+    newTimeouts.set(projectId, timeout);
+    setLongPressTimeouts(newTimeouts);
+  };
+
+  const handleLongPressEnd = (projectId: string) => {
+    const timeout = longPressTimeouts.get(projectId);
+    if (timeout) {
+      clearTimeout(timeout);
+      const newTimeouts = new Map(longPressTimeouts);
+      newTimeouts.delete(projectId);
+      setLongPressTimeouts(newTimeouts);
+    }
+  };
+
+  // 处理删除项目
+  const handleDeleteProject = async (projectId: string) => {
+    setActionMenuProject(null);
+    if (!window.confirm('确定要删除这个项目吗？此操作不可恢复。')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('rualive_token');
+      if (!token) {
+        alert('未授权，请重新登录');
+        return;
+      }
+
+      const response = await fetch(`${window.location.origin}/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert('项目已删除');
+        window.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`删除失败: ${result.error || '未知错误'}`);
+      }
+    } catch (error) {
+      alert('删除失败，请重试');
+    }
+  };
+
+  // 处理编辑项目（打开历史模态窗口）
+  const handleEditProject = (projectId: string, projectName: string) => {
+    setActionMenuProject(null);
+    if (onProjectClick) {
+      onProjectClick(projectId, projectName);
+    }
+  };
+
   return (
     <div className="w-full mb-4 md:mb-8">
       {/* 标题区域 */}
@@ -793,39 +860,77 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
         {projects.map((proj, idx) => {
           const isActive = idx === selectedIndex;
           const displayName = anonymizeMode ? anonymizeName(proj.name) : proj.name;
+          const showMenu = actionMenuProject === proj.projectId;
 
           return (
-            <button
-              key={proj.projectId}
-              onClick={(e) => {
-                onSelect(idx);
-                if (onProjectClick) handleCardClick(e, proj.projectId, proj.name);
-              }}
-              style={{
-                flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
-                minWidth: '120px' // 设置最小宽度，确保项目名、运行时间和编号都能正常显示
-              }}
-              className={`
-                relative h-full flex flex-col justify-between p-1.5 md:p-4 text-left transition-all duration-300 group
-                border border-ru-glassBorder backdrop-blur-sm overflow-hidden
-                ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
-              `}
-              title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'}` : undefined}
-            >
-              <div className="flex justify-between items-start w-full">
-                 <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
-                   {displayName}
-                 </span>
-                 {isActive && <div className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35] flex-shrink-0"></div>}
-              </div>
+            <div key={proj.projectId} className="relative">
+              <button
+                onClick={(e) => {
+                  onSelect(idx);
+                  if (onProjectClick) handleCardClick(e, proj.projectId, proj.name);
+                }}
+                onMouseDown={() => handleLongPressStart(proj.projectId)}
+                onMouseUp={() => handleLongPressEnd(proj.projectId)}
+                onMouseLeave={() => handleLongPressEnd(proj.projectId)}
+                onTouchStart={() => handleLongPressStart(proj.projectId)}
+                onTouchEnd={() => handleLongPressEnd(proj.projectId)}
+                onTouchMove={() => handleLongPressEnd(proj.projectId)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setActionMenuProject(proj.projectId);
+                }}
+                style={{
+                  flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
+                  minWidth: '120px'
+                }}
+                className={`
+                  relative h-full flex flex-col justify-between p-1.5 md:p-4 text-left transition-all duration-300 group
+                  border border-ru-glassBorder backdrop-blur-sm overflow-hidden
+                  ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
+                `}
+                title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'} (长按或右键显示操作菜单)` : undefined}
+              >
+                <div className="flex justify-between items-start w-full">
+                   <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
+                     {displayName}
+                   </span>
+                   {isActive && <div className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35] flex-shrink-0"></div>}
+                </div>
 
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
-                 <span className="text-[9px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
-                 <span className="text-[8px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden md:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
-              </div>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
+                   <span className="text-[9px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
+                   <span className="text-[8px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden md:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
+                </div>
 
-              <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
-            </button>
+                <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
+              </button>
+
+              {/* 操作菜单 */}
+              {showMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setActionMenuProject(null)}
+                  />
+                  <div className="absolute top-8 right-0 z-20 bg-[#1a1a2e] border border-ru-glassBorder rounded-lg shadow-xl min-w-[120px] overflow-hidden">
+                    <button 
+                      onClick={() => handleEditProject(proj.projectId, proj.name)}
+                      className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                    >
+                      <History size={14} />
+                      查看历史
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteProject(proj.projectId)}
+                      className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/20 flex items-center gap-2 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                      删除项目
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )
         })}
       </div>
@@ -2882,6 +2987,7 @@ const App = () => {
   const [historyData, setHistoryData] = useState<any[] | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [editingRuntime, setEditingRuntime] = useState<{ date: string; hours: number } | null>(null);
 
   // Handle fetch project history (for modal)
   const handleFetchProjectHistory = async (projectId: string, projectName: string) => {
@@ -2890,6 +2996,7 @@ const App = () => {
     setShowHistoryModal(true);
     setIsLoadingHistory(true);
     setHistoryData(null);
+    setEditingRuntime(null);
 
     try {
       const token = localStorage.getItem('rualive_token');
@@ -2935,6 +3042,41 @@ const App = () => {
     } finally {
       setIsLoadingHistory(false);
     }
+  };
+
+  // 保存运行时长
+  const handleSaveRuntime = async (date: string) => {
+    if (!editingRuntime || !historyProject) return;
+    
+    try {
+      const token = localStorage.getItem('rualive_token');
+      if (!token) {
+        alert('未授权，请重新登录');
+        return;
+      }
+
+      const response = await fetch(`${window.location.origin}/api/projects/${historyProject.id}/daily-stats/${date}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ work_hours: editingRuntime.hours })
+      });
+
+      if (response.ok) {
+        // 重新加载历史数据
+        await handleFetchProjectHistory(historyProject.id, historyProject.name);
+        alert('运行时长已更新');
+      } else {
+        const result = await response.json();
+        alert(`更新失败: ${result.error || '未知错误'}`);
+      }
+    } catch (error) {
+      alert('更新失败，请重试');
+    }
+    
+    setEditingRuntime(null);
   };
 
   // Load project history for gantt chart (without modal)
@@ -3394,7 +3536,29 @@ const App = () => {
                         {historyData.map((item: any, idx: number) => (
                           <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                             <td className="py-2 font-mono text-ru-textDim">{item.work_date}</td>
-                            <td className="py-2 text-right font-mono text-ru-primary">{formatRuntimeCompact(item.accumulated_runtime)}</td>
+                            <td className="py-2 text-right">
+                              {editingRuntime?.date === item.work_date ? (
+                                <input 
+                                  type="number"
+                                  value={editingRuntime.hours}
+                                  onChange={(e) => setEditingRuntime({ ...editingRuntime, hours: parseFloat(e.target.value) || 0 })}
+                                  step="0.1"
+                                  min="0"
+                                  className="w-20 text-right bg-white/10 border border-ru-primary rounded px-1 py-0.5 text-ru-primary font-mono text-xs"
+                                  autoFocus
+                                  onBlur={() => handleSaveRuntime(item.work_date)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRuntime(item.work_date); }}
+                                />
+                              ) : (
+                                <span 
+                                  onClick={() => setEditingRuntime({ date: item.work_date, hours: item.work_hours })}
+                                  className="font-mono text-ru-primary cursor-pointer hover:bg-white/5 px-1 rounded transition-colors"
+                                  title="点击编辑运行时长"
+                                >
+                                  {formatRuntimeCompact(item.accumulated_runtime)}
+                                </span>
+                              )}
+                            </td>
                             <td className="py-2 text-right font-mono">{item.composition_count}</td>
                             <td className="py-2 text-right font-mono">{item.layer_count}</td>
                             <td className="py-2 text-right font-mono">{item.keyframe_count}</td>
