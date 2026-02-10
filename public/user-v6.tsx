@@ -733,11 +733,16 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
   // 用于检测移动端单击和桌面端双击
   const [clickTimeouts, setClickTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
   
-  // 长按检测相关状态
-  const [longPressTimeouts, setLongPressTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
-  const [actionMenuProject, setActionMenuProject] = useState<string | null>(null);
+  // 删除确认模态窗口状态
+  const [deleteConfirmProject, setDeleteConfirmProject] = useState<{ id: string; name: string } | null>(null);
 
   const handleCardClick = (e: React.MouseEvent | React.TouchEvent, projectId: string, projectName: string) => {
+    // 移动端：单击直接打开历史
+    if ('ontouchstart' in window) {
+      if (onProjectClick) onProjectClick(projectId, projectName);
+      return;
+    }
+
     // 桌面端：双击打开历史
     const existingTimeout = clickTimeouts.get(projectId);
     
@@ -753,10 +758,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     } else {
       // 这是第一次点击，设置超时
       const timeout = setTimeout(() => {
-        // 超时后，这是单击（移动端打开历史，桌面端不操作）
-        if ('ontouchstart' in window) {
-          if (onProjectClick) onProjectClick(projectId, projectName);
-        }
+        // 超时后，这是单击（桌面端不操作）
         const newTimeouts = new Map(clickTimeouts);
         newTimeouts.delete(projectId);
         setClickTimeouts(newTimeouts);
@@ -768,40 +770,19 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     }
   };
 
-  // 长按检测
-  const handleLongPressStart = (projectId: string) => {
-    const timeout = setTimeout(() => {
-      setActionMenuProject(projectId);
-    }, 500); // 500ms 长按触发（缩短时间）
-    
-    const newTimeouts = new Map(longPressTimeouts);
-    newTimeouts.set(projectId, timeout);
-    setLongPressTimeouts(newTimeouts);
-  };
-
-  const handleLongPressEnd = (projectId: string, e: React.TouchEvent) => {
-    const timeout = longPressTimeouts.get(projectId);
-    if (timeout) {
-      clearTimeout(timeout);
-      const newTimeouts = new Map(longPressTimeouts);
-      newTimeouts.delete(projectId);
-      setLongPressTimeouts(newTimeouts);
-      
-      // 移动端：如果是快速松开，触发单击（打开历史）
-      if ('ontouchstart' in window && onProjectClick && !actionMenuProject) {
-        // 延迟一点执行，避免和长按冲突
-        setTimeout(() => {
-          if (!actionMenuProject) {
-            handleCardClick(e, projectId, '');
-          }
-        }, 50);
-      }
-    }
+  // 处理右键点击（弹出删除确认模态窗口）
+  const handleContextMenu = (e: React.MouseEvent, projectId: string, projectName: string) => {
+    e.preventDefault();
+    setDeleteConfirmProject({ id: projectId, name: projectName });
   };
 
   // 处理删除项目
-  const handleDeleteProject = async (projectId: string) => {
-    setActionMenuProject(null);
+  const handleDeleteProject = async () => {
+    if (!deleteConfirmProject) return;
+    
+    const { id: projectId } = deleteConfirmProject;
+    setDeleteConfirmProject(null);
+
     if (!window.confirm('确定要删除这个项目吗？此操作不可恢复。')) {
       return;
     }
@@ -833,12 +814,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     }
   };
 
-  // 处理编辑项目（打开历史模态窗口）
-  const handleEditProject = (projectId: string, projectName: string) => {
-    setActionMenuProject(null);
-    if (onProjectClick) {
-      onProjectClick(projectId, projectName);
-    }
+  // 处理移动端长按（显示删除确认）
+  const handleLongPress = (projectId: string, projectName: string) => {
+    setDeleteConfirmProject({ id: projectId, name: projectName });
   };
 
   return (
@@ -867,80 +845,71 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
         {projects.map((proj, idx) => {
           const isActive = idx === selectedIndex;
           const displayName = anonymizeMode ? anonymizeName(proj.name) : proj.name;
-          const showMenu = actionMenuProject === proj.projectId;
 
           return (
-            <div key={proj.projectId} className="relative">
-              <button
-                onClick={(e) => {
-                  onSelect(idx);
-                  if (onProjectClick) handleCardClick(e, proj.projectId, proj.name);
-                }}
-                onMouseDown={() => handleLongPressStart(proj.projectId)}
-                onMouseUp={() => handleLongPressEnd(proj.projectId)}
-                onMouseLeave={() => handleLongPressEnd(proj.projectId)}
-                onTouchStart={() => handleLongPressStart(proj.projectId)}
-                onTouchEnd={() => handleLongPressEnd(proj.projectId)}
-                onTouchMove={() => handleLongPressEnd(proj.projectId)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setActionMenuProject(proj.projectId);
-                }}
-                style={{
-                  flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
-                  minWidth: '120px'
-                }}
-                className={`
-                  relative h-full flex flex-col justify-between p-1.5 md:p-4 text-left transition-all duration-300 group
-                  border border-ru-glassBorder backdrop-blur-sm overflow-hidden
-                  ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
-                `}
-                title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'} (长按或右键显示操作菜单)` : undefined}
-              >
-                <div className="flex justify-between items-start w-full">
-                   <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
-                     {displayName}
-                   </span>
-                   {isActive && <div className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35] flex-shrink-0"></div>}
-                </div>
+            <button
+              key={proj.projectId}
+              onClick={(e) => {
+                onSelect(idx);
+                if (onProjectClick) handleCardClick(e, proj.projectId, proj.name);
+              }}
+              onContextMenu={(e) => handleContextMenu(e, proj.projectId, proj.name)}
+              style={{
+                flex: `${projectsTotalHours.get(proj.projectId) || 0} 1 0px`,
+                minWidth: '120px'
+              }}
+              className={`
+                relative h-full flex flex-col justify-between p-1.5 md:p-4 text-left transition-all duration-300 group
+                border border-ru-glassBorder backdrop-blur-sm overflow-hidden
+                ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
+              `}
+              title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'} (右键删除项目)` : undefined}
+            >
+              <div className="flex justify-between items-start w-full">
+                 <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
+                   {displayName}
+                 </span>
+                 {isActive && <div className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-ru-primary shadow-[0_0_10px_#FF6B35] flex-shrink-0"></div>}
+              </div>
 
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
-                   <span className="text-[9px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
-                   <span className="text-[8px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden md:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
-                </div>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end w-full mt-auto">
+                 <span className="text-[9px] md:text-xs font-mono text-ru-primary truncate block">{formatRuntimeCompact((projectsTotalHours.get(proj.projectId) || 0) * 3600)}</span>
+                 <span className="text-[8px] md:text-[10px] text-ru-textMuted uppercase tracking-wider hidden md:block truncate md:ml-2">{trans.id}: {proj.projectId}</span>
+              </div>
 
-                <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
-              </button>
-
-              {/* 操作菜单 */}
-              {showMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setActionMenuProject(null)}
-                  />
-                  <div className="absolute top-8 right-0 z-20 bg-[#1a1a2e] border border-ru-glassBorder rounded-lg shadow-xl min-w-[120px] overflow-hidden">
-                    <button 
-                      onClick={() => handleEditProject(proj.projectId, proj.name)}
-                      className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
-                    >
-                      <History size={14} />
-                      查看历史
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteProject(proj.projectId)}
-                      className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/20 flex items-center gap-2 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                      删除项目
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+              <div className={`absolute bottom-0 left-0 h-1 bg-ru-primary transition-all duration-300 ${isActive ? 'w-full opacity-100' : 'w-0 opacity-0 group-hover:w-full group-hover:opacity-50'}`} />
+            </button>
           )
         })}
       </div>
+
+      {/* 删除确认模态窗口 */}
+      {deleteConfirmProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setDeleteConfirmProject(null)} />
+          <div className="relative w-full max-w-md bg-[#0a0a0f] border border-red-500/30 rounded-lg shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-2">删除项目</h3>
+            <p className="text-ru-textMuted text-sm mb-4">
+              确定要删除项目 <span className="text-white font-mono">{deleteConfirmProject.name}</span> 吗？
+            </p>
+            <p className="text-red-400/80 text-xs mb-6">此操作不可恢复，将删除该项目及所有历史数据。</p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setDeleteConfirmProject(null)}
+                className="px-4 py-2 bg-white/10 border border-white/10 rounded text-white hover:bg-white/20 transition-colors text-sm"
+              >
+                取消
+              </button>
+              <button 
+                onClick={handleDeleteProject}
+                className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-colors text-sm"
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -3558,9 +3527,9 @@ const App = () => {
                                 />
                               ) : (
                                 <span 
-                                  onClick={() => setEditingRuntime({ date: item.work_date, hours: item.work_hours })}
+                                  onDoubleClick={() => setEditingRuntime({ date: item.work_date, hours: item.work_hours })}
                                   className="font-mono text-ru-primary cursor-pointer hover:bg-white/5 px-1 rounded transition-colors"
-                                  title="点击编辑运行时长"
+                                  title="双击编辑运行时长"
                                 >
                                   {formatRuntimeCompact(item.accumulated_runtime)}
                                 </span>
