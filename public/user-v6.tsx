@@ -14,7 +14,7 @@ import {
   Clock, FileType, CheckSquare, Calendar, AlignLeft, BarChart2, Table as TableIcon,
   Folder, Settings, Bell, ShieldAlert, Send, Save, User, Mail, Zap, Eye, EyeOff,
   PanelLeftClose, PanelLeftOpen, LayoutDashboard, BarChart2 as BarChartIcon2,
-  LogOut
+  LogOut, Trash2, History
 } from 'lucide-react';
 import { SettingsView } from './user-v6-settings';
 import { RuaLogo } from './LogoAnimation';
