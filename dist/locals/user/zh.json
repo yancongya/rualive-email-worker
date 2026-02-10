@@ -1,4 +1,5 @@
 {
+  "pageTitle": "RuAlive@烟囱鸭 - 你还在做动画嘛 - 用户页",
   "subtitle": "系统在线 // 监控中",
   "compositions": "合成数量",
   "totalLayers": "图层总数",
@@ -101,5 +102,5 @@
   "loading": "加载中...",
   "noHistory": "暂无历史数据",
   "loadHistory": "加载历史",
-  "_deployTime": "2026-02-10T13:09:51.411Z"
+  "_deployTime": "2026-02-10T13:13:42.910Z"
 }

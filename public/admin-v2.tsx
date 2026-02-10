@@ -1242,8 +1242,9 @@ function AdminDashboard() {
         setTranslations(data);
         setIsLangLoading(false);
         // 设置页面标题
-        if (data.app && data.app.title) {
-          document.title = data.app.title;
+        const titleElement = document.getElementById('page-title');
+        if (titleElement && data.app && data.app.title) {
+          titleElement.textContent = data.app.title;
         }
       })
       .catch(err => { console.error('Failed to load translations:', err); setIsLangLoading(false); });
