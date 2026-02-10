@@ -1140,7 +1140,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t('hero.subtitle')}</p>
               <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t('hero.desc')}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login?mode=register'); }}>{t('hero.btnPrimary')}</button>
+                <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login#register'); }}>{t('hero.btnPrimary')}</button>
                           <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login'); }}>{t('hero.btnSecondary')}</button>              </div>
 
               {/* User Count Display */}
@@ -1276,7 +1276,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               <div className="flex-grow flex flex-col justify-center items-center">
                 <h2 className="text-6xl sm:text-9xl md:text-[11rem] font-black text-white leading-none tracking-tighter uppercase mb-6 drop-shadow-lg">{t('cta.title')}<span className="text-black">?</span></h2>
                 <p className="text-black/70 text-base sm:text-3xl font-black mb-12 italic uppercase tracking-widest max-w-2xl mx-auto leading-tight">{t('cta.subtitle')}</p>
-                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { window.location.assign('/login?mode=register'); }}>{t('cta.btn')}</button>
+                <button className="bg-white text-black px-12 py-6 sm:px-20 sm:py-8 rounded-3xl font-black text-xl sm:text-4xl italic shadow-2xl hover:scale-105 active:scale-95 transition-all animate-pulse" onClick={() => { window.location.assign('/login#register'); }}>{t('cta.btn')}</button>
               </div>
               <div className="pb-10 border-t border-black/10 pt-8 flex flex-col gap-6 text-[9px] sm:text-[13px] font-black text-black/50 uppercase tracking-[0.1em] italic shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
