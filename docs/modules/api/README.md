@@ -33,7 +33,16 @@ API 模块负责定义和说明 RuAlive Email Worker 的所有 RESTful API 接�
 | `/api/config` | GET | 获取用户配置 | 是 |
 | `/api/config` | POST | 更新用户配置 | 是 |
 
-### 3. 工作数据 API
+### 3. 统计 API
+**路径前缀**: `/api/stats`
+
+**文档**: [stats-api.md](stats-api.md)
+
+| 端点 | 方法 | 功能 | 认证 |
+|------|------|------|------|
+| `/api/stats/users` | GET | 获取用户统计数量 | 否 |
+
+### 4. 工作数据 API
 **路径前缀**: `/api`
 
 **文档**: [work-data-api.md](work-data-api.md)
@@ -45,7 +54,7 @@ API 模块负责定义和说明 RuAlive Email Worker 的所有 RESTful API 接�
 | `/api/ae-status` | GET | 获取 AE 状态 | 是 |
 | `/api/ae-status` | POST | 更新 AE 状态 | 是 |
 
-### 4. 管理 API
+### 5. 管理 API
 **路径前缀**: `/api/admin`
 
 **文档**: [admin-api.md](admin-api.md)
@@ -67,7 +76,7 @@ API 模块负责定义和说明 RuAlive Email Worker 的所有 RESTful API 接�
 | `/api/admin/api-key` | DELETE | 删除 API 密钥 | 是（admin） |
 | `/api/admin/api-key/test` | POST | 测试 API 密钥 | 是（admin） |
 
-### 5. 项目 API
+### 6. 项目 API
 **路径前缀**: `/api/projects`
 
 **文档**: [project-api.md](project-api.md)
@@ -77,7 +86,7 @@ API 模块负责定义和说明 RuAlive Email Worker 的所有 RESTful API 接�
 | `/api/projects/summary` | GET | 获取项目总时长列表 | 是 |
 | `/api/projects/history` | GET | 获取项目历史 | 是 |
 
-### 6. 日志 API
+### 7. 日志 API
 **路径前缀**: `/api`
 
 **文档**: [logs-api.md](logs-api.md)
@@ -238,6 +247,6 @@ curl -X POST https://rualive-email-worker.cubetan57.workers.dev/api/work-data \
 
 ---
 
-**文档版本**: 1.0
-**最后更新**: 2026-02-07
+**文档版本**: 1.1
+**最后更新**: 2026-02-10
 **作者**: iFlow CLI

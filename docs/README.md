@@ -46,6 +46,7 @@
 - **[API 模块总览](modules/api/README.md)** - API 模块索引
   - **[认证 API](modules/api/auth-api.md)** - 用户认证和授权 API（注册、登录、登出、修改密码）
   - **[配置 API](modules/api/config-api.md)** - 用户配置 API（获取和更新配置）
+  - **[统计 API](modules/api/stats-api.md)** - 统计数据 API（用户统计、项目统计）
   - **[工作数据 API](modules/api/work-data-api.md)** - 工作数据上传和管理 API
   - **[项目 API](modules/api/project-api.md)** - 项目数据 API（项目总时长、项目历史）
   - **[日志 API](modules/api/logs-api.md)** - 日志查询 API（发送日志、工作日志）
@@ -192,6 +193,11 @@
 ---
 
 ## 📝 文档更新日志
+
+### 2026-02-10
+- ✅ 新增用户统计 API (`/api/stats/users`)
+- ✅ 落地页添加用户数量显示功能
+- ✅ 更新路由管理文档，添加统计相关 API 端点
 
 ### 2026-02-07
 - ✅ 完成完整的文档系统重构

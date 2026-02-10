@@ -90,6 +90,12 @@
 | `/api/config` | GET | `handleGetConfig` | 获取用户配置 |
 | `/api/config` | POST | `handleUpdateConfig` | 更新用户配置 |
 
+### 统计相关
+
+| 路由 | 方法 | 处理函数 | 说明 |
+|------|------|----------|------|
+| `/api/stats/users` | GET | `handleGetUserStats` | 获取用户统计数量 |
+
 ### 工作数据相关
 
 | 路由 | 方法 | 处理函数 | 说明 |
