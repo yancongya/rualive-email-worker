@@ -90,6 +90,19 @@ export default defineConfig({
   plugins: [
     react(),
     {
+      name: 'copy-favicon',
+      generateBundle() {
+        const { copyFileSync, existsSync } = require('fs');
+        const faviconSrc = path.resolve(__dirname, 'public/favicon.svg');
+        const faviconDest = path.resolve(__dirname, 'dist/favicon.svg');
+
+        if (existsSync(faviconSrc)) {
+          copyFileSync(faviconSrc, faviconDest);
+          console.log('[copy-favicon] Copied favicon.svg to dist/');
+        }
+      }
+    },
+    {
       name: 'copy-locals',
       generateBundle() {
         const { copyFileSync, existsSync, mkdirSync, readdirSync } = require('fs');
