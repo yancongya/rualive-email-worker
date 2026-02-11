@@ -446,6 +446,46 @@ Select-String -Path "public\*.html" -Pattern "modulepreload"
 - Hero 打字机动画使用 `hero.subtitlePrefix` 和 `hero.subtitleTypewriter`
 - 技术架构页面使用 `techstack.*` 键（title、cep、worker、dataflow）
 
+### 移动端适配
+
+落地页已针对移动设备进行全面优化，确保在手机、平板等小屏幕上提供良好的用户体验。
+
+**已优化的页面和组件**：
+
+1. **实时生存看板（Stats 页面）**
+   - 添加顶部内边距 `pt-16` 避免被导航栏遮挡
+   - 调整标题和副标题字体大小
+   - 卡片响应式布局（p-2 → p-4 → p-10）
+   - 数字字体自适应（text-2xl → text-3xl → text-6xl）
+
+2. **用户计数组件**
+   - 最大宽度限制 `max-w-[calc(100vw-3rem)]` 防止溢出
+   - 三层响应式字体大小（text-[9px] → text-[10px] → text-xs）
+   - 添加 `shrink-0` 防止元素被压缩
+   - 所有间距自适应缩小
+
+3. **技术架构页面（Tech Stack）**
+   - 小屏幕隐藏数据流向动画（`hidden md:block`）
+   - CEP 和 Worker 面板并排布局
+   - 响应式字体大小和间距
+
+4. **界面展示页面（Showcase）**
+   - 方向检测：区分垂直滚动和水平拖拽
+   - 垂直滚动优先：允许上下切换页面
+   - 水平拖拽：允许左右切换展示图片
+   - 最小移动距离：15px 减少误触发
+
+**响应式断点**：
+- `sm:` (640px) - 小屏幕/平板
+- `md:` (768px) - 中等屏幕
+- `lg:` (1024px) - 大屏幕
+
+**常见移动端问题修复**：
+- **导航栏遮挡**：使用 `pt-16` 为受影响页面添加顶部内边距
+- **内容溢出**：使用 `max-w-[calc(100vw-3rem)]` 限制最大宽度
+- **文字换行**：使用 `whitespace-nowrap` 和 `shrink-0` 保持单行显示
+- **触摸冲突**：GSAP Draggable 方向检测，垂直滚动优先
+
 ---
 
 ## 故障排查

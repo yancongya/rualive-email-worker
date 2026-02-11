@@ -1115,8 +1115,26 @@ const moveSlideToIndex = useCallback((index: number) => {
         if (metrics) {
             const draggableInstance = window.Draggable.create(slider, {
                 type: "x", edgeResistance: 0.85, bounds: { minX: -(metrics.step * (metrics.count - 1)) + metrics.centerOffset, maxX: metrics.centerOffset }, inertia: true,
-                onDragStart: () => obs.disable(),
+                dragClickables: false,
+                minimumMovement: 15,
+                onPressInit: function(this: any) {
+                    this.startX = this.pointerX;
+                    this.startY = this.pointerY;
+                },
+                onDragStart: function(this: any) {
+                    const deltaX = Math.abs(this.pointerX - this.startX);
+                    const deltaY = Math.abs(this.pointerY - this.startY);
+                    
+                    // 垂直滚动优先，禁用 Draggable
+                    if (deltaY > deltaX) {
+                        this.enabled(false);
+                        return;
+                    }
+                    
+                    obs.disable();
+                },
                 onDragEnd: function(this: any) {
+                    this.enabled(true);
                     obs.enable();
                     const index = Math.round((this.x - metrics.centerOffset) / -metrics.step);
                     const clampedIndex = Math.max(0, Math.min(metrics.count - 1, index));
@@ -1276,17 +1294,17 @@ const moveSlideToIndex = useCallback((index: number) => {
                           <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-black text-base italic hover:bg-white/10 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login'); }}>{t('hero.btnSecondary')}</button>              </div>
 
               {/* User Count Display */}
-              <div className="mt-8 group relative inline-block">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-help">
-                  <span className="text-white/60 text-sm font-bold">{t('userCount.title')}</span>
-                  <span className="text-primary text-lg font-black">{userCount}</span>
-                  <span className="text-white/60 text-sm font-bold">{t('userCount.unit')}</span>
-                  <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">
+              <div className="mt-8 group relative inline-block max-w-[calc(100vw-3rem)] sm:max-w-none">
+                <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2 sm:px-2.5 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-help text-nowrap">
+                  <span className="text-white/60 text-[9px] sm:text-[10px] md:text-xs font-bold shrink-0">{t('userCount.title')}</span>
+                  <span className="text-primary text-xs sm:text-sm md:text-lg font-black shrink-0">{userCount}</span>
+                  <span className="text-white/60 text-[9px] sm:text-[10px] md:text-sm font-bold shrink-0">{t('userCount.unit')}</span>
+                  <span className="ml-0.5 sm:ml-1 md:ml-2 px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[7px] sm:text-[8px] md:text-[10px] font-black uppercase tracking-wider whitespace-nowrap shrink-0">
                     {t('userCount.openSource')}
                   </span>
                 </div>
                 {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white/80 text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white/80 text-[9px] sm:text-[10px] font-bold leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
                   {t('userCount.openSourceTooltip')}
                 </div>
               </div>
@@ -1294,18 +1312,18 @@ const moveSlideToIndex = useCallback((index: number) => {
           </section>
 
           {/* SECTION 1: STATS */}
-          <section className="h-screen flex flex-col items-center justify-center bg-transparent px-6 shrink-0">
-            <div className="container mx-auto max-w-5xl text-center mb-8 sm:mb-16">
-              <h2 className="text-4xl sm:text-7xl font-black italic uppercase mb-2 tracking-tighter leading-tight">{t('stats.title')}</h2>
-              <p className="text-white/40 text-[10px] sm:text-lg font-bold italic uppercase tracking-widest">{t('stats.subtitle')}</p>
+          <section className="h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-16 sm:pt-0 shrink-0 bg-transparent">
+            <div className="container mx-auto max-w-5xl text-center mb-4 sm:mb-8 md:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-7xl font-black italic uppercase mb-1 sm:mb-2 tracking-tighter leading-tight">{t('stats.title')}</h2>
+              <p className="text-white/40 text-[9px] sm:text-[10px] md:text-lg font-bold italic uppercase tracking-widest">{t('stats.subtitle')}</p>
             </div>
-            <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-8">
+            <div className="container mx-auto px-2 sm:px-4 grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-8">
               {getArray('stats.items').map((s: any, i: number) => (
-                <div key={i} className={`text-center group p-4 sm:p-10 glass-card rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[160px] sm:min-h-[260px] ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
-                  <div className="text-3xl sm:text-5xl md:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-3 py-4 overflow-visible h-auto flex items-center justify-center">
+                <div key={i} className={`text-center group p-2 sm:p-4 md:p-10 glass-card rounded-2xl sm:rounded-3xl hover:border-primary/40 transition-all transform hover:-translate-y-1 relative flex flex-col justify-center min-h-[120px] sm:min-h-[160px] md:min-h-[260px] ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
+                  <div className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black italic group-hover:text-primary transition-colors tracking-tighter leading-none mb-2 sm:mb-3 py-2 sm:py-4 overflow-visible h-auto flex items-center justify-center">
                     <span className="block">{s.value}</span>
                   </div>
-                  <div className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest text-white/30 italic leading-tight">{s.label} <span className="text-primary/60">{s.unit}</span></div>
+                  <div className="text-[6px] sm:text-[7px] md:text-[10px] font-black uppercase tracking-widest text-white/30 italic leading-tight">{s.label} <span className="text-primary/60">{s.unit}</span></div>
                 </div>
               ))}
             </div>
