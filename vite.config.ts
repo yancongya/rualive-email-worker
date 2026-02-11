@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
+    copyPublicDir: true,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'public/index.html'),
@@ -20,8 +21,7 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js'
       }
     },
-    assetsDir: 'assets',
-    copyPublicDir: false
+    assetsDir: 'assets'
   },
   server: {
     port: 3737,
@@ -50,6 +50,7 @@ export default defineConfig({
         }
       }
     },
+    
     {
       name: 'copy-locals',
       generateBundle() {
