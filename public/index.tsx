@@ -9,6 +9,7 @@ declare global {
     gsap: any;
     Observer: any;
     Draggable: any;
+    MotionPathPlugin: any;
   }
 }
 
@@ -78,15 +79,19 @@ const TRANSLATIONS = {
           stats: "生存看板", 
           features: "动画搭子", 
           pain: "加班共鸣",
-          faq: "疑难杂症", 
+          faq: "疑难杂症",
+          techstack: "技术架构",
           showcase: "界面展示", 
           start: "立即开始"
         },
         pageTitle: "RuAlive@烟囱鸭 - 你还在做动画嘛",
-        hero: {      tag: "专为 AE 动画师打造",
+        hero: {
+      tag: "专为 AE 动画师打造",
       title: "Ru",
       titleAlive: "Alive",
       subtitle: "你还Alive吗？",
+      subtitlePrefix: "你还",
+      subtitleTypewriter: "Alive吗？",
       desc: "希望你还在做着动画，但更重要的是活着。",
       btnPrimary: "我还活着，去注册",
       btnSecondary: "登录确认呼吸"
@@ -142,6 +147,38 @@ const TRANSLATIONS = {
         { q: "支持什么版本？", a: "能跑就行，放过旧版。" }
       ]
     },
+    techstack: {
+      title: "技术",
+      titleAccent: "架构",
+      desc: "CEP 扩展与 Cloudflare Worker 的完整技术栈",
+      cep: {
+        title: "CEP 扩展",
+        subtitle: "Adobe After Effects 前端扩展",
+        tech: [
+          { name: "HTML5", desc: "纯原生 HTML/CSS/JavaScript" },
+          { name: "ExtendScript", desc: "Adobe After Effects API 脚本" },
+          { name: "CSInterface", desc: "CEP 通信桥接库" },
+          { name: "CSXS Manifest", desc: "扩展配置与权限管理" }
+        ]
+      },
+      worker: {
+        title: "Email Worker",
+        subtitle: "Cloudflare Workers 后端服务",
+        tech: [
+          { name: "Node.js", desc: "Cloudflare Workers 运行时环境" },
+          { name: "React 19", desc: "现代前端组件库" },
+          { name: "Vite 5", desc: "极速构建工具" },
+          { name: "Cloudflare D1", desc: "SQLite 数据库" }
+        ]
+      },
+      dataflow: {
+        title: "数据流向",
+        step1: "AE 扫描",
+        step2: "本地存储",
+        step3: "云端上传",
+        step4: "邮件通知"
+      }
+    },
     showcase: {
         title: "界面",
         titleAccent: "展示",
@@ -169,7 +206,8 @@ const TRANSLATIONS = {
       stats: "Dashboard", 
       features: "Buddy", 
       pain: "Pain",
-      faq: "FAQ", 
+      faq: "FAQ",
+      techstack: "Tech Stack",
       showcase: "Showcase", 
       start: "Start" 
     },
@@ -179,6 +217,8 @@ const TRANSLATIONS = {
       title: "Ru",
       titleAlive: "Alive",
       subtitle: "Are you still Alive?",
+      subtitlePrefix: "Are you still ",
+      subtitleTypewriter: "Alive?",
       desc: "Hope you're still animating, but more importantly, you're alive.",
       btnPrimary: "I'm Alive, Register",
       btnSecondary: "Login to Confirm Pulse"
@@ -233,6 +273,38 @@ const TRANSLATIONS = {
         { q: "Why keep asking?", a: "3 hrs no move: ascended?" },
         { q: "AE Version?", a: "If it runs, it works." }
       ]
+    },
+    techstack: {
+      title: "Tech",
+      titleAccent: "Stack",
+      desc: "Complete architecture of CEP Extension and Cloudflare Worker",
+      cep: {
+        title: "CEP Extension",
+        subtitle: "Adobe After Effects Frontend Extension",
+        tech: [
+          { name: "HTML5", desc: "Pure native HTML/CSS/JavaScript" },
+          { name: "ExtendScript", desc: "Adobe After Effects API scripting" },
+          { name: "CSInterface", desc: "CEP communication bridge library" },
+          { name: "CSXS Manifest", desc: "Extension config and permission management" }
+        ]
+      },
+      worker: {
+        title: "Email Worker",
+        subtitle: "Cloudflare Workers Backend Service",
+        tech: [
+          { name: "Node.js", desc: "Cloudflare Workers runtime environment" },
+          { name: "React 19", desc: "Modern frontend component library" },
+          { name: "Vite 5", desc: "Ultra-fast build tool" },
+          { name: "Cloudflare D1", desc: "SQLite database" }
+        ]
+      },
+      dataflow: {
+        title: "Data Flow",
+        step1: "AE Scan",
+        step2: "Local Storage",
+        step3: "Cloud Upload",
+        step4: "Email Notify"
+      }
     },
     showcase: {
         title: "UI",
@@ -420,6 +492,49 @@ const IconComponent = ({ type }: { type: string }) => {
   }
 };
 
+// --- TYPEWRITER COMPONENT ---
+
+const TypewriterText = ({ text, className = "" }: { text: string, className?: string }) => {
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (textRef.current && window.gsap) {
+      textRef.current.textContent = "";
+
+      const tl = window.gsap.timeline({ repeat: -1, repeatDelay: 0.5 });
+
+      // 进场动画：逐字显示
+      tl.to({}, {
+        duration: text.length * 0.08,
+        onUpdate: function() {
+          const progress = this.progress();
+          const charIndex = Math.floor(progress * text.length);
+          textRef.current!.textContent = text.slice(0, charIndex + 1);
+        },
+        ease: "none"
+      })
+      // 第一次闪烁（0.35秒）
+      .to(textRef.current, {
+        opacity: 0,
+        duration: 0.35,
+        repeat: 1,
+        yoyo: true
+      })
+      // 等待 0.5 秒
+      .to({}, { duration: 0.5 })
+      // 第二次闪烁（0.35秒）
+      .to(textRef.current, {
+        opacity: 0,
+        duration: 0.35,
+        repeat: 1,
+        yoyo: true
+      });
+    }
+  }, [text]);
+
+  return <span ref={textRef} className={className} />;
+};
+
 // --- DYNAMIC BACKGROUND LINE ---
 
 const BackgroundLine = ({ currentSection, view }: { currentSection: number, view: string }) => {
@@ -437,9 +552,11 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
     "M 100,700 C 100,700 400,600 400,400 C 400,200 600,100 700,100",
     // 4: FAQ - Question Mark (放大版)
     "M 300,150 C 300,50 500,50 500,150 C 500,250 400,250 400,350 C 400,450 400,500 400,550 C 400,600 380,650 380,700 C 380,750 420,750 420,700",
-    // 5: Showcase - Circle
+    // 5: TechStack - Network Connection
+    "M 150,400 C 200,300 300,350 400,300 L 400,500 C 500,500 600,300 650,400",
+    // 6: Showcase - Circle
     "M 400,200 C 500,200 600,300 600,400 C 600,500 500,600 400,600 C 300,600 200,500 200,400 C 200,300 300,200 400,200",
-    // 6: CTA - Spiral Vortex
+    // 7: CTA - Spiral Vortex
     "M 400,400 C 450,350 350,300 300,400 C 250,500 450,550 550,400 C 600,300 300,200 250,400"
   ];
 
@@ -451,6 +568,7 @@ const BackgroundLine = ({ currentSection, view }: { currentSection: number, view
     { x: '5vw', y: '-5vh', scale: 1.6, rotate: 0, opacity: 0.25 },   // Buddy
     { x: '-10vw', y: '10vh', scale: 1.8, rotate: 10, opacity: 0.25 },// Pain
     { x: '10vw', y: '0vh', scale: 0.9, rotate: 0, opacity: 0.25 },   // FAQ
+    { x: '0vw', y: '0vh', scale: 1.2, rotate: 0, opacity: 0.35 },    // TechStack
     { x: '0vw', y: '0vh', scale: 0.8, rotate: 90, opacity: 0.55 },   // Showcase
     { x: '-2vw', y: '5vh', scale: 2.5, rotate: 180, opacity: 0.25 }  // CTA
   ];
@@ -770,7 +888,7 @@ const App = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isAnimating = useRef(false);
   const isSliderAnimating = useRef(false);
-  const sectionCount = 7;
+  const sectionCount = 8;
 
   const sliderDraggable = useRef<any>(null);
   const sectionObserver = useRef<any>(null);
@@ -931,7 +1049,7 @@ const moveSlideToIndex = useCallback((index: number) => {
 
   useEffect(() => {
     if (!window.gsap || !window.Observer || !window.Draggable) return;
-    try { window.gsap.registerPlugin(window.Observer, window.Draggable); } catch (e) {}
+    try { window.gsap.registerPlugin(window.Observer, window.Draggable, window.MotionPathPlugin); } catch (e) {}
 
     const obs = window.Observer.create({
       target: window, type: "wheel,touch,pointer", wheelSpeed: -1,
@@ -939,7 +1057,7 @@ const moveSlideToIndex = useCallback((index: number) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
           // 检查是否在 showcase 页面且鼠标在图片区域
-          const isShowcaseSection = currentSectionRef.current === 5;
+          const isShowcaseSection = currentSectionRef.current === 6;
           const target = self.event.target as HTMLElement;
           const isOnSlide = target.closest('.showcase-slide');
           const isHeader = target.closest('#showcase-header');
@@ -963,7 +1081,7 @@ const moveSlideToIndex = useCallback((index: number) => {
         if (isAnimating.current || isSliderAnimating.current || view === 'auth') return;
         if (!mobileMenuOpen) {
           // 检查是否在 showcase 页面且鼠标在图片区域
-          const isShowcaseSection = currentSectionRef.current === 5;
+          const isShowcaseSection = currentSectionRef.current === 6;
           const target = self.event.target as HTMLElement;
           const isOnSlide = target.closest('.showcase-slide');
           const isHeader = target.closest('#showcase-header');
@@ -1107,7 +1225,8 @@ const moveSlideToIndex = useCallback((index: number) => {
                           <button onClick={() => goToSection(2)} className={`hover:text-primary transition-colors ${currentSection === 2 ? 'text-primary opacity-100' : ''}`}>{t('nav.features')}</button>
                           <button onClick={() => goToSection(3)} className={`hover:text-primary transition-colors ${currentSection === 3 ? 'text-primary opacity-100' : ''}`}>{t('nav.pain')}</button>
                           <button onClick={() => goToSection(4)} className={`hover:text-primary transition-colors ${currentSection === 4 ? 'text-primary opacity-100' : ''}`}>{t('nav.faq')}</button>
-                          <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t('nav.showcase')}</button>              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
+                          <button onClick={() => goToSection(5)} className={`hover:text-primary transition-colors ${currentSection === 5 ? 'text-primary opacity-100' : ''}`}>{t('nav.techstack')}</button>
+                          <button onClick={() => goToSection(6)} className={`hover:text-primary transition-colors ${currentSection === 6 ? 'text-primary opacity-100' : ''}`}>{t('nav.showcase')}</button>              <button onClick={() => setLang(l => l === 'zh' ? 'en' : 'zh')} className="hover:bg-white/10 transition-colors border border-white/10 px-2 py-0.5 rounded text-[9px] uppercase font-bold">{lang === 'zh' ? 'EN' : 'ZH'}</button>
             </div>
           ) : view === 'user' ? (
             <button onClick={() => window.location.assign('/')} className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all">返回首页 BACK TO HOME</button>
@@ -1127,7 +1246,8 @@ const moveSlideToIndex = useCallback((index: number) => {
                 <button onClick={() => { setMobileMenuOpen(false); goToSection(2); }} className="text-left text-2xl font-black italic">{t('nav.features')}</button>
                 <button onClick={() => { setMobileMenuOpen(false); goToSection(3); }} className="text-left text-2xl font-black italic">{t('nav.pain')}</button>
                 <button onClick={() => { setMobileMenuOpen(false); goToSection(4); }} className="text-left text-2xl font-black italic">{t('nav.faq')}</button>
-                <button onClick={() => { setMobileMenuOpen(false); goToSection(5); }} className="text-left text-2xl font-black italic">{t('nav.showcase')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(5); }} className="text-left text-2xl font-black italic">{t('nav.techstack')}</button>
+                <button onClick={() => { setMobileMenuOpen(false); goToSection(6); }} className="text-left text-2xl font-black italic">{t('nav.showcase')}</button>
               </>
             ) : (
               <button onClick={() => { setMobileMenuOpen(false); switchView('landing'); }} className="text-left text-2xl font-black italic">返回首页 HOME</button>
@@ -1146,7 +1266,10 @@ const moveSlideToIndex = useCallback((index: number) => {
               <h1 className="text-5xl sm:text-8xl md:text-[9rem] font-black leading-none tracking-tighter mb-4 italic uppercase whitespace-nowrap overflow-visible">
                 {t('hero.title')}<span className="text-primary inline-block animate-breathing">{t('hero.titleAlive')}</span><span className="text-primary">?</span>
               </h1>
-              <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">{t('hero.subtitle')}</p>
+              <p className="text-lg sm:text-3xl text-white mb-2 font-black italic uppercase leading-none">
+                {t('hero.subtitlePrefix')}
+                <TypewriterText text={t('hero.subtitleTypewriter')} className="text-primary" />
+              </p>
               <p className="text-sm sm:text-xl text-white/40 mb-10 leading-relaxed font-bold italic max-w-lg mx-auto">{t('hero.desc')}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-black text-base italic shadow-2xl hover:brightness-110 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); window.location.assign('/login#register'); }}>{t('hero.btnPrimary')}</button>
@@ -1243,7 +1366,210 @@ const moveSlideToIndex = useCallback((index: number) => {
             </div>
           </section>
 
-          {/* SECTION 5: SHOWCASE */}
+          {/* SECTION 5: TECH STACK */}
+          <section id="techstack" className="h-screen flex flex-col items-center justify-center px-4 shrink-0 bg-transparent overflow-hidden relative">
+            {/* Animated background particles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+              {[...Array(12)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="absolute w-1 h-1 bg-primary rounded-full animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${2 + Math.random() * 2}s`
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="container mx-auto max-w-6xl h-full flex flex-col pt-12 sm:pt-16 pb-2 sm:pb-4 relative z-10">
+              <div className="text-center mb-2 sm:mb-3 shrink-0">
+                <h2 className="text-2xl sm:text-3xl md:text-6xl font-black italic uppercase tracking-tighter mb-0.5 sm:mb-1">
+                  {t('techstack.title')}<span className="text-primary">{t('techstack.titleAccent')}</span>
+                </h2>
+                <p className="text-white/40 text-[9px] sm:text-xs md:text-sm font-bold italic">{t('techstack.desc')}</p>
+              </div>
+              
+              <div className="flex-grow flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 min-h-0">
+                {/* CEP Extension */}
+                <div className="flex-1 glass-card rounded-2xl p-3 sm:p-4 md:p-6 overflow-hidden flex flex-col min-h-0 hover:border-primary/30 transition-all duration-500 group">
+                  <div className="mb-2 sm:mb-3 shrink-0 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs sm:text-sm md:text-xl font-black italic uppercase mb-0.5 sm:mb-1 text-primary group-hover:scale-105 transition-transform">{t('techstack.cep.title')}</h3>
+                      <p className="text-white/30 text-[8px] sm:text-[9px] md:text-xs font-medium italic">{t('techstack.cep.subtitle')}</p>
+                    </div>
+                    {/* Animated icon */}
+                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-primary/60 group-hover:text-primary group-hover:rotate-12 transition-all duration-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <path d="M9 9h6M9 12h6M9 15h6" />
+                    </svg>
+                  </div>
+                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-1.5 sm:space-y-2 md:space-y-3 min-h-0">
+                    {[0, 1, 2, 3].map((i: number) => (
+                      <div 
+                        key={i} 
+                        className="tech-card flex items-start gap-1.5 sm:gap-2 md:gap-3 p-1.5 sm:p-2 md:p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.08] transition-all border border-white/5 hover:border-primary/50 shrink-0 cursor-pointer group/item"
+                        onMouseEnter={(e) => {
+                          if (window.gsap) {
+                            window.gsap.to(e.currentTarget, { x: 4, duration: 0.3 });
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (window.gsap) {
+                            window.gsap.to(e.currentTarget, { x: 0, duration: 0.3 });
+                          }
+                        }}
+                      >
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-primary/40 transition-colors">
+                          <span className="text-primary font-black text-[10px] sm:text-xs group-hover/item:scale-110 transition-transform">{i + 1}</span>
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <h4 className="text-[10px] sm:text-[11px] md:text-sm font-black uppercase tracking-tight mb-0.5 truncate group-hover/item:text-primary transition-colors">{t(`techstack.cep.tech.${i}.name`)}</h4>
+                          <p className="text-[7px] sm:text-[8px] md:text-[11px] font-medium italic text-white/40 line-clamp-2 group-hover/item:text-white/60 transition-colors">{t(`techstack.cep.tech.${i}.desc`)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Email Worker */}
+                <div className="flex-1 glass-card rounded-2xl p-3 sm:p-4 md:p-6 overflow-hidden flex flex-col min-h-0 hover:border-primary/30 transition-all duration-500 group">
+                  <div className="mb-2 sm:mb-3 shrink-0 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs sm:text-sm md:text-xl font-black italic uppercase mb-0.5 sm:mb-1 text-primary group-hover:scale-105 transition-transform">{t('techstack.worker.title')}</h3>
+                      <p className="text-white/30 text-[8px] sm:text-[9px] md:text-xs font-medium italic">{t('techstack.worker.subtitle')}</p>
+                    </div>
+                    {/* Animated icon */}
+                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-primary/60 group-hover:text-primary group-hover:rotate-12 transition-all duration-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                  </div>
+                  <div className="flex-grow overflow-y-auto no-scrollbar space-y-1.5 sm:space-y-2 md:space-y-3 min-h-0">
+                    {[0, 1, 2, 3].map((i: number) => (
+                      <div 
+                        key={i} 
+                        className="tech-card flex items-start gap-1.5 sm:gap-2 md:gap-3 p-1.5 sm:p-2 md:p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.08] transition-all border border-white/5 hover:border-primary/50 shrink-0 cursor-pointer group/item"
+                        onMouseEnter={(e) => {
+                          if (window.gsap) {
+                            window.gsap.to(e.currentTarget, { x: 4, duration: 0.3 });
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (window.gsap) {
+                            window.gsap.to(e.currentTarget, { x: 0, duration: 0.3 });
+                          }
+                        }}
+                      >
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover/item:bg-primary/40 transition-colors">
+                          <span className="text-primary font-black text-[10px] sm:text-xs group-hover/item:scale-110 transition-transform">{i + 1}</span>
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <h4 className="text-[10px] sm:text-[11px] md:text-sm font-black uppercase tracking-tight mb-0.5 truncate group-hover/item:text-primary transition-colors">{t(`techstack.worker.tech.${i}.name`)}</h4>
+                          <p className="text-[7px] sm:text-[8px] md:text-[11px] font-medium italic text-white/40 line-clamp-2 group-hover/item:text-white/60 transition-colors">{t(`techstack.worker.tech.${i}.desc`)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Data Flow - Hidden on small screens */}
+              <div className="mt-2 sm:mt-3 hidden md:block glass-card rounded-2xl p-2 sm:p-3 md:p-4 shrink-0 hover:border-primary/30 transition-all duration-500">
+                <h3 className="text-[10px] sm:text-xs md:text-lg font-black italic uppercase mb-1.5 sm:mb-2 text-center">{t('techstack.dataflow.title')}</h3>
+                <div className="relative h-20 sm:h-24 md:h-32">
+                  <svg viewBox="0 0 800 160" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                    {/* Connection Lines - Simple dashed */}
+                    <path 
+                      d="M 100,80 L 700,80" 
+                      stroke="rgba(255,107,53,0.2)" 
+                      strokeWidth="3" 
+                      strokeDasharray="6 6" 
+                    />
+                    
+                    {/* Nodes with breathing animation */}
+                    {[0, 1, 2, 3].map((i: number) => {
+                      const cx = 100 + i * 200;
+                      const cy = 80;
+                      return (
+                        <g key={i}>
+                          {/* Breathing outer circle - 使用CSS动画确保位置固定 */}
+                          <circle 
+                            cx={cx}
+                            cy={cy}
+                            r="35"
+                            className="fill-primary"
+                            style={{
+                              transformOrigin: `${cx}px ${cy}px`,
+                              animation: `breathing-${i} 3s ease-in-out infinite`,
+                              animationDelay: `${i * 0.5}s`
+                            }}
+                          />
+                          {/* CSS动画定义 */}
+                          <style>{`
+                            @keyframes breathing-${i} {
+                              0%, 100% {
+                                transform: scale(1);
+                                opacity: 0.6;
+                              }
+                              50% {
+                                transform: scale(1.8);
+                                opacity: 0;
+                              }
+                            }
+                          `}</style>
+                          {/* Inner circles - 静态不动画 */}
+                          <circle cx={cx} cy={cy} r="28" className="fill-primary/20" />
+                          <circle cx={cx} cy={cy} r="20" className="fill-primary/10 stroke-primary/40" strokeWidth="2" />
+                          <text x={cx} y={cy} textAnchor="middle" dominant-baseline="middle" className="fill-primary text-[10px] font-black uppercase">
+                            {t(`techstack.dataflow.step${i + 1}`)}
+                          </text>
+                        </g>
+                      );
+                    })}
+                    
+                    {/* Animated Data Packet with glow trail */}
+                    <circle ref={(el: any) => {
+                      if (el && window.gsap && !el.dataset.animated) {
+                        el.dataset.animated = "true";
+                        window.gsap.to(el, {
+                          motionPath: {
+                            path: "M 100,80 L 700,80",
+                            align: "self",
+                            alignOrigin: [0.5, 0.5]
+                          },
+                          duration: 4,
+                          repeat: -1,
+                          ease: "none"
+                        });
+                      }
+                    }} cx="100" cy="80" r="6" className="fill-primary filter drop-shadow-lg drop-shadow-primary/50" />
+                    
+                    {/* Second data packet (delayed) */}
+                    <circle ref={(el: any) => {
+                      if (el && window.gsap && !el.dataset.animated2) {
+                        el.dataset.animated2 = "true";
+                        window.gsap.to(el, {
+                          motionPath: {
+                            path: "M 100,80 L 700,80",
+                            align: "self",
+                            alignOrigin: [0.5, 0.5]
+                          },
+                          duration: 4,
+                          repeat: -1,
+                          ease: "none",
+                          delay: 2
+                        });
+                      }
+                    }} cx="100" cy="80" r="4" className="fill-primary/40" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 6: SHOWCASE */}
           <section id="showcase" className="h-screen flex flex-col items-center justify-center shrink-0 bg-transparent relative overflow-hidden">
               <div className="container mx-auto px-6 h-full flex flex-col pt-20">
                   <div id="showcase-header" className="text-center mb-6 cursor-ns-resize group select-none relative z-20">
@@ -1278,7 +1604,7 @@ const moveSlideToIndex = useCallback((index: number) => {
               </div>
           </section>
 
-          {/* SECTION 6: CTA + FOOTER */}
+          {/* SECTION 7: CTA + FOOTER */}
           <section className="h-screen flex flex-col items-center justify-center relative bg-primary/90 px-6 overflow-hidden shrink-0">
             <div className="absolute inset-0 bg-black opacity-10 pattern-dots pointer-events-none"></div>
             <div className="container mx-auto text-center relative z-10 flex flex-col h-full pt-20">

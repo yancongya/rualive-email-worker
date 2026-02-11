@@ -82,6 +82,27 @@ export default defineConfig({
       }
     },
     {
+      name: 'copy-showcase',
+      generateBundle() {
+        const { copyFileSync, existsSync, mkdirSync, readdirSync } = require('fs');
+        const showcaseSrc = path.resolve(__dirname, 'public/assets/showcase');
+        const showcaseDest = path.resolve(__dirname, 'dist/assets/showcase');
+
+        if (existsSync(showcaseSrc)) {
+          if (!existsSync(showcaseDest)) {
+            mkdirSync(showcaseDest, { recursive: true });
+          }
+          const files = readdirSync(showcaseSrc);
+          files.forEach(file => {
+            const srcFile = path.join(showcaseSrc, file);
+            const destFile = path.join(showcaseDest, file);
+            copyFileSync(srcFile, destFile);
+            console.log(`[copy-showcase] Copied ${file} to dist/assets/showcase/`);
+          });
+        }
+      }
+    },
+    {
       name: 'move-html-files',
       closeBundle() {
         const { copyFileSync, existsSync } = require('fs');
