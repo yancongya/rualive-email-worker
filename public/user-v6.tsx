@@ -786,7 +786,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
     try {
       const token = localStorage.getItem('rualive_token');
       if (!token) {
-        alert('未授权，请重新登录');
+        alert(`${trans.unauthorized || 'Unauthorized, please login again'}`);
         return;
       }
 
@@ -803,10 +803,10 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
         await handleRefresh();
       } else {
         const result = await response.json();
-        alert(`删除失败: ${result.error || '未知错误'}`);
+        alert(`${trans.deleteFailed || 'Delete failed'}: ${result.error || trans.unknownError || 'Unknown error'}`);
       }
     } catch (error) {
-      alert('删除失败，请重试');
+      alert(`${trans.deleteFailed || 'Delete failed'}, ${trans.retry || 'Please try again'}`);
     }
   };
 
@@ -859,7 +859,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
                 border border-ru-glassBorder backdrop-blur-sm overflow-hidden
                 ${isActive ? 'bg-white/10 border-white/40' : 'bg-ru-glass hover:bg-white/5'}
               `}
-              title={onProjectClick ? `${trans.doubleClickProject || '双击查看项目历史'} (右键删除项目)` : undefined}
+              title={onProjectClick ? `${trans.doubleClickProject || 'Double-click to view project history'} (${trans.rightClickDelete || 'Right-click to delete project'})` : undefined}
             >
               <div className="flex justify-between items-start w-full">
                  <span className={`text-[10px] md:text-sm font-bold truncate pr-1 md:pr-2 ${isActive ? 'text-white' : 'text-ru-textDim'}`}>
@@ -881,27 +881,30 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ projects, selectedInd
 
       {/* 删除确认模态窗口 */}
       {deleteConfirmProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setDeleteConfirmProject(null)} />
-          <div className="relative w-full max-w-md bg-[#0a0a0f] border border-red-500/30 rounded-lg shadow-2xl p-6">
-            <h3 className="text-lg font-bold text-white mb-2">删除项目</h3>
-            <p className="text-ru-textMuted text-sm mb-4">
-              确定要删除项目 <span className="text-white font-mono">{deleteConfirmProject.name}</span> 吗？
-            </p>
-            <p className="text-red-400/80 text-xs mb-6">此操作不可恢复，将删除该项目及所有历史数据。</p>
-            <div className="flex gap-3 justify-end">
-              <button 
-                onClick={() => setDeleteConfirmProject(null)}
-                className="px-4 py-2 bg-white/10 border border-white/10 rounded text-white hover:bg-white/20 transition-colors text-sm"
-              >
-                取消
-              </button>
-              <button 
-                onClick={handleDeleteProject}
-                className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-colors text-sm"
-              >
-                确认删除
-              </button>
+          <div className="relative w-full max-w-md bg-[#0a0a0f] border border-red-500/30 rounded-lg shadow-2xl p-4 md:p-6 mx-2">
+            <h3 className="text-base md:text-lg font-bold text-white mb-2">{trans.deleteProject || 'Delete Project'}</h3>
+                      <p className="text-ru-textMuted text-xs md:text-sm mb-4">
+                        {trans.deleteProjectConfirm?.replace('{name}', deleteConfirmProject.name) || `Are you sure you want to delete project ${deleteConfirmProject.name}?`}
+                      </p>
+                      <p className="text-red-400/80 text-xs mb-4 md:mb-6">{trans.deleteProjectWarning || 'This action cannot be undone. All project data and history will be deleted.'}</p>            <div className="flex gap-3">
+              <div className="flex-1 flex justify-start">
+                <button
+                  onClick={() => setDeleteConfirmProject(null)}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-white/10 border border-white/10 rounded text-white hover:bg-white/20 transition-colors text-xs md:text-sm"
+                >
+                  {trans.cancel || 'Cancel'}
+                </button>
+              </div>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={handleDeleteProject}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-colors text-xs md:text-sm"
+                >
+                  {trans.confirm || 'Confirm'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2928,7 +2931,7 @@ const App = () => {
       try {
         // 禁用缓存，强制从服务器重新加载
         const response = await getWorkLogs(currentDate, false);
-        
+
         if (response.success && response.data && response.data.length > 0) {
           const workLog = response.data[0];
           const transformedData = workLogToDailyData(workLog);
@@ -2937,6 +2940,9 @@ const App = () => {
           // No data for this date
           setDailyData({ date: currentDate, projects: [] });
         }
+
+        // 重新加载项目汇总数据
+        await loadProjectsSummary();
       } catch (err) {
         console.error('[UserV6] Refresh Failed to load work logs:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -2959,7 +2965,9 @@ const App = () => {
   const [historyData, setHistoryData] = useState<any[] | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [editingRuntime, setEditingRuntime] = useState<{ date: string; hours: number } | null>(null);
+  const [editingRuntime, setEditingRuntime] = useState<{ date: string; minutes: number } | null>(null);
+  const [deleteConfirmDate, setDeleteConfirmDate] = useState<{ date: string; formattedDate: string } | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Handle fetch project history (for modal)
   const handleFetchProjectHistory = async (projectId: string, projectName: string) => {
@@ -3016,16 +3024,19 @@ const App = () => {
     }
   };
 
-  // 保存运行时长
+  // 保存运行时长（输入单位为分钟）
   const handleSaveRuntime = async (date: string) => {
     if (!editingRuntime || !historyProject) return;
-    
+
     try {
       const token = localStorage.getItem('rualive_token');
       if (!token) {
-        alert('未授权，请重新登录');
+        alert(`${trans.unauthorized || 'Unauthorized, please login again'}`);
         return;
       }
+
+      // 将分钟转换为小时
+      const workHours = editingRuntime.minutes / 60;
 
       const response = await fetch(`${window.location.origin}/api/projects/${historyProject.id}/daily-stats/${date}`, {
         method: 'PUT',
@@ -3033,22 +3044,60 @@ const App = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ work_hours: editingRuntime.hours })
+        body: JSON.stringify({ work_hours: workHours })
       });
 
       if (response.ok) {
         // 重新加载历史数据
         await handleFetchProjectHistory(historyProject.id, historyProject.name);
-        alert('运行时长已更新');
+        // 重新加载项目汇总数据
+        await loadProjectsSummary();
+        alert(`${trans.runtimeUpdated || 'Runtime updated'}`);
       } else {
         const result = await response.json();
-        alert(`更新失败: ${result.error || '未知错误'}`);
+        alert(`${trans.updateFailed || 'Update failed'}: ${result.error || trans.unknownError || 'Unknown error'}`);
       }
     } catch (error) {
-      alert('更新失败，请重试');
+      alert(`${trans.updateFailed || 'Update failed'}, ${trans.retry || 'Please try again'}`);
     }
-    
+
     setEditingRuntime(null);
+  };
+
+  // 删除当天数据
+  const handleDeleteDailyData = async () => {
+    if (!deleteConfirmDate || !historyProject) return;
+    const { date } = deleteConfirmDate;
+    setDeleteConfirmDate(null);
+
+    try {
+      const token = localStorage.getItem('rualive_token');
+      if (!token) {
+        alert(`${trans.unauthorized || 'Unauthorized, please login again'}`);
+        return;
+      }
+
+      const response = await fetch(`${window.location.origin}/api/projects/${historyProject.id}/daily-stats/${date}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // 重新加载历史数据
+        await handleFetchProjectHistory(historyProject.id, historyProject.name);
+        // 重新加载项目汇总数据
+        await loadProjectsSummary();
+        alert(`${trans.dataDeleted || 'Data deleted'}`);
+      } else {
+        const result = await response.json();
+        alert(`${trans.deleteFailed || 'Delete failed'}: ${result.error || trans.unknownError || 'Unknown error'}`);
+      }
+    } catch (error) {
+      alert(`${trans.deleteFailed || 'Delete failed'}, ${trans.retry || 'Please try again'}`);
+    }
   };
 
   // Load project history for gantt chart (without modal)
@@ -3101,41 +3150,43 @@ const App = () => {
   };
 
   // Load projects total hours
-  useEffect(() => {
-    async function loadProjectsSummary() {
-      try {
-        const token = localStorage.getItem('rualive_token');
-        if (!token) {
-          console.error('[Dashboard] No authentication token found');
-          return;
-        }
-
-        const response = await fetch(`${window.location.origin}/api/projects/summary`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('[Dashboard] Projects summary response:', result);
-          if (result.success && result.projects) {
-            const hoursMap = new Map<string, number>();
-            result.projects.forEach((p: any) => {
-              hoursMap.set(p.project_id, p.total_work_hours);
-            });
-            setProjectsTotalHours(hoursMap);
-          }
-        } else {
-          console.error('[Dashboard] Failed to fetch projects summary:', response.status);
-        }
-      } catch (error) {
-        console.error('[Dashboard] Error fetching projects summary:', error);
+  const loadProjectsSummary = async () => {
+    try {
+      const token = localStorage.getItem('rualive_token');
+      if (!token) {
+        console.error('[Dashboard] No authentication token found');
+        return;
       }
-    }
 
+      // 添加时间戳避免浏览器缓存
+      const response = await fetch(`${window.location.origin}/api/projects/summary?t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[Dashboard] Projects summary response:', result);
+        if (result.success && result.projects) {
+          const hoursMap = new Map<string, number>();
+          result.projects.forEach((p: any) => {
+            console.log('[Dashboard] Project:', p.project_id, 'total_work_hours:', p.total_work_hours);
+            hoursMap.set(p.project_id, p.total_work_hours);
+          });
+          setProjectsTotalHours(hoursMap);
+        }
+      } else {
+        console.error('[Dashboard] Failed to fetch projects summary:', response.status);
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error fetching projects summary:', error);
+    }
+  };
+
+  useEffect(() => {
     loadProjectsSummary();
   }, []);
 
@@ -3506,15 +3557,26 @@ const App = () => {
                       </thead>
                       <tbody>
                         {historyData.map((item: any, idx: number) => (
-                          <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="py-2 font-mono text-ru-textDim">{item.work_date}</td>
+                          <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                            <td className="py-2 font-mono text-ru-textDim">
+                              <div className="flex items-center gap-2">
+                                <span>{item.work_date}</span>
+                                <button
+                                  onClick={() => setDeleteConfirmDate({ date: item.work_date, formattedDate: item.work_date })}
+                                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/20 p-1 rounded transition-all"
+                                  title={trans.deleteDay || 'Delete daily data'}
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </td>
                             <td className="py-2 text-right">
                               {editingRuntime?.date === item.work_date ? (
-                                <input 
+                                <input
                                   type="number"
-                                  value={editingRuntime.hours}
-                                  onChange={(e) => setEditingRuntime({ ...editingRuntime, hours: parseFloat(e.target.value) || 0 })}
-                                  step="0.1"
+                                  value={editingRuntime.minutes}
+                                  onChange={(e) => setEditingRuntime({ ...editingRuntime, minutes: parseFloat(e.target.value) || 0 })}
+                                  step="1"
                                   min="0"
                                   className="w-20 text-right bg-white/10 border border-ru-primary rounded px-1 py-0.5 text-ru-primary font-mono text-xs"
                                   autoFocus
@@ -3522,13 +3584,41 @@ const App = () => {
                                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRuntime(item.work_date); }}
                                 />
                               ) : (
-                                <span 
-                                  onDoubleClick={() => setEditingRuntime({ date: item.work_date, hours: item.work_hours })}
-                                  className="font-mono text-ru-primary cursor-pointer hover:bg-white/5 px-1 rounded transition-colors"
-                                  title="双击编辑运行时长"
+                                <div
+                                  onDoubleClick={() => {
+                                    console.log('[Double-click] Editing runtime for date:', item.work_date, 'work_hours:', item.work_hours);
+                                    const minutes = item.work_hours ? Math.round(item.work_hours * 60) : 0;
+                                    console.log('[Double-click] Setting editing runtime to:', minutes, 'minutes');
+                                    setEditingRuntime({ date: item.work_date, minutes });
+                                  }}
+                                  onTouchStart={() => {
+                                    // 长按检测
+                                    const timer = setTimeout(() => {
+                                      const minutes = item.work_hours ? Math.round(item.work_hours * 60) : 0;
+                                      console.log('[Long-press] Editing runtime for date:', item.work_date, 'minutes:', minutes);
+                                      setEditingRuntime({ date: item.work_date, minutes });
+                                    }, 500);
+                                    setLongPressTimer(timer);
+                                  }}
+                                  onTouchEnd={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                  onTouchMove={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                  className="inline-block px-1 rounded transition-colors cursor-pointer hover:bg-white/5"
+                                  title={trans.editRuntime || 'Double-click to edit runtime (input unit: minutes)'}
                                 >
-                                  {formatRuntimeCompact(item.accumulated_runtime)}
-                                </span>
+                                  <span className="font-mono text-ru-primary">
+                                    {formatRuntimeCompact(item.accumulated_runtime || 0)}
+                                  </span>
+                                </div>
                               )}
                             </td>
                             <td className="py-2 text-right font-mono">{item.composition_count}</td>
@@ -3546,6 +3636,38 @@ const App = () => {
                   <p className="text-ru-textMuted text-sm">{trans.historyNoData || '暂无历史数据'}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 删除当天数据确认弹窗 */}
+      {deleteConfirmDate && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setDeleteConfirmDate(null)} />
+          <div className="relative w-full max-w-md bg-[#0a0a0f] border border-red-500/30 rounded-lg shadow-2xl p-4 md:p-6 mx-2">
+            <h3 className="text-base md:text-lg font-bold text-white mb-2">{trans.deleteDay || 'Delete daily data'}</h3>
+            <p className="text-ru-textMuted text-xs md:text-sm mb-4">
+              {trans.deleteDayConfirm?.replace('{date}', deleteConfirmDate.formattedDate) || `Are you sure you want to delete all data for ${deleteConfirmDate.formattedDate}?`}
+            </p>
+            <p className="text-red-400/80 text-xs mb-4 md:mb-6">{trans.deleteDayWarning || 'This action cannot be undone.'}</p>
+            <div className="flex gap-3">
+              <div className="flex-1 flex justify-start">
+                <button
+                  onClick={() => setDeleteConfirmDate(null)}
+                  className="px-3 py-2 md:px-4 md:py-2 rounded bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-xs md:text-sm"
+                >
+                  {trans.cancel || 'Cancel'}
+                </button>
+              </div>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={handleDeleteDailyData}
+                  className="px-3 py-2 md:px-4 md:py-2 rounded bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors text-xs md:text-sm"
+                >
+                  {trans.confirm || 'Confirm'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

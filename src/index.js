@@ -440,6 +440,12 @@ export default {
       return handleUpdateProjectDailyStats(request, env);
     }
 
+    // 删除项目当天数据 API
+    if (path.startsWith('/api/projects/') && path.includes('/daily-stats/') && request.method === 'DELETE') {
+      console.log('[Router] 删除项目当天数据 API 被调用');
+      return handleDeleteProjectDailyStats(request, env);
+    }
+
     // 删除项目 API
     if (path.startsWith('/api/projects/') && request.method === 'DELETE') {
       console.log('[Router] 删除项目 API 被调用');
@@ -2777,7 +2783,14 @@ async function handleGetProjectHistory(request, env) {
     }
 
     if (!project) {
-      return Response.json({ error: '项目不存在' }, { status: 404 });
+      // 如果找不到项目，返回空的历史数据而不是 404
+      console.log('[handleGetProjectHistory] 项目不存在，返回空历史数据:', projectId);
+      return Response.json({
+        success: true,
+        projectId: projectId,
+        projectName: '未知项目',
+        dailyStats: []
+      });
     }
 
     // 查询项目的历史数据
@@ -2884,7 +2897,7 @@ async function handleUpdateProjectDailyStats(request, env) {
 
     // 更新或创建日统计记录
     const accumulated_runtime = work_hours * 3600; // 转换为秒
-    const result = await DB.prepare(`
+    await DB.prepare(`
       INSERT INTO project_daily_stats (project_id, work_date, work_hours, accumulated_runtime)
       VALUES (?, ?, ?, ?)
       ON CONFLICT(project_id, work_date) DO UPDATE SET
@@ -2892,16 +2905,110 @@ async function handleUpdateProjectDailyStats(request, env) {
         accumulated_runtime = excluded.accumulated_runtime
     `).bind(project.id, workDate, work_hours, accumulated_runtime).run();
 
-    console.log('[handleUpdateProjectDailyStats] 更新成功:', {
-      projectId,
+    console.log('[handleUpdateProjectDailyStats] Daily stats updated:', {
+      projectDbId: project.id,
+      projectId: projectId,
       workDate,
       work_hours,
       accumulated_runtime
     });
 
+    // 查询所有 daily stats 记录（用于调试）
+    const allStats = await DB.prepare(
+      'SELECT work_date, work_hours FROM project_daily_stats WHERE project_id = ? ORDER BY work_date'
+    ).bind(project.id).all();
+    console.log('[handleUpdateProjectDailyStats] All daily stats for project:', projectId, JSON.stringify(allStats.results));
+
+    // 重新计算项目的总统计
+    const stats = await DB.prepare(
+      'SELECT SUM(work_hours) as total_hours, COUNT(*) as total_days FROM project_daily_stats WHERE project_id = ?'
+    ).bind(project.id).first();
+
+    const totalWorkHours = stats?.total_hours || 0;
+    const totalWorkDays = stats?.total_days || 0;
+
+    // 更新 projects 表的总统计
+    await DB.prepare(`
+      UPDATE projects
+      SET total_work_hours = ?, total_work_days = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(totalWorkHours, totalWorkDays, project.id).run();
+
+    console.log('[handleUpdateProjectDailyStats] 更新成功:', {
+      projectId,
+      workDate,
+      work_hours,
+      totalWorkHours,
+      totalWorkDays
+    });
+
     return Response.json({ success: true });
   } catch (error) {
     console.error('handleUpdateProjectDailyStats error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 删除项目当天数据
+async function handleDeleteProjectDailyStats(request, env) {
+  const DB = env.DB || env.rualive;
+
+  try {
+    // 验证用户身份
+    const payload = await verifyAuth(request, env);
+    if (!payload) {
+      return Response.json({ error: '未授权' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const projectId = pathParts[3]; // /api/projects/:projectId/daily-stats/:date
+    const workDate = pathParts[5];
+
+    if (!projectId || !workDate) {
+      return Response.json({ error: '缺少 projectId 或 date 参数' }, { status: 400 });
+    }
+
+    // 验证项目所有权
+    const project = await DB.prepare(
+      'SELECT id, project_id, user_id FROM projects WHERE user_id = ? AND project_id = ?'
+    ).bind(userId, projectId).first();
+
+    if (!project) {
+      return Response.json({ error: '项目不存在或无权访问' }, { status: 404 });
+    }
+
+    // 删除当天统计记录
+    await DB.prepare(
+      'DELETE FROM project_daily_stats WHERE project_id = ? AND work_date = ?'
+    ).bind(project.id, workDate).run();
+
+    // 重新计算项目的总统计
+    const stats = await DB.prepare(
+      'SELECT SUM(work_hours) as total_hours, COUNT(*) as total_days FROM project_daily_stats WHERE project_id = ?'
+    ).bind(project.id).first();
+
+    const totalWorkHours = stats?.total_hours || 0;
+    const totalWorkDays = stats?.total_days || 0;
+
+    // 更新 projects 表的总统计
+    await DB.prepare(`
+      UPDATE projects
+      SET total_work_hours = ?, total_work_days = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(totalWorkHours, totalWorkDays, project.id).run();
+
+    console.log('[handleDeleteProjectDailyStats] 删除成功:', {
+      projectId,
+      workDate,
+      totalWorkHours,
+      totalWorkDays
+    });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error('handleDeleteProjectDailyStats error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
